@@ -244,7 +244,7 @@ def test_recovery_evidence_is_one_compact_collapsed_disclosure_per_retry():
     trace_height = int(
         re.search(r"\.trace-scroll\s*\{[^}]*max-height:\s*(\d+)px", rendered).group(1)
     )
-    assert 590 <= trace_height <= 650
+    assert 690 <= trace_height <= 720
     assert re.search(
         r"\.recovery-branch\s*>\s*summary\s*\{[^}]*font-size:\s*(?:1[5-9]|[2-9]\d)px",
         rendered,

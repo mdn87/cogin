@@ -403,7 +403,7 @@ dd { margin: 2px 0 0; }
 .partial-series { stroke: #f5c451; stroke-dasharray: 7 5; }
 .sample-point { fill: #e6edf3; stroke: #090d12; }
 .chart-legend { display: flex; gap: 18px; }
-.trace-scroll { max-height: 650px; overflow: auto; scroll-behavior: smooth; }
+.trace-scroll { max-height: 700px; overflow: auto; scroll-behavior: smooth; }
 .tier-header { position: sticky; top: 0; z-index: 2; display: flex; align-items: baseline; gap: 12px; padding: 7px 10px; background: #17212b; border-block: 1px solid #344454; }
 .tier-header h3 { font-size: 16px; white-space: nowrap; }
 .tier-header p { color: #b8c4cf; font-size: 13px; }
