@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 import statistics
 from collections import Counter, defaultdict, deque
@@ -23,6 +25,31 @@ UNSUPPORTED_OUTPUT_CODES = {
     "integrity.false_positive",
 }
 
+CONDITION_CONFIG_KEYS = (
+    "provider",
+    "model",
+    "effort",
+    "output_mode",
+    "session_mode",
+    "retries",
+    "retry_policy",
+    "retry_context",
+    "transport_retries",
+    "tool_access",
+    "condition_label",
+)
+
+CAPABILITY_PROXIES = {
+    "semantic_match": "bounded selection and immediate dependency identification",
+    "direct_prerequisites": "bounded selection and immediate dependency identification",
+    "reverse_unlocks": "reverse-dependency impact analysis",
+    "transitive_prerequisites": "multi-hop dependency reasoning and ordering",
+    "topological_order": "multi-hop dependency reasoning and ordering",
+    "shortest_path": "constrained planning and efficient sequencing",
+    "mastery_plan": "constrained planning and efficient sequencing",
+    "integrity_audit": "contradiction and structural-error detection",
+}
+
 
 def wilson_interval(
     successes: int,
@@ -36,6 +63,254 @@ def wilson_interval(
     center = (p + z * z / (2 * total)) / denominator
     margin = z * math.sqrt((p * (1 - p) + z * z / (4 * total)) / total) / denominator
     return max(0.0, center - margin), min(1.0, center + margin)
+
+
+def condition_key(run: Mapping[str, Any]) -> tuple[Any, ...]:
+    configuration = run.get("configuration", {})
+    return (
+        run.get("suite_hash"),
+        *(configuration.get(key) for key in CONDITION_CONFIG_KEYS),
+    )
+
+
+def _evidence_level(repeat_count: int) -> str:
+    if repeat_count >= 3:
+        return "repeated model evidence"
+    if repeat_count == 2:
+        return "limited repeat evidence"
+    return "session evidence"
+
+
+def derive_condition_evidence(runs: list[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[str, list[Mapping[str, Any]]] = {}
+    keys: dict[str, tuple[Any, ...]] = {}
+    for run in runs:
+        key = condition_key(run)
+        serialized = json.dumps(key, sort_keys=True, separators=(",", ":"), default=str)
+        grouped.setdefault(serialized, []).append(run)
+        keys[serialized] = key
+
+    conditions: list[dict[str, Any]] = []
+    for serialized, grouped_runs in grouped.items():
+        key = keys[serialized]
+        repeat_count = len(grouped_runs)
+        aligned: dict[str, dict[str, Any]] = {}
+        for run in grouped_runs:
+            for task in derive_progression_view(run)["tasks"]:
+                task_id = str(task["task_id"])
+                aligned_task = aligned.setdefault(
+                    task_id,
+                    {
+                        "task_id": task_id,
+                        "tier": task["tier"],
+                        "kind": task["kind"],
+                        "observations": [],
+                    },
+                )
+                aligned_task["observations"].append(
+                    {
+                        "run_id": run.get("run_id"),
+                        "sequence_index": task["sequence_index"],
+                        "outcome": task["outcome"],
+                        "exact": task["exact"],
+                        "partial": task["partial"],
+                        "latency_ms": task["latency_ms"],
+                        "codes": task["codes"],
+                    }
+                )
+
+        task_evidence: list[dict[str, Any]] = []
+        exact_total = 0
+        scored_total = 0
+        minority_total = 0
+        for aligned_task in aligned.values():
+            scored_observations = [
+                item for item in aligned_task["observations"] if item["exact"] is not None
+            ]
+            exact_count = sum(item["exact"] is True for item in scored_observations)
+            observed_count = len(scored_observations)
+            minority_count = min(exact_count, observed_count - exact_count)
+            partials = [
+                float(item["partial"])
+                for item in scored_observations
+                if item["partial"] is not None
+            ]
+            task_evidence.append(
+                {
+                    **aligned_task,
+                    "exact_count": exact_count,
+                    "observed_count": observed_count,
+                    "exact_rate": exact_count / observed_count if observed_count else None,
+                    "median_partial": statistics.median(partials) if partials else None,
+                    "flip_rate": minority_count / observed_count if observed_count else None,
+                }
+            )
+            exact_total += exact_count
+            scored_total += observed_count
+            minority_total += minority_count
+
+        lower, upper = wilson_interval(exact_total, scored_total)
+        family_observations: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for task in task_evidence:
+            family_observations[task["kind"]].extend(
+                observation
+                for observation in task["observations"]
+                if observation["exact"] is not None
+            )
+        family_evidence: list[dict[str, Any]] = []
+        for kind, observations in family_observations.items():
+            family_exact = sum(item["exact"] is True for item in observations)
+            family_partials = [
+                float(item["partial"])
+                for item in observations
+                if item["partial"] is not None
+            ]
+            family_evidence.append(
+                {
+                    "kind": kind,
+                    "proxy_label": CAPABILITY_PROXIES.get(kind, kind),
+                    "exact_count": family_exact,
+                    "sample_count": len(observations),
+                    "exact_rate": family_exact / len(observations) if observations else None,
+                    "median_partial": statistics.median(family_partials) if family_partials else None,
+                }
+            )
+
+        resolved_models = sorted(
+            {
+                str(model)
+                for run in grouped_runs
+                for model in (
+                    list(run.get("summary", {}).get("resolved_models", ()))
+                    + [
+                        attempt.get("resolved_model")
+                        for task in run.get("tasks", ())
+                        for attempt in task.get("attempts", ())
+                    ]
+                )
+                if model
+            }
+        )
+        frontier_observations = [
+            {
+                "run_id": run.get("run_id"),
+                "tier": run.get("summary", {}).get("reliable_frontier_first"),
+            }
+            for run in grouped_runs
+            if run.get("summary", {}).get("reliable_frontier_first") is not None
+        ]
+        frontier_values = [item["tier"] for item in frontier_observations]
+        scored_observations = [
+            observation
+            for task in task_evidence
+            for observation in task["observations"]
+            if observation["exact"] is not None
+        ]
+        latencies = [
+            float(item["latency_ms"])
+            for item in scored_observations
+            if item["latency_ms"] is not None
+        ]
+        unsupported_count = sum(
+            any(code in UNSUPPORTED_OUTPUT_CODES for code in item["codes"])
+            for item in scored_observations
+        )
+        condition = {
+            "condition_id": hashlib.sha256(serialized.encode("utf-8")).hexdigest(),
+            "suite_hash": key[0],
+            "configuration": dict(zip(CONDITION_CONFIG_KEYS, key[1:])),
+            "repeat_count": repeat_count,
+            "evidence_level": _evidence_level(repeat_count),
+            "run_ids": [run.get("run_id") for run in grouped_runs],
+            "run_traces": [
+                {
+                    "run_id": run.get("run_id"),
+                    "suite_hash": run.get("suite_hash"),
+                    "suite_seed": run.get("suite_seed"),
+                    "repeat": run.get("configuration", {}).get("repeat", 1),
+                    "created_at": run.get("created_at"),
+                }
+                for run in grouped_runs
+            ],
+            "resolved_models": resolved_models,
+            "resolved_model_changed": len(resolved_models) > 1,
+            "tasks": task_evidence,
+            "exact_rate_confidence": {
+                "exact_count": exact_total,
+                "sample_count": scored_total,
+                "exact_rate": exact_total / scored_total if scored_total else None,
+                "wilson_95": [lower, upper],
+            },
+            "consistency": {
+                "flip_count": minority_total,
+                "sample_count": scored_total,
+                "flip_rate": minority_total / scored_total if scored_total else None,
+                "measured": repeat_count >= 2,
+            },
+            "frontier_distribution": {
+                "observations": frontier_observations,
+                "sample_count": len(frontier_values),
+                "minimum": min(frontier_values) if frontier_values else None,
+                "median": statistics.median(frontier_values) if frontier_values else None,
+                "maximum": max(frontier_values) if frontier_values else None,
+            },
+            "first_pass_latency_ms": {
+                "sample_count": len(latencies),
+                "median": statistics.median(latencies) if latencies else None,
+            },
+            "task_families": family_evidence,
+            "unsupported_output_proxy": {
+                "label": "unsupported-output proxy",
+                "count": unsupported_count,
+                "scored_count": len(scored_observations),
+                "rate": unsupported_count / len(scored_observations) if scored_observations else None,
+            },
+        }
+        condition["routing_interpretation"] = derive_routing_interpretation(condition)
+        conditions.append(condition)
+    return conditions
+
+
+def derive_routing_interpretation(evidence: Mapping[str, Any]) -> dict[str, Any]:
+    families = [
+        row for row in evidence.get("task_families", ()) if row.get("exact_rate") is not None
+    ]
+    strongest = max(families, key=lambda row: row["exact_rate"], default=None)
+    weakest = min(families, key=lambda row: row["exact_rate"], default=None)
+    frontier = evidence.get("frontier_distribution", {}).get("median")
+    frontier_label = f"Tier {frontier:g}" if frontier is not None else "not measured"
+    strongest_label = strongest["proxy_label"] if strongest else "not measured"
+    weakest_label = weakest["proxy_label"] if weakest else "not measured"
+    recommendation = (
+        f"Observed reliable frontier: {frontier_label}. "
+        f"Strongest observed capability proxy: {strongest_label}; "
+        f"weakest observed capability proxy: {weakest_label}. "
+        f"Require independent verification beyond {frontier_label}."
+    )
+    references = [
+        {"metric": "reliable_frontier", "value": evidence.get("frontier_distribution")},
+        {"metric": "strongest_capability_proxy", "value": strongest},
+        {"metric": "weakest_capability_proxy", "value": weakest},
+        {
+            "metric": "median_first_pass_latency_ms",
+            "value": evidence.get("first_pass_latency_ms", {}).get("median"),
+        },
+    ]
+    if evidence.get("consistency", {}).get("measured"):
+        references.append(
+            {"metric": "repeat_consistency", "value": evidence.get("consistency")}
+        )
+    references.append(
+        {
+            "metric": "unsupported_output_proxy",
+            "value": evidence.get("unsupported_output_proxy"),
+        }
+    )
+    return {
+        "recommendation": recommendation,
+        "heuristic": True,
+        "evidence_references": references,
+    }
 
 
 def derive_attempt_outcome(kind: str, attempt: Mapping[str, Any]) -> dict[str, Any]:

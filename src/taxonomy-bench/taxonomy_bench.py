@@ -29,7 +29,7 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-from taxonomy_bench_progression import wilson_interval
+from taxonomy_bench_progression import derive_condition_evidence, wilson_interval
 
 FORMAT_VERSION = 1
 BENCHMARK_VERSION = "0.1.0"
@@ -2027,8 +2027,8 @@ def aggregate_matrix(runs: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
                 "frontier_first": summary.get("reliable_frontier_first"),
                 "frontier_eventual": summary.get("reliable_frontier_eventual"),
                 "median_latency_ms": summary.get("latency_ms", {}).get("first_median"),
-                "reasoning_tokens": summary.get("usage_first", {}).get("reasoning_tokens", 0),
-                "total_tokens": summary.get("usage_first", {}).get("total_tokens", 0),
+                "reasoning_tokens": summary.get("usage_first", {}).get("reasoning_tokens"),
+                "total_tokens": summary.get("usage_first", {}).get("total_tokens"),
                 "points_per_minute": summary.get("efficiency", {}).get("difficulty_weighted_points_per_minute_first"),
                 "infra_errors": summary.get("infrastructure_error_count"),
             }
@@ -2038,6 +2038,7 @@ def aggregate_matrix(runs: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "benchmark_version": BENCHMARK_VERSION,
         "created_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "runs": rows,
+        "conditions": derive_condition_evidence(list(runs)),
     }
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -9,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import taxonomy_bench_progression as progression
+import taxonomy_bench as tb
 from taxonomy_bench_progression import derive_attempt_outcome, wilson_interval
 
 
@@ -112,6 +114,24 @@ def make_run(tier_outcomes, infra_indexes=()):
             "usage_first": {},
         },
     }
+
+
+def make_repeat_run(
+    run_id,
+    outcomes=(True,),
+    *,
+    repeat=1,
+    suite_hash="suite-a",
+    suite_seed=42,
+    **configuration,
+):
+    run = make_run({1: list(outcomes)})
+    run["run_id"] = run_id
+    run["suite_hash"] = suite_hash
+    run["suite_seed"] = suite_seed
+    run["configuration"].update(configuration)
+    run["configuration"]["repeat"] = repeat
+    return run
 
 
 def test_progression_preserves_order_and_selects_first_phase_explicitly():
@@ -256,6 +276,195 @@ def test_retry_attempts_do_not_contaminate_first_pass_metrics_or_markers():
     ]
     assert retried["markers"] == baseline["markers"]
     assert retried["tasks"][1]["retries"][0]["outcome"] == "exact"
+
+
+def test_condition_grouping_uses_exact_configuration_key_without_repeat():
+    assert progression.CONDITION_CONFIG_KEYS == (
+        "provider",
+        "model",
+        "effort",
+        "output_mode",
+        "session_mode",
+        "retries",
+        "retry_policy",
+        "retry_context",
+        "transport_retries",
+        "tool_access",
+        "condition_label",
+    )
+    first = make_repeat_run("run-1", repeat=1)
+    second = make_repeat_run("run-2", repeat=99)
+
+    assert progression.condition_key(first) == (
+        "suite-a",
+        *(first["configuration"][key] for key in progression.CONDITION_CONFIG_KEYS),
+    )
+    assert progression.condition_key(first) == progression.condition_key(second)
+
+
+def test_condition_evidence_separates_session_modes_and_labels_repeat_strength():
+    runs = [
+        make_repeat_run(f"isolated-{repeat}", repeat=repeat)
+        for repeat in range(1, 4)
+    ]
+    runs.append(make_repeat_run("continuous-1", session_mode="continuous"))
+
+    conditions = progression.derive_condition_evidence(runs)
+
+    assert len(conditions) == 2
+    isolated = next(
+        item for item in conditions if item["configuration"]["session_mode"] == "isolated"
+    )
+    assert isolated["repeat_count"] == 3
+    assert isolated["evidence_level"] == "repeated model evidence"
+    assert isolated["run_ids"] == ["isolated-1", "isolated-2", "isolated-3"]
+
+
+def test_condition_evidence_does_not_align_different_suites_or_output_modes():
+    runs = [
+        make_repeat_run("prompt-a"),
+        make_repeat_run("schema-a", output_mode="schema"),
+        make_repeat_run("prompt-b", suite_hash="suite-b", suite_seed=43),
+    ]
+
+    conditions = progression.derive_condition_evidence(runs)
+
+    assert len(conditions) == 3
+    assert all(condition["repeat_count"] == 1 for condition in conditions)
+
+
+def test_same_task_repeat_evidence_precomputes_consistency_and_confidence():
+    runs = [
+        make_repeat_run("run-1", (True,), repeat=1),
+        make_repeat_run("run-2", (True,), repeat=2),
+        make_repeat_run("run-3", (False,), repeat=3),
+    ]
+
+    condition = progression.derive_condition_evidence(runs)[0]
+    task = condition["tasks"][0]
+
+    assert {
+        key: task[key]
+        for key in (
+            "task_id",
+            "tier",
+            "kind",
+            "exact_count",
+            "observed_count",
+            "exact_rate",
+            "median_partial",
+            "flip_rate",
+        )
+    } == {
+        "task_id": "task-1",
+        "tier": 1,
+        "kind": "semantic_match",
+        "exact_count": 2,
+        "observed_count": 3,
+        "exact_rate": pytest.approx(2 / 3),
+        "median_partial": pytest.approx(1.0),
+        "flip_rate": pytest.approx(1 / 3),
+    }
+    assert condition["consistency"]["flip_rate"] == pytest.approx(1 / 3)
+    assert condition["exact_rate_confidence"]["sample_count"] == 3
+    assert condition["exact_rate_confidence"]["wilson_95"] == pytest.approx(
+        progression.wilson_interval(2, 3)
+    )
+    assert [item["run_id"] for item in task["observations"]] == [
+        "run-1",
+        "run-2",
+        "run-3",
+    ]
+    assert [item["run_id"] for item in condition["run_traces"]] == condition["run_ids"]
+
+
+def test_unscored_repeat_observations_do_not_enter_confidence_or_flip_rates():
+    runs = [
+        make_repeat_run("run-1", (True,), repeat=1),
+        make_repeat_run("run-2", (False,), repeat=2),
+        make_repeat_run("run-infra", (True,), repeat=3),
+    ]
+    runs[-1]["tasks"][0]["attempts"] = [attempt(error="network unavailable")]
+
+    condition = progression.derive_condition_evidence(runs)[0]
+
+    assert condition["tasks"][0]["observed_count"] == 2
+    assert condition["exact_rate_confidence"]["sample_count"] == 2
+    assert condition["consistency"]["flip_rate"] == pytest.approx(0.5)
+
+
+@pytest.mark.parametrize(
+    ("repeat_count", "expected"),
+    [
+        (1, "session evidence"),
+        (2, "limited repeat evidence"),
+        (3, "repeated model evidence"),
+    ],
+)
+def test_condition_evidence_levels_are_exact(repeat_count, expected):
+    runs = [make_repeat_run(f"run-{index}", repeat=index) for index in range(1, repeat_count + 1)]
+
+    assert progression.derive_condition_evidence(runs)[0]["evidence_level"] == expected
+
+
+def test_routing_evidence_is_precomputed_descriptive_and_source_grounded():
+    runs = [
+        make_repeat_run(f"run-{repeat}", (True, False), repeat=repeat)
+        for repeat in range(1, 4)
+    ]
+    for index, run in enumerate(runs):
+        run["tasks"][0]["kind"] = "reverse_unlocks"
+        run["tasks"][1]["kind"] = "integrity_audit"
+        run["tasks"][1]["attempts"] = [
+            attempt(partial=0.25, details={"extra_count": 1})
+        ]
+        run["tasks"][0]["attempts"][0]["resolved_model"] = (
+            "resolved-a" if index < 2 else "resolved-b"
+        )
+
+    condition = progression.derive_condition_evidence(runs)[0]
+
+    assert next(
+        row for row in condition["task_families"] if row["kind"] == "reverse_unlocks"
+    )["proxy_label"] == "reverse-dependency impact analysis"
+    assert condition["resolved_models"] == ["resolved-a", "resolved-b"]
+    assert condition["resolved_model_changed"] is True
+    assert condition["frontier_distribution"]["sample_count"] == 3
+    assert condition["first_pass_latency_ms"]["sample_count"] == 6
+    assert condition["unsupported_output_proxy"]["label"] == "unsupported-output proxy"
+
+    routing = condition["routing_interpretation"]
+    assert routing["heuristic"] is True
+    assert "independent verification beyond" in routing["recommendation"]
+    assert {reference["metric"] for reference in routing["evidence_references"]} == {
+        "reliable_frontier",
+        "strongest_capability_proxy",
+        "weakest_capability_proxy",
+        "median_first_pass_latency_ms",
+        "repeat_consistency",
+        "unsupported_output_proxy",
+    }
+    serialized = json.dumps(condition).lower()
+    assert "hallucination" not in serialized
+    assert "winner" not in serialized
+
+
+def test_matrix_preserves_run_rows_adds_conditions_and_keeps_missing_usage_null():
+    missing = make_repeat_run("missing-usage")
+    explicit_zero = make_repeat_run("zero-usage", session_mode="continuous")
+    explicit_zero["summary"]["usage_first"] = {
+        "reasoning_tokens": 0,
+        "total_tokens": 0,
+    }
+
+    matrix = tb.aggregate_matrix([missing, explicit_zero])
+
+    assert [row["run_id"] for row in matrix["runs"]] == ["missing-usage", "zero-usage"]
+    assert matrix["runs"][0]["reasoning_tokens"] is None
+    assert matrix["runs"][0]["total_tokens"] is None
+    assert matrix["runs"][1]["reasoning_tokens"] == 0
+    assert matrix["runs"][1]["total_tokens"] == 0
+    assert len(matrix["conditions"]) == 2
 
 
 def test_wilson_interval_handles_empty_and_known_samples():
