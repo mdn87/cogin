@@ -29,6 +29,8 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from taxonomy_bench_progression import wilson_interval
+
 FORMAT_VERSION = 1
 BENCHMARK_VERSION = "0.1.0"
 ATTRIBUTION = (
@@ -1586,16 +1588,6 @@ def _percentile(values: Sequence[float], percentile: float) -> float | None:
     return sorted_values[low] * (1 - weight) + sorted_values[high] * weight
 
 
-def _wilson_interval(successes: int, total: int, z: float = 1.96) -> tuple[float | None, float | None]:
-    if total <= 0:
-        return None, None
-    p = successes / total
-    denominator = 1 + z * z / total
-    center = (p + z * z / (2 * total)) / denominator
-    margin = z * math.sqrt((p * (1 - p) + z * z / (4 * total)) / total) / denominator
-    return max(0.0, center - margin), min(1.0, center + margin)
-
-
 def _sum_usage(attempts: Iterable[Mapping[str, Any]]) -> dict[str, int]:
     totals: dict[str, int] = defaultdict(int)
     for attempt in attempts:
@@ -1718,7 +1710,7 @@ def summarize_run(run: Mapping[str, Any]) -> dict[str, Any]:
         }
 
     scored = len(scored_records)
-    lower, upper = _wilson_interval(first_passes, scored)
+    lower, upper = wilson_interval(first_passes, scored)
     total_first_ms = sum(first_latencies)
     total_all_ms = sum(all_latencies)
     weighted_points_per_minute = (

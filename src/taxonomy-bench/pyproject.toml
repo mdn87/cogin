@@ -20,7 +20,7 @@ test = ["pytest>=8,<10"]
 taxonomy-bench = "taxonomy_bench:main"
 
 [tool.setuptools]
-py-modules = ["taxonomy_bench"]
+py-modules = ["taxonomy_bench", "taxonomy_bench_progression", "taxonomy_bench_report"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
