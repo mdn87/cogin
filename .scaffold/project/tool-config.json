@@ -1,0 +1,13 @@
+{
+  "audit_interval_milestones": 3,
+  "activated_tools": [
+    "sync",
+    "plan-overview-gen",
+    "lane",
+    "module-report"
+  ],
+  "initialized": "2026-07-21",
+  "project": "cogin",
+  "activated_references": [],
+  "deactivated": {}
+}

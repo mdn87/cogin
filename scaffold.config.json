@@ -1,0 +1,26 @@
+{
+  "projectName": "cogin",
+  "scaffold": {
+    "template": "common",
+    "appliedOn": "2026-07-21",
+    "agentRules": {
+      "mode": "direct",
+      "outputPath": ".agents",
+      "stackHints": [
+        "python"
+      ],
+      "hasApiSurface": true,
+      "derivationMode": "project-docs",
+      "projectType": "Python project",
+      "sourceDocs": [
+        "src\\taxonomy-bench\\README.md",
+        "src\\taxonomy-bench\\BENCHMARK_SPEC.md",
+        "docs\\concept-doc.md",
+        "src\\taxonomy-bench\\NOTICE.md",
+        "src\\taxonomy-bench\\VALIDATION.md"
+      ],
+      "remoteGitHubEnabled": false,
+      "remoteGitHubSuccess": false
+    }
+  }
+}

@@ -1,0 +1,38 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Env
+.env
+.env.*
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+.scaffold/project/handoff.md
+.scaffold/project/handoff-history/
+
+# Git Lanes — host-local state; never commit
+.venv
+.venv-*
+venv
+node_modules
+.vscode
+.idea
+.history
+.tmp-debug
+.tmp-debug-*

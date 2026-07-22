@@ -1,0 +1,44 @@
+{
+  "version": "1.0.0",
+  "description": "External tool and MCP references for scaffold-managed projects",
+  "references": [
+    {
+      "name": "context7",
+      "description": "Library documentation lookup via MCP",
+      "type": "mcp",
+      "url": "https://github.com/upstash/context7",
+      "platform": "claude",
+      "auto_suggest_when": ["any"],
+      "conflicts": {}
+    },
+    {
+      "name": "claude-preview",
+      "description": "Browser preview for visual development",
+      "type": "mcp",
+      "url": "https://github.com/anthropics/claude-code-preview",
+      "platform": "claude",
+      "auto_suggest_when": ["frontend", "web"],
+      "conflicts": {}
+    },
+    {
+      "name": "serena",
+      "description": "Code intelligence — symbol resolution, reference finding, refactoring",
+      "type": "mcp",
+      "url": "https://github.com/codegen-oss/serena",
+      "platform": "all",
+      "auto_suggest_when": ["api", "large_codebase"],
+      "conflicts": {
+        "behavioral": [
+          {
+            "pattern": "auto-refactor",
+            "resolution": "defer to milestone-review orchestration",
+            "note": "Treat Serena refactor suggestions as recommendations, not actions, until reviewed"
+          }
+        ],
+        "scaffold_overrides": {
+          "priority": "scaffold wins on orchestration, tool wins on code intelligence"
+        }
+      }
+    }
+  ]
+}

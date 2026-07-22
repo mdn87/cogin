@@ -1,0 +1,1094 @@
+{
+  "version": "test",
+  "topicCount": 64,
+  "topics": [
+    {
+      "id": "mt_000",
+      "type": "CONCEPTUAL",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 000",
+      "description": "Understand and apply synthetic skill number 000 in progressively complex situations.",
+      "ageRangeStart": 4,
+      "ageRangeEnd": 6,
+      "centrality": 0.0,
+      "evidence": [
+        "Demonstrate synthetic skill 000",
+        "Explain why skill 000 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 000?",
+      "standards": []
+    },
+    {
+      "id": "mt_001",
+      "type": "PROCEDURAL",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 001",
+      "description": "Understand and apply synthetic skill number 001 in progressively complex situations.",
+      "ageRangeStart": 4,
+      "ageRangeEnd": 6,
+      "centrality": 0.01,
+      "evidence": [
+        "Demonstrate synthetic skill 001",
+        "Explain why skill 001 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 001?",
+      "standards": []
+    },
+    {
+      "id": "mt_002",
+      "type": "REPRESENTATIONAL",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 002",
+      "description": "Understand and apply synthetic skill number 002 in progressively complex situations.",
+      "ageRangeStart": 4,
+      "ageRangeEnd": 6,
+      "centrality": 0.02,
+      "evidence": [
+        "Demonstrate synthetic skill 002",
+        "Explain why skill 002 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 002?",
+      "standards": []
+    },
+    {
+      "id": "mt_003",
+      "type": "LANGUAGE",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 003",
+      "description": "Understand and apply synthetic skill number 003 in progressively complex situations.",
+      "ageRangeStart": 4,
+      "ageRangeEnd": 6,
+      "centrality": 0.03,
+      "evidence": [
+        "Demonstrate synthetic skill 003",
+        "Explain why skill 003 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 003?",
+      "standards": []
+    },
+    {
+      "id": "mt_004",
+      "type": "META",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 004",
+      "description": "Understand and apply synthetic skill number 004 in progressively complex situations.",
+      "ageRangeStart": 4,
+      "ageRangeEnd": 6,
+      "centrality": 0.04,
+      "evidence": [
+        "Demonstrate synthetic skill 004",
+        "Explain why skill 004 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 004?",
+      "standards": []
+    },
+    {
+      "id": "mt_005",
+      "type": "CONCEPTUAL",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 005",
+      "description": "Understand and apply synthetic skill number 005 in progressively complex situations.",
+      "ageRangeStart": 4,
+      "ageRangeEnd": 6,
+      "centrality": 0.05,
+      "evidence": [
+        "Demonstrate synthetic skill 005",
+        "Explain why skill 005 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 005?",
+      "standards": []
+    },
+    {
+      "id": "mt_006",
+      "type": "PROCEDURAL",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 006",
+      "description": "Understand and apply synthetic skill number 006 in progressively complex situations.",
+      "ageRangeStart": 4,
+      "ageRangeEnd": 6,
+      "centrality": 0.06,
+      "evidence": [
+        "Demonstrate synthetic skill 006",
+        "Explain why skill 006 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 006?",
+      "standards": []
+    },
+    {
+      "id": "mt_007",
+      "type": "REPRESENTATIONAL",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 007",
+      "description": "Understand and apply synthetic skill number 007 in progressively complex situations.",
+      "ageRangeStart": 4,
+      "ageRangeEnd": 6,
+      "centrality": 0.07,
+      "evidence": [
+        "Demonstrate synthetic skill 007",
+        "Explain why skill 007 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 007?",
+      "standards": []
+    },
+    {
+      "id": "mt_008",
+      "type": "LANGUAGE",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 008",
+      "description": "Understand and apply synthetic skill number 008 in progressively complex situations.",
+      "ageRangeStart": 4,
+      "ageRangeEnd": 6,
+      "centrality": 0.08,
+      "evidence": [
+        "Demonstrate synthetic skill 008",
+        "Explain why skill 008 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 008?",
+      "standards": []
+    },
+    {
+      "id": "mt_009",
+      "type": "META",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 009",
+      "description": "Understand and apply synthetic skill number 009 in progressively complex situations.",
+      "ageRangeStart": 4,
+      "ageRangeEnd": 6,
+      "centrality": 0.09,
+      "evidence": [
+        "Demonstrate synthetic skill 009",
+        "Explain why skill 009 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 009?",
+      "standards": []
+    },
+    {
+      "id": "mt_010",
+      "type": "CONCEPTUAL",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 010",
+      "description": "Understand and apply synthetic skill number 010 in progressively complex situations.",
+      "ageRangeStart": 5,
+      "ageRangeEnd": 7,
+      "centrality": 0.1,
+      "evidence": [
+        "Demonstrate synthetic skill 010",
+        "Explain why skill 010 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 010?",
+      "standards": []
+    },
+    {
+      "id": "mt_011",
+      "type": "PROCEDURAL",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 011",
+      "description": "Understand and apply synthetic skill number 011 in progressively complex situations.",
+      "ageRangeStart": 5,
+      "ageRangeEnd": 7,
+      "centrality": 0.11,
+      "evidence": [
+        "Demonstrate synthetic skill 011",
+        "Explain why skill 011 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 011?",
+      "standards": []
+    },
+    {
+      "id": "mt_012",
+      "type": "REPRESENTATIONAL",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 012",
+      "description": "Understand and apply synthetic skill number 012 in progressively complex situations.",
+      "ageRangeStart": 5,
+      "ageRangeEnd": 7,
+      "centrality": 0.12,
+      "evidence": [
+        "Demonstrate synthetic skill 012",
+        "Explain why skill 012 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 012?",
+      "standards": []
+    },
+    {
+      "id": "mt_013",
+      "type": "LANGUAGE",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 013",
+      "description": "Understand and apply synthetic skill number 013 in progressively complex situations.",
+      "ageRangeStart": 5,
+      "ageRangeEnd": 7,
+      "centrality": 0.13,
+      "evidence": [
+        "Demonstrate synthetic skill 013",
+        "Explain why skill 013 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 013?",
+      "standards": []
+    },
+    {
+      "id": "mt_014",
+      "type": "META",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 014",
+      "description": "Understand and apply synthetic skill number 014 in progressively complex situations.",
+      "ageRangeStart": 5,
+      "ageRangeEnd": 7,
+      "centrality": 0.14,
+      "evidence": [
+        "Demonstrate synthetic skill 014",
+        "Explain why skill 014 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 014?",
+      "standards": []
+    },
+    {
+      "id": "mt_015",
+      "type": "CONCEPTUAL",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 015",
+      "description": "Understand and apply synthetic skill number 015 in progressively complex situations.",
+      "ageRangeStart": 5,
+      "ageRangeEnd": 7,
+      "centrality": 0.15,
+      "evidence": [
+        "Demonstrate synthetic skill 015",
+        "Explain why skill 015 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 015?",
+      "standards": []
+    },
+    {
+      "id": "mt_016",
+      "type": "PROCEDURAL",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 016",
+      "description": "Understand and apply synthetic skill number 016 in progressively complex situations.",
+      "ageRangeStart": 5,
+      "ageRangeEnd": 7,
+      "centrality": 0.16,
+      "evidence": [
+        "Demonstrate synthetic skill 016",
+        "Explain why skill 016 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 016?",
+      "standards": []
+    },
+    {
+      "id": "mt_017",
+      "type": "REPRESENTATIONAL",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 017",
+      "description": "Understand and apply synthetic skill number 017 in progressively complex situations.",
+      "ageRangeStart": 5,
+      "ageRangeEnd": 7,
+      "centrality": 0.17,
+      "evidence": [
+        "Demonstrate synthetic skill 017",
+        "Explain why skill 017 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 017?",
+      "standards": []
+    },
+    {
+      "id": "mt_018",
+      "type": "LANGUAGE",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 018",
+      "description": "Understand and apply synthetic skill number 018 in progressively complex situations.",
+      "ageRangeStart": 5,
+      "ageRangeEnd": 7,
+      "centrality": 0.18,
+      "evidence": [
+        "Demonstrate synthetic skill 018",
+        "Explain why skill 018 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 018?",
+      "standards": []
+    },
+    {
+      "id": "mt_019",
+      "type": "META",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 019",
+      "description": "Understand and apply synthetic skill number 019 in progressively complex situations.",
+      "ageRangeStart": 5,
+      "ageRangeEnd": 7,
+      "centrality": 0.19,
+      "evidence": [
+        "Demonstrate synthetic skill 019",
+        "Explain why skill 019 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 019?",
+      "standards": []
+    },
+    {
+      "id": "mt_020",
+      "type": "CONCEPTUAL",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 020",
+      "description": "Understand and apply synthetic skill number 020 in progressively complex situations.",
+      "ageRangeStart": 6,
+      "ageRangeEnd": 8,
+      "centrality": 0.2,
+      "evidence": [
+        "Demonstrate synthetic skill 020",
+        "Explain why skill 020 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 020?",
+      "standards": []
+    },
+    {
+      "id": "mt_021",
+      "type": "PROCEDURAL",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 021",
+      "description": "Understand and apply synthetic skill number 021 in progressively complex situations.",
+      "ageRangeStart": 6,
+      "ageRangeEnd": 8,
+      "centrality": 0.21,
+      "evidence": [
+        "Demonstrate synthetic skill 021",
+        "Explain why skill 021 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 021?",
+      "standards": []
+    },
+    {
+      "id": "mt_022",
+      "type": "REPRESENTATIONAL",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 022",
+      "description": "Understand and apply synthetic skill number 022 in progressively complex situations.",
+      "ageRangeStart": 6,
+      "ageRangeEnd": 8,
+      "centrality": 0.22,
+      "evidence": [
+        "Demonstrate synthetic skill 022",
+        "Explain why skill 022 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 022?",
+      "standards": []
+    },
+    {
+      "id": "mt_023",
+      "type": "LANGUAGE",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 023",
+      "description": "Understand and apply synthetic skill number 023 in progressively complex situations.",
+      "ageRangeStart": 6,
+      "ageRangeEnd": 8,
+      "centrality": 0.23,
+      "evidence": [
+        "Demonstrate synthetic skill 023",
+        "Explain why skill 023 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 023?",
+      "standards": []
+    },
+    {
+      "id": "mt_024",
+      "type": "META",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 024",
+      "description": "Understand and apply synthetic skill number 024 in progressively complex situations.",
+      "ageRangeStart": 6,
+      "ageRangeEnd": 8,
+      "centrality": 0.24,
+      "evidence": [
+        "Demonstrate synthetic skill 024",
+        "Explain why skill 024 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 024?",
+      "standards": []
+    },
+    {
+      "id": "mt_025",
+      "type": "CONCEPTUAL",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 025",
+      "description": "Understand and apply synthetic skill number 025 in progressively complex situations.",
+      "ageRangeStart": 6,
+      "ageRangeEnd": 8,
+      "centrality": 0.25,
+      "evidence": [
+        "Demonstrate synthetic skill 025",
+        "Explain why skill 025 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 025?",
+      "standards": []
+    },
+    {
+      "id": "mt_026",
+      "type": "PROCEDURAL",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 026",
+      "description": "Understand and apply synthetic skill number 026 in progressively complex situations.",
+      "ageRangeStart": 6,
+      "ageRangeEnd": 8,
+      "centrality": 0.26,
+      "evidence": [
+        "Demonstrate synthetic skill 026",
+        "Explain why skill 026 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 026?",
+      "standards": []
+    },
+    {
+      "id": "mt_027",
+      "type": "REPRESENTATIONAL",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 027",
+      "description": "Understand and apply synthetic skill number 027 in progressively complex situations.",
+      "ageRangeStart": 6,
+      "ageRangeEnd": 8,
+      "centrality": 0.27,
+      "evidence": [
+        "Demonstrate synthetic skill 027",
+        "Explain why skill 027 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 027?",
+      "standards": []
+    },
+    {
+      "id": "mt_028",
+      "type": "LANGUAGE",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 028",
+      "description": "Understand and apply synthetic skill number 028 in progressively complex situations.",
+      "ageRangeStart": 6,
+      "ageRangeEnd": 8,
+      "centrality": 0.28,
+      "evidence": [
+        "Demonstrate synthetic skill 028",
+        "Explain why skill 028 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 028?",
+      "standards": []
+    },
+    {
+      "id": "mt_029",
+      "type": "META",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 029",
+      "description": "Understand and apply synthetic skill number 029 in progressively complex situations.",
+      "ageRangeStart": 6,
+      "ageRangeEnd": 8,
+      "centrality": 0.29,
+      "evidence": [
+        "Demonstrate synthetic skill 029",
+        "Explain why skill 029 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 029?",
+      "standards": []
+    },
+    {
+      "id": "mt_030",
+      "type": "CONCEPTUAL",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 030",
+      "description": "Understand and apply synthetic skill number 030 in progressively complex situations.",
+      "ageRangeStart": 7,
+      "ageRangeEnd": 9,
+      "centrality": 0.3,
+      "evidence": [
+        "Demonstrate synthetic skill 030",
+        "Explain why skill 030 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 030?",
+      "standards": []
+    },
+    {
+      "id": "mt_031",
+      "type": "PROCEDURAL",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 031",
+      "description": "Understand and apply synthetic skill number 031 in progressively complex situations.",
+      "ageRangeStart": 7,
+      "ageRangeEnd": 9,
+      "centrality": 0.31,
+      "evidence": [
+        "Demonstrate synthetic skill 031",
+        "Explain why skill 031 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 031?",
+      "standards": []
+    },
+    {
+      "id": "mt_032",
+      "type": "REPRESENTATIONAL",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 032",
+      "description": "Understand and apply synthetic skill number 032 in progressively complex situations.",
+      "ageRangeStart": 7,
+      "ageRangeEnd": 9,
+      "centrality": 0.32,
+      "evidence": [
+        "Demonstrate synthetic skill 032",
+        "Explain why skill 032 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 032?",
+      "standards": []
+    },
+    {
+      "id": "mt_033",
+      "type": "LANGUAGE",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 033",
+      "description": "Understand and apply synthetic skill number 033 in progressively complex situations.",
+      "ageRangeStart": 7,
+      "ageRangeEnd": 9,
+      "centrality": 0.33,
+      "evidence": [
+        "Demonstrate synthetic skill 033",
+        "Explain why skill 033 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 033?",
+      "standards": []
+    },
+    {
+      "id": "mt_034",
+      "type": "META",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 034",
+      "description": "Understand and apply synthetic skill number 034 in progressively complex situations.",
+      "ageRangeStart": 7,
+      "ageRangeEnd": 9,
+      "centrality": 0.34,
+      "evidence": [
+        "Demonstrate synthetic skill 034",
+        "Explain why skill 034 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 034?",
+      "standards": []
+    },
+    {
+      "id": "mt_035",
+      "type": "CONCEPTUAL",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 035",
+      "description": "Understand and apply synthetic skill number 035 in progressively complex situations.",
+      "ageRangeStart": 7,
+      "ageRangeEnd": 9,
+      "centrality": 0.35,
+      "evidence": [
+        "Demonstrate synthetic skill 035",
+        "Explain why skill 035 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 035?",
+      "standards": []
+    },
+    {
+      "id": "mt_036",
+      "type": "PROCEDURAL",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 036",
+      "description": "Understand and apply synthetic skill number 036 in progressively complex situations.",
+      "ageRangeStart": 7,
+      "ageRangeEnd": 9,
+      "centrality": 0.36,
+      "evidence": [
+        "Demonstrate synthetic skill 036",
+        "Explain why skill 036 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 036?",
+      "standards": []
+    },
+    {
+      "id": "mt_037",
+      "type": "REPRESENTATIONAL",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 037",
+      "description": "Understand and apply synthetic skill number 037 in progressively complex situations.",
+      "ageRangeStart": 7,
+      "ageRangeEnd": 9,
+      "centrality": 0.37,
+      "evidence": [
+        "Demonstrate synthetic skill 037",
+        "Explain why skill 037 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 037?",
+      "standards": []
+    },
+    {
+      "id": "mt_038",
+      "type": "LANGUAGE",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 038",
+      "description": "Understand and apply synthetic skill number 038 in progressively complex situations.",
+      "ageRangeStart": 7,
+      "ageRangeEnd": 9,
+      "centrality": 0.38,
+      "evidence": [
+        "Demonstrate synthetic skill 038",
+        "Explain why skill 038 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 038?",
+      "standards": []
+    },
+    {
+      "id": "mt_039",
+      "type": "META",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 039",
+      "description": "Understand and apply synthetic skill number 039 in progressively complex situations.",
+      "ageRangeStart": 7,
+      "ageRangeEnd": 9,
+      "centrality": 0.39,
+      "evidence": [
+        "Demonstrate synthetic skill 039",
+        "Explain why skill 039 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 039?",
+      "standards": []
+    },
+    {
+      "id": "mt_040",
+      "type": "CONCEPTUAL",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 040",
+      "description": "Understand and apply synthetic skill number 040 in progressively complex situations.",
+      "ageRangeStart": 8,
+      "ageRangeEnd": 10,
+      "centrality": 0.4,
+      "evidence": [
+        "Demonstrate synthetic skill 040",
+        "Explain why skill 040 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 040?",
+      "standards": []
+    },
+    {
+      "id": "mt_041",
+      "type": "PROCEDURAL",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 041",
+      "description": "Understand and apply synthetic skill number 041 in progressively complex situations.",
+      "ageRangeStart": 8,
+      "ageRangeEnd": 10,
+      "centrality": 0.41,
+      "evidence": [
+        "Demonstrate synthetic skill 041",
+        "Explain why skill 041 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 041?",
+      "standards": []
+    },
+    {
+      "id": "mt_042",
+      "type": "REPRESENTATIONAL",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 042",
+      "description": "Understand and apply synthetic skill number 042 in progressively complex situations.",
+      "ageRangeStart": 8,
+      "ageRangeEnd": 10,
+      "centrality": 0.42,
+      "evidence": [
+        "Demonstrate synthetic skill 042",
+        "Explain why skill 042 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 042?",
+      "standards": []
+    },
+    {
+      "id": "mt_043",
+      "type": "LANGUAGE",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 043",
+      "description": "Understand and apply synthetic skill number 043 in progressively complex situations.",
+      "ageRangeStart": 8,
+      "ageRangeEnd": 10,
+      "centrality": 0.43,
+      "evidence": [
+        "Demonstrate synthetic skill 043",
+        "Explain why skill 043 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 043?",
+      "standards": []
+    },
+    {
+      "id": "mt_044",
+      "type": "META",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 044",
+      "description": "Understand and apply synthetic skill number 044 in progressively complex situations.",
+      "ageRangeStart": 8,
+      "ageRangeEnd": 10,
+      "centrality": 0.44,
+      "evidence": [
+        "Demonstrate synthetic skill 044",
+        "Explain why skill 044 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 044?",
+      "standards": []
+    },
+    {
+      "id": "mt_045",
+      "type": "CONCEPTUAL",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 045",
+      "description": "Understand and apply synthetic skill number 045 in progressively complex situations.",
+      "ageRangeStart": 8,
+      "ageRangeEnd": 10,
+      "centrality": 0.45,
+      "evidence": [
+        "Demonstrate synthetic skill 045",
+        "Explain why skill 045 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 045?",
+      "standards": []
+    },
+    {
+      "id": "mt_046",
+      "type": "PROCEDURAL",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 046",
+      "description": "Understand and apply synthetic skill number 046 in progressively complex situations.",
+      "ageRangeStart": 8,
+      "ageRangeEnd": 10,
+      "centrality": 0.46,
+      "evidence": [
+        "Demonstrate synthetic skill 046",
+        "Explain why skill 046 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 046?",
+      "standards": []
+    },
+    {
+      "id": "mt_047",
+      "type": "REPRESENTATIONAL",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 047",
+      "description": "Understand and apply synthetic skill number 047 in progressively complex situations.",
+      "ageRangeStart": 8,
+      "ageRangeEnd": 10,
+      "centrality": 0.47,
+      "evidence": [
+        "Demonstrate synthetic skill 047",
+        "Explain why skill 047 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 047?",
+      "standards": []
+    },
+    {
+      "id": "mt_048",
+      "type": "LANGUAGE",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 048",
+      "description": "Understand and apply synthetic skill number 048 in progressively complex situations.",
+      "ageRangeStart": 8,
+      "ageRangeEnd": 10,
+      "centrality": 0.48,
+      "evidence": [
+        "Demonstrate synthetic skill 048",
+        "Explain why skill 048 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 048?",
+      "standards": []
+    },
+    {
+      "id": "mt_049",
+      "type": "META",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 049",
+      "description": "Understand and apply synthetic skill number 049 in progressively complex situations.",
+      "ageRangeStart": 8,
+      "ageRangeEnd": 10,
+      "centrality": 0.49,
+      "evidence": [
+        "Demonstrate synthetic skill 049",
+        "Explain why skill 049 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 049?",
+      "standards": []
+    },
+    {
+      "id": "mt_050",
+      "type": "CONCEPTUAL",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 050",
+      "description": "Understand and apply synthetic skill number 050 in progressively complex situations.",
+      "ageRangeStart": 9,
+      "ageRangeEnd": 11,
+      "centrality": 0.5,
+      "evidence": [
+        "Demonstrate synthetic skill 050",
+        "Explain why skill 050 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 050?",
+      "standards": []
+    },
+    {
+      "id": "mt_051",
+      "type": "PROCEDURAL",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 051",
+      "description": "Understand and apply synthetic skill number 051 in progressively complex situations.",
+      "ageRangeStart": 9,
+      "ageRangeEnd": 11,
+      "centrality": 0.51,
+      "evidence": [
+        "Demonstrate synthetic skill 051",
+        "Explain why skill 051 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 051?",
+      "standards": []
+    },
+    {
+      "id": "mt_052",
+      "type": "REPRESENTATIONAL",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 052",
+      "description": "Understand and apply synthetic skill number 052 in progressively complex situations.",
+      "ageRangeStart": 9,
+      "ageRangeEnd": 11,
+      "centrality": 0.52,
+      "evidence": [
+        "Demonstrate synthetic skill 052",
+        "Explain why skill 052 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 052?",
+      "standards": []
+    },
+    {
+      "id": "mt_053",
+      "type": "LANGUAGE",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 053",
+      "description": "Understand and apply synthetic skill number 053 in progressively complex situations.",
+      "ageRangeStart": 9,
+      "ageRangeEnd": 11,
+      "centrality": 0.53,
+      "evidence": [
+        "Demonstrate synthetic skill 053",
+        "Explain why skill 053 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 053?",
+      "standards": []
+    },
+    {
+      "id": "mt_054",
+      "type": "META",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 054",
+      "description": "Understand and apply synthetic skill number 054 in progressively complex situations.",
+      "ageRangeStart": 9,
+      "ageRangeEnd": 11,
+      "centrality": 0.54,
+      "evidence": [
+        "Demonstrate synthetic skill 054",
+        "Explain why skill 054 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 054?",
+      "standards": []
+    },
+    {
+      "id": "mt_055",
+      "type": "CONCEPTUAL",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 055",
+      "description": "Understand and apply synthetic skill number 055 in progressively complex situations.",
+      "ageRangeStart": 9,
+      "ageRangeEnd": 11,
+      "centrality": 0.55,
+      "evidence": [
+        "Demonstrate synthetic skill 055",
+        "Explain why skill 055 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 055?",
+      "standards": []
+    },
+    {
+      "id": "mt_056",
+      "type": "PROCEDURAL",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 056",
+      "description": "Understand and apply synthetic skill number 056 in progressively complex situations.",
+      "ageRangeStart": 9,
+      "ageRangeEnd": 11,
+      "centrality": 0.56,
+      "evidence": [
+        "Demonstrate synthetic skill 056",
+        "Explain why skill 056 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 056?",
+      "standards": []
+    },
+    {
+      "id": "mt_057",
+      "type": "REPRESENTATIONAL",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 057",
+      "description": "Understand and apply synthetic skill number 057 in progressively complex situations.",
+      "ageRangeStart": 9,
+      "ageRangeEnd": 11,
+      "centrality": 0.57,
+      "evidence": [
+        "Demonstrate synthetic skill 057",
+        "Explain why skill 057 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 057?",
+      "standards": []
+    },
+    {
+      "id": "mt_058",
+      "type": "LANGUAGE",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 058",
+      "description": "Understand and apply synthetic skill number 058 in progressively complex situations.",
+      "ageRangeStart": 9,
+      "ageRangeEnd": 11,
+      "centrality": 0.58,
+      "evidence": [
+        "Demonstrate synthetic skill 058",
+        "Explain why skill 058 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 058?",
+      "standards": []
+    },
+    {
+      "id": "mt_059",
+      "type": "META",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 059",
+      "description": "Understand and apply synthetic skill number 059 in progressively complex situations.",
+      "ageRangeStart": 9,
+      "ageRangeEnd": 11,
+      "centrality": 0.59,
+      "evidence": [
+        "Demonstrate synthetic skill 059",
+        "Explain why skill 059 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 059?",
+      "standards": []
+    },
+    {
+      "id": "mt_060",
+      "type": "CONCEPTUAL",
+      "subject": "Mathematics",
+      "domain": "Domain 0",
+      "name": "Skill 060",
+      "description": "Understand and apply synthetic skill number 060 in progressively complex situations.",
+      "ageRangeStart": 10,
+      "ageRangeEnd": 12,
+      "centrality": 0.6,
+      "evidence": [
+        "Demonstrate synthetic skill 060",
+        "Explain why skill 060 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 060?",
+      "standards": []
+    },
+    {
+      "id": "mt_061",
+      "type": "PROCEDURAL",
+      "subject": "Science",
+      "domain": "Domain 1",
+      "name": "Skill 061",
+      "description": "Understand and apply synthetic skill number 061 in progressively complex situations.",
+      "ageRangeStart": 10,
+      "ageRangeEnd": 12,
+      "centrality": 0.61,
+      "evidence": [
+        "Demonstrate synthetic skill 061",
+        "Explain why skill 061 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 061?",
+      "standards": []
+    },
+    {
+      "id": "mt_062",
+      "type": "REPRESENTATIONAL",
+      "subject": "English",
+      "domain": "Domain 2",
+      "name": "Skill 062",
+      "description": "Understand and apply synthetic skill number 062 in progressively complex situations.",
+      "ageRangeStart": 10,
+      "ageRangeEnd": 12,
+      "centrality": 0.62,
+      "evidence": [
+        "Demonstrate synthetic skill 062",
+        "Explain why skill 062 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 062?",
+      "standards": []
+    },
+    {
+      "id": "mt_063",
+      "type": "LANGUAGE",
+      "subject": "History",
+      "domain": "Domain 3",
+      "name": "Skill 063",
+      "description": "Understand and apply synthetic skill number 063 in progressively complex situations.",
+      "ageRangeStart": 10,
+      "ageRangeEnd": 12,
+      "centrality": 0.63,
+      "evidence": [
+        "Demonstrate synthetic skill 063",
+        "Explain why skill 063 works"
+      ],
+      "assessmentPrompt": "Can {{name}} demonstrate skill 063?",
+      "standards": []
+    }
+  ]
+}

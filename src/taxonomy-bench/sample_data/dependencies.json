@@ -1,0 +1,943 @@
+{
+  "version": "test",
+  "description": "Synthetic DAG",
+  "edgeCount": 156,
+  "dependencies": [
+    {
+      "topicId": "mt_001",
+      "prerequisiteId": "mt_000",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_002",
+      "prerequisiteId": "mt_001",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_002",
+      "prerequisiteId": "mt_000",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_003",
+      "prerequisiteId": "mt_002",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_003",
+      "prerequisiteId": "mt_001",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_004",
+      "prerequisiteId": "mt_003",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_004",
+      "prerequisiteId": "mt_002",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_005",
+      "prerequisiteId": "mt_004",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_005",
+      "prerequisiteId": "mt_003",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_006",
+      "prerequisiteId": "mt_005",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_006",
+      "prerequisiteId": "mt_004",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_006",
+      "prerequisiteId": "mt_002",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_007",
+      "prerequisiteId": "mt_006",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_007",
+      "prerequisiteId": "mt_005",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_008",
+      "prerequisiteId": "mt_007",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_008",
+      "prerequisiteId": "mt_006",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_009",
+      "prerequisiteId": "mt_008",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_009",
+      "prerequisiteId": "mt_007",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_009",
+      "prerequisiteId": "mt_005",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_010",
+      "prerequisiteId": "mt_009",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_010",
+      "prerequisiteId": "mt_008",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_010",
+      "prerequisiteId": "mt_003",
+      "strength": "hard",
+      "reason": "Longer dependency"
+    },
+    {
+      "topicId": "mt_011",
+      "prerequisiteId": "mt_010",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_011",
+      "prerequisiteId": "mt_009",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_012",
+      "prerequisiteId": "mt_011",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_012",
+      "prerequisiteId": "mt_010",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_012",
+      "prerequisiteId": "mt_008",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_013",
+      "prerequisiteId": "mt_012",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_013",
+      "prerequisiteId": "mt_011",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_014",
+      "prerequisiteId": "mt_013",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_014",
+      "prerequisiteId": "mt_012",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_015",
+      "prerequisiteId": "mt_014",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_015",
+      "prerequisiteId": "mt_013",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_015",
+      "prerequisiteId": "mt_011",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_015",
+      "prerequisiteId": "mt_008",
+      "strength": "hard",
+      "reason": "Longer dependency"
+    },
+    {
+      "topicId": "mt_016",
+      "prerequisiteId": "mt_015",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_016",
+      "prerequisiteId": "mt_014",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_017",
+      "prerequisiteId": "mt_016",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_017",
+      "prerequisiteId": "mt_015",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_018",
+      "prerequisiteId": "mt_017",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_018",
+      "prerequisiteId": "mt_016",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_018",
+      "prerequisiteId": "mt_014",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_019",
+      "prerequisiteId": "mt_018",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_019",
+      "prerequisiteId": "mt_017",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_020",
+      "prerequisiteId": "mt_019",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_020",
+      "prerequisiteId": "mt_018",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_020",
+      "prerequisiteId": "mt_013",
+      "strength": "hard",
+      "reason": "Longer dependency"
+    },
+    {
+      "topicId": "mt_021",
+      "prerequisiteId": "mt_020",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_021",
+      "prerequisiteId": "mt_019",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_021",
+      "prerequisiteId": "mt_017",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_022",
+      "prerequisiteId": "mt_021",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_022",
+      "prerequisiteId": "mt_020",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_023",
+      "prerequisiteId": "mt_022",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_023",
+      "prerequisiteId": "mt_021",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_024",
+      "prerequisiteId": "mt_023",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_024",
+      "prerequisiteId": "mt_022",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_024",
+      "prerequisiteId": "mt_020",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_025",
+      "prerequisiteId": "mt_024",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_025",
+      "prerequisiteId": "mt_023",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_025",
+      "prerequisiteId": "mt_018",
+      "strength": "hard",
+      "reason": "Longer dependency"
+    },
+    {
+      "topicId": "mt_026",
+      "prerequisiteId": "mt_025",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_026",
+      "prerequisiteId": "mt_024",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_027",
+      "prerequisiteId": "mt_026",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_027",
+      "prerequisiteId": "mt_025",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_027",
+      "prerequisiteId": "mt_023",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_028",
+      "prerequisiteId": "mt_027",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_028",
+      "prerequisiteId": "mt_026",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_029",
+      "prerequisiteId": "mt_028",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_029",
+      "prerequisiteId": "mt_027",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_030",
+      "prerequisiteId": "mt_029",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_030",
+      "prerequisiteId": "mt_028",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_030",
+      "prerequisiteId": "mt_026",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_030",
+      "prerequisiteId": "mt_023",
+      "strength": "hard",
+      "reason": "Longer dependency"
+    },
+    {
+      "topicId": "mt_031",
+      "prerequisiteId": "mt_030",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_031",
+      "prerequisiteId": "mt_029",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_032",
+      "prerequisiteId": "mt_031",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_032",
+      "prerequisiteId": "mt_030",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_033",
+      "prerequisiteId": "mt_032",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_033",
+      "prerequisiteId": "mt_031",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_033",
+      "prerequisiteId": "mt_029",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_034",
+      "prerequisiteId": "mt_033",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_034",
+      "prerequisiteId": "mt_032",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_035",
+      "prerequisiteId": "mt_034",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_035",
+      "prerequisiteId": "mt_033",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_035",
+      "prerequisiteId": "mt_028",
+      "strength": "hard",
+      "reason": "Longer dependency"
+    },
+    {
+      "topicId": "mt_036",
+      "prerequisiteId": "mt_035",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_036",
+      "prerequisiteId": "mt_034",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_036",
+      "prerequisiteId": "mt_032",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_037",
+      "prerequisiteId": "mt_036",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_037",
+      "prerequisiteId": "mt_035",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_038",
+      "prerequisiteId": "mt_037",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_038",
+      "prerequisiteId": "mt_036",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_039",
+      "prerequisiteId": "mt_038",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_039",
+      "prerequisiteId": "mt_037",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_039",
+      "prerequisiteId": "mt_035",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_040",
+      "prerequisiteId": "mt_039",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_040",
+      "prerequisiteId": "mt_038",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_040",
+      "prerequisiteId": "mt_033",
+      "strength": "hard",
+      "reason": "Longer dependency"
+    },
+    {
+      "topicId": "mt_041",
+      "prerequisiteId": "mt_040",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_041",
+      "prerequisiteId": "mt_039",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_042",
+      "prerequisiteId": "mt_041",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_042",
+      "prerequisiteId": "mt_040",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_042",
+      "prerequisiteId": "mt_038",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_043",
+      "prerequisiteId": "mt_042",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_043",
+      "prerequisiteId": "mt_041",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_044",
+      "prerequisiteId": "mt_043",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_044",
+      "prerequisiteId": "mt_042",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_045",
+      "prerequisiteId": "mt_044",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_045",
+      "prerequisiteId": "mt_043",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_045",
+      "prerequisiteId": "mt_041",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_045",
+      "prerequisiteId": "mt_038",
+      "strength": "hard",
+      "reason": "Longer dependency"
+    },
+    {
+      "topicId": "mt_046",
+      "prerequisiteId": "mt_045",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_046",
+      "prerequisiteId": "mt_044",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_047",
+      "prerequisiteId": "mt_046",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_047",
+      "prerequisiteId": "mt_045",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_048",
+      "prerequisiteId": "mt_047",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_048",
+      "prerequisiteId": "mt_046",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_048",
+      "prerequisiteId": "mt_044",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_049",
+      "prerequisiteId": "mt_048",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_049",
+      "prerequisiteId": "mt_047",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_050",
+      "prerequisiteId": "mt_049",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_050",
+      "prerequisiteId": "mt_048",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_050",
+      "prerequisiteId": "mt_043",
+      "strength": "hard",
+      "reason": "Longer dependency"
+    },
+    {
+      "topicId": "mt_051",
+      "prerequisiteId": "mt_050",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_051",
+      "prerequisiteId": "mt_049",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_051",
+      "prerequisiteId": "mt_047",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_052",
+      "prerequisiteId": "mt_051",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_052",
+      "prerequisiteId": "mt_050",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_053",
+      "prerequisiteId": "mt_052",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_053",
+      "prerequisiteId": "mt_051",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_054",
+      "prerequisiteId": "mt_053",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_054",
+      "prerequisiteId": "mt_052",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_054",
+      "prerequisiteId": "mt_050",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_055",
+      "prerequisiteId": "mt_054",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_055",
+      "prerequisiteId": "mt_053",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_055",
+      "prerequisiteId": "mt_048",
+      "strength": "hard",
+      "reason": "Longer dependency"
+    },
+    {
+      "topicId": "mt_056",
+      "prerequisiteId": "mt_055",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_056",
+      "prerequisiteId": "mt_054",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_057",
+      "prerequisiteId": "mt_056",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_057",
+      "prerequisiteId": "mt_055",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_057",
+      "prerequisiteId": "mt_053",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_058",
+      "prerequisiteId": "mt_057",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_058",
+      "prerequisiteId": "mt_056",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_059",
+      "prerequisiteId": "mt_058",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_059",
+      "prerequisiteId": "mt_057",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_060",
+      "prerequisiteId": "mt_059",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_060",
+      "prerequisiteId": "mt_058",
+      "strength": "soft",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_060",
+      "prerequisiteId": "mt_056",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    },
+    {
+      "topicId": "mt_060",
+      "prerequisiteId": "mt_053",
+      "strength": "hard",
+      "reason": "Longer dependency"
+    },
+    {
+      "topicId": "mt_061",
+      "prerequisiteId": "mt_060",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_061",
+      "prerequisiteId": "mt_059",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_062",
+      "prerequisiteId": "mt_061",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_062",
+      "prerequisiteId": "mt_060",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_063",
+      "prerequisiteId": "mt_062",
+      "strength": "hard",
+      "reason": "Sequential foundation"
+    },
+    {
+      "topicId": "mt_063",
+      "prerequisiteId": "mt_061",
+      "strength": "hard",
+      "reason": "Secondary foundation"
+    },
+    {
+      "topicId": "mt_063",
+      "prerequisiteId": "mt_059",
+      "strength": "soft",
+      "reason": "Enrichment link"
+    }
+  ]
+}

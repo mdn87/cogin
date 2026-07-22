@@ -1,0 +1,75 @@
+{
+  "version": "1.0.0",
+  "description": "Available tools for scaffold-managed projects",
+  "_schemas": {
+    "tool-config": {
+      "description": "Schema for .scaffold/project/tool-config.json — created at init, never overwritten by sync",
+      "example": {
+        "project": "{project_name}",
+        "initialized": "{YYYY-MM-DD}",
+        "audit_interval_milestones": 3,
+        "activated_tools": ["sync", "plan-overview-gen"],
+        "activated_references": ["context7"],
+        "deactivated": {
+          "codex-review": "no Codex CLI available",
+          "serena": "small project, not needed"
+        }
+      }
+    },
+    "usage-log": {
+      "description": "Schema for .scaffold/project/usage-log.json — append-only, one entry per milestone",
+      "example": [
+        {
+          "milestone": "M1",
+          "date": "2026-03-22",
+          "used": ["sync", "handoff"],
+          "available": ["sync", "handoff", "codex-review", "plan-overview-gen"],
+          "notes": "codex-review skipped — reviewer was unavailable"
+        }
+      ]
+    }
+  },
+  "tools": [
+    {
+      "name": "sync",
+      "file": "sync.sh",
+      "description": "Self-update script for fetching upstream scaffold changes",
+      "platform": "all",
+      "auto_activate": true,
+      "conflicts": {}
+    },
+    {
+      "name": "codex-review",
+      "file": "codex-review.sh",
+      "description": "Invoke Codex CLI with structured review prompt for cross-agent review",
+      "platform": "all",
+      "auto_activate": false,
+      "conflicts": {},
+      "requires": "codex"
+    },
+    {
+      "name": "plan-overview-gen",
+      "file": "plan-overview-gen.sh",
+      "description": "Regenerate PLAN-OVERVIEW.md from milestone files",
+      "platform": "all",
+      "auto_activate": true,
+      "conflicts": {}
+    },
+    {
+      "name": "lane",
+      "file": "lane.sh",
+      "description": "Git 'lanes' workflow tool: manage branches, retrofit repos, verify Syncthing .stignore hardening. See runtime/rules/git-lanes.md.",
+      "platform": "all",
+      "auto_activate": true,
+      "conflicts": {}
+    },
+    {
+      "name": "module-report",
+      "file": "module-report.sh",
+      "description": "Generate, validate, and stamp lugos-module.toml (Contract 1, aeta v2 contract bundle). See docs/superpowers/specs/2026-05-02-aeta-v2-contract-bundle.md.",
+      "platform": "all",
+      "auto_activate": true,
+      "conflicts": {}
+    }
+  ]
+}

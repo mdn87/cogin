@@ -1,0 +1,8 @@
+{
+  "dataset": "Synthetic Taxonomy Fixture",
+  "taxonomyVersion": "test",
+  "counts": {
+    "topics": 64,
+    "dependencies": 156
+  }
+}
