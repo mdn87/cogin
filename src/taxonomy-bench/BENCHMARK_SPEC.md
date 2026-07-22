@@ -127,6 +127,16 @@ Token accounting depends on provider support and must not be compared when provi
 
 Schema output mode largely removes this dimension and must be reported separately from prompt output mode.
 
+## Reporting and evidence boundaries
+
+`report.html` is an evidence-first first-pass Benchmark Progression trace, not a curriculum path. It derives its display from `run.json` evidence and does not consume private scorer constraints. Each first attempt is described as exact, non-exact with partial/diagnostic evidence, unparseable/wrong-shape, or unscored infrastructure. Infrastructure is excluded from first-pass accuracy denominators, while reported latency from a first-attempt infrastructure result remains in latency reporting.
+
+Retries are displayed under their originating task in a later Recovery phase. They do not alter first-pass curves. The progression view identifies the first miss, reliable frontier, instability onset, sustained breakdown, and peak isolated success. Reliable frontier retains the primary-metric definition above; a peak isolated success is not evidence of a reliable frontier. Rolling-window displays use scored tasks only and preserve infrastructure gaps.
+
+Unsupported-output is a graph-output proxy, not a general hallucination rate. Any Marble-to-agentic-coding mapping is a routing heuristic, not proof of coding performance. Missing provider usage is reported as "not reported"; an uncollected retry measurement is "not measured."
+
+`matrix.html` groups only runs with the same fixed suite and requested condition: provider, requested model, effort, output mode, session mode, retry count/policy/context, transport retries, tool access, and condition label. Resolved-model changes within such a condition are flagged rather than silently split or pooled away. The matrix aligns comparisons only by fixed task ID. It labels one, two, and three-or-more repeats as session, limited, and repeated evidence, respectively; shows Wilson intervals, flip rates, task-family behavior, and links to every individual run. It does not select a composite winner.
+
 ## Statistical guidance
 
 A single run is a session measurement, not a stable model estimate. For model-level conclusions:

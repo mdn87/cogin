@@ -15,7 +15,6 @@ import argparse
 import dataclasses
 import datetime as dt
 import hashlib
-import html
 import json
 import math
 import os
@@ -29,8 +28,14 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from taxonomy_bench_progression import derive_condition_evidence, wilson_interval
+from taxonomy_bench_report import (
+    render_matrix_html as _render_matrix_html,
+    render_run_html as _render_run_html,
+)
+
 FORMAT_VERSION = 1
-BENCHMARK_VERSION = "0.1.0"
+BENCHMARK_VERSION = "0.2.0"
 ATTRIBUTION = (
     "Marble Skill Taxonomy (v1) · © Generative Spark, Inc. (Marble) · "
     "https://withmarble.com · licensed under ODbL 1.0 (database) and "
@@ -1586,16 +1591,6 @@ def _percentile(values: Sequence[float], percentile: float) -> float | None:
     return sorted_values[low] * (1 - weight) + sorted_values[high] * weight
 
 
-def _wilson_interval(successes: int, total: int, z: float = 1.96) -> tuple[float | None, float | None]:
-    if total <= 0:
-        return None, None
-    p = successes / total
-    denominator = 1 + z * z / total
-    center = (p + z * z / (2 * total)) / denominator
-    margin = z * math.sqrt((p * (1 - p) + z * z / (4 * total)) / total) / denominator
-    return max(0.0, center - margin), min(1.0, center + margin)
-
-
 def _sum_usage(attempts: Iterable[Mapping[str, Any]]) -> dict[str, int]:
     totals: dict[str, int] = defaultdict(int)
     for attempt in attempts:
@@ -1718,7 +1713,7 @@ def summarize_run(run: Mapping[str, Any]) -> dict[str, Any]:
         }
 
     scored = len(scored_records)
-    lower, upper = _wilson_interval(first_passes, scored)
+    lower, upper = wilson_interval(first_passes, scored)
     total_first_ms = sum(first_latencies)
     total_all_ms = sum(all_latencies)
     weighted_points_per_minute = (
@@ -1819,109 +1814,8 @@ def save_run(run: Mapping[str, Any], out_dir: Path) -> None:
     (out_dir / "report.html").write_text(render_run_html(run), encoding="utf-8")
 
 
-def _fmt_percent(value: Any) -> str:
-    return "n/a" if value is None else f"{100 * float(value):.1f}%"
-
-
-def _fmt_num(value: Any, digits: int = 1) -> str:
-    return "n/a" if value is None else f"{float(value):.{digits}f}"
-
-
 def render_run_html(run: Mapping[str, Any]) -> str:
-    summary = run["summary"]
-    config = run["configuration"]
-    cards = [
-        ("Base strength", _fmt_num(summary.get("base_strength_0_100")), "difficulty-weighted first-attempt score"),
-        ("Eventual strength", _fmt_num(summary.get("eventual_strength_0_100")), "after cognitive retries"),
-        ("Retry lift", _fmt_num(summary.get("retry_lift_points")), "weighted score points"),
-        ("First accuracy", _fmt_percent(summary.get("first_attempt_accuracy")), "exact answers"),
-        ("Recovery", _fmt_percent(summary.get("retry_recovery_rate")), "failed first attempts corrected"),
-        ("Frontier", str(summary.get("reliable_frontier_first", 0)), "reliable first-attempt tier"),
-        ("Median latency", _fmt_num(summary.get("latency_ms", {}).get("first_median"), 0) + " ms", "first attempts"),
-        ("Coverage", _fmt_percent(summary.get("scored_coverage")), "tasks with a scored first response"),
-        ("Strict JSON", _fmt_percent(summary.get("strict_json_rate_first")), "no parser recovery needed"),
-    ]
-    card_html = "".join(
-        f'<section class="card"><span>{html.escape(label)}</span><strong>{html.escape(value)}</strong><small>{html.escape(note)}</small></section>'
-        for label, value, note in cards
-    )
-
-    tier_rows = []
-    for tier, row in summary.get("by_tier", {}).items():
-        tier_rows.append(
-            "<tr>"
-            f"<td>{tier}</td>"
-            f"<td>{row['scored']}</td>"
-            f"<td>{_fmt_percent(row['first_accuracy'])}</td>"
-            f"<td>{_fmt_percent(row['eventual_accuracy'])}</td>"
-            f"<td>{_fmt_num(row['first_partial_mean'], 3)}</td>"
-            f"<td>{_fmt_num(row['eventual_partial_mean'], 3)}</td>"
-            "</tr>"
-        )
-
-    task_rows = []
-    for task in run["tasks"]:
-        first = task["attempts"][0]
-        first_exact = bool(first.get("score", {}).get("exact")) if first.get("score") else False
-        eventual_exact = any(
-            bool(attempt.get("score", {}).get("exact")) for attempt in task["attempts"] if attempt.get("score")
-        )
-        status = "infra error" if first.get("error") else ("pass" if first_exact else ("recovered" if eventual_exact else "fail"))
-        total_latency = sum(float(attempt.get("latency_ms", 0)) for attempt in task["attempts"])
-        details = html.escape(json.dumps(task["attempts"], ensure_ascii=False, indent=2))
-        task_rows.append(
-            "<tr>"
-            f"<td>{html.escape(task['task_id'])}</td>"
-            f"<td>{task['tier']}</td>"
-            f"<td>{html.escape(task['kind'])}</td>"
-            f"<td><span class=\"status {status.replace(' ', '-')}\">{status}</span></td>"
-            f"<td>{len(task['attempts'])}</td>"
-            f"<td>{total_latency:.0f}</td>"
-            f"<td><details><summary>attempts</summary><pre>{details}</pre></details></td>"
-            "</tr>"
-        )
-
-    configuration = html.escape(json.dumps(config, ensure_ascii=False, indent=2))
-    taxonomy = html.escape(json.dumps(run.get("taxonomy", {}), ensure_ascii=False, indent=2))
-    return f"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Taxonomy Bench - {html.escape(run['run_id'])}</title>
-<style>
-:root {{ color-scheme: light dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }}
-body {{ margin: 0; background: #0e1116; color: #e8edf3; }}
-main {{ max-width: 1220px; margin: 0 auto; padding: 36px 24px 64px; }}
-h1 {{ font-size: clamp(28px, 5vw, 56px); line-height: 1; margin: 0 0 8px; letter-spacing: -0.04em; }}
-p.lede {{ color: #9da8b5; margin: 0 0 30px; }}
-.grid {{ display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 12px; margin: 24px 0 36px; }}
-.card {{ border: 1px solid #2a3440; background: #151a21; padding: 16px; border-radius: 10px; display: grid; gap: 6px; }}
-.card span,.card small {{ color: #9da8b5; }} .card strong {{ font-size: 28px; }}
-h2 {{ margin-top: 42px; }}
-table {{ width: 100%; border-collapse: collapse; background: #151a21; border: 1px solid #2a3440; }}
-th,td {{ padding: 10px 12px; text-align: left; border-bottom: 1px solid #2a3440; vertical-align: top; }}
-th {{ color: #9da8b5; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }}
-.status {{ display: inline-block; padding: 3px 8px; border: 1px solid #45515f; border-radius: 999px; font-size: 12px; }}
-.status.pass {{ border-color: #3a8b5f; }} .status.recovered {{ border-color: #9b7a31; }} .status.fail,.status.infra-error {{ border-color: #9a4a4a; }}
-pre {{ max-width: 70vw; max-height: 420px; overflow: auto; white-space: pre-wrap; background: #0e1116; padding: 12px; border-radius: 6px; }}
-details.meta {{ margin: 10px 0; }} footer {{ margin-top: 40px; color: #9da8b5; font-size: 12px; }}
-@media (max-width: 720px) {{ table {{ display: block; overflow-x: auto; }} main {{ padding: 24px 14px 48px; }} }}
-</style>
-</head>
-<body><main>
-<h1>Taxonomy Bench</h1>
-<p class="lede">{html.escape(run['run_id'])}</p>
-<div class="grid">{card_html}</div>
-<h2>Difficulty profile</h2>
-<table><thead><tr><th>Tier</th><th>Tasks</th><th>First accuracy</th><th>Eventual accuracy</th><th>First partial</th><th>Eventual partial</th></tr></thead><tbody>{''.join(tier_rows)}</tbody></table>
-<h2>Task results</h2>
-<table><thead><tr><th>Task</th><th>Tier</th><th>Kind</th><th>Status</th><th>Attempts</th><th>Total ms</th><th>Details</th></tr></thead><tbody>{''.join(task_rows)}</tbody></table>
-<h2>Run metadata</h2>
-<details class="meta"><summary>Configuration</summary><pre>{configuration}</pre></details>
-<details class="meta"><summary>Taxonomy</summary><pre>{taxonomy}</pre></details>
-<footer>{html.escape(ATTRIBUTION)}</footer>
-</main></body></html>"""
+    return _render_run_html(run, attribution=ATTRIBUTION)
 
 
 def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
@@ -2035,8 +1929,8 @@ def aggregate_matrix(runs: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
                 "frontier_first": summary.get("reliable_frontier_first"),
                 "frontier_eventual": summary.get("reliable_frontier_eventual"),
                 "median_latency_ms": summary.get("latency_ms", {}).get("first_median"),
-                "reasoning_tokens": summary.get("usage_first", {}).get("reasoning_tokens", 0),
-                "total_tokens": summary.get("usage_first", {}).get("total_tokens", 0),
+                "reasoning_tokens": summary.get("usage_first", {}).get("reasoning_tokens"),
+                "total_tokens": summary.get("usage_first", {}).get("total_tokens"),
                 "points_per_minute": summary.get("efficiency", {}).get("difficulty_weighted_points_per_minute_first"),
                 "infra_errors": summary.get("infrastructure_error_count"),
             }
@@ -2046,39 +1940,12 @@ def aggregate_matrix(runs: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "benchmark_version": BENCHMARK_VERSION,
         "created_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "runs": rows,
+        "conditions": derive_condition_evidence(list(runs)),
     }
 
 
 def render_matrix_html(matrix: Mapping[str, Any]) -> str:
-    rows_html = []
-    sorted_rows = sorted(
-        matrix["runs"],
-        key=lambda row: (
-            -(row.get("base_strength") or -1),
-            row.get("median_latency_ms") or float("inf"),
-        ),
-    )
-    for row in sorted_rows:
-        rows_html.append(
-            "<tr>"
-            f"<td>{html.escape(str(row.get('model')))}</td>"
-            f"<td>{html.escape(', '.join(row.get('resolved_models') or []))}</td>"
-            f"<td>{html.escape(str(row.get('effort')))}</td>"
-            f"<td>{row.get('repeat')}</td>"
-            f"<td>{_fmt_num(row.get('base_strength'))}</td>"
-            f"<td>{_fmt_num(row.get('eventual_strength'))}</td>"
-            f"<td>{_fmt_num(row.get('retry_lift'))}</td>"
-            f"<td>{_fmt_percent(row.get('recovery'))}</td>"
-            f"<td>{row.get('frontier_first')}</td>"
-            f"<td>{_fmt_num(row.get('median_latency_ms'), 0)}</td>"
-            f"<td>{row.get('reasoning_tokens')}</td>"
-            f"<td>{row.get('total_tokens')}</td>"
-            f"<td>{_fmt_num(row.get('points_per_minute'), 2)}</td>"
-            f"<td>{row.get('infra_errors')}</td>"
-            "</tr>"
-        )
-    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Taxonomy Bench matrix</title><style>
-body{{font-family:Inter,system-ui,sans-serif;margin:0;background:#0e1116;color:#e8edf3}}main{{max-width:1400px;margin:auto;padding:32px 20px}}h1{{font-size:44px;letter-spacing:-.04em}}table{{width:100%;border-collapse:collapse;background:#151a21;border:1px solid #2a3440}}th,td{{padding:10px;border-bottom:1px solid #2a3440;text-align:left;white-space:nowrap}}th{{color:#9da8b5;font-size:12px;text-transform:uppercase}}.wrap{{overflow:auto}}footer{{margin-top:24px;color:#9da8b5;font-size:12px}}</style></head><body><main><h1>Taxonomy Bench matrix</h1><p>Ranked by difficulty-weighted first-attempt strength, then median latency.</p><div class="wrap"><table><thead><tr><th>Requested model</th><th>Resolved model</th><th>Effort</th><th>Repeat</th><th>Base</th><th>Eventual</th><th>Lift</th><th>Recovery</th><th>Frontier</th><th>Median ms</th><th>Reasoning tok</th><th>Total tok</th><th>Pts/min</th><th>Infra</th></tr></thead><tbody>{''.join(rows_html)}</tbody></table></div><footer>{html.escape(ATTRIBUTION)}</footer></main></body></html>"""
+    return _render_matrix_html(matrix, attribution=ATTRIBUTION)
 
 
 def build_provider(args: argparse.Namespace, model: str | None = None, effort: str | None = None) -> Provider:

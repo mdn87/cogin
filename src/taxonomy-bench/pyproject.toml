@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "taxonomy-bench"
-version = "0.1.0"
+version = "0.2.0"
 description = "A progressive AI session-strength benchmark generated from the Marble Skill Taxonomy"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -14,13 +14,13 @@ dependencies = []
 
 [project.optional-dependencies]
 openai = ["openai>=1.68"]
-test = ["pytest>=8,<10"]
+test = ["pytest>=8,<10", "build>=1.2,<2"]
 
 [project.scripts]
 taxonomy-bench = "taxonomy_bench:main"
 
 [tool.setuptools]
-py-modules = ["taxonomy_bench"]
+py-modules = ["taxonomy_bench", "taxonomy_bench_progression", "taxonomy_bench_report"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

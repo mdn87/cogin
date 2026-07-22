@@ -36,3 +36,9 @@ node_modules
 .history
 .tmp-debug
 .tmp-debug-*
+
+# Local visual brainstorming artifacts
+.superpowers/
+
+# Local Git worktrees
+.worktrees/
