@@ -8,6 +8,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+import taxonomy_bench_progression as progression
 from taxonomy_bench_progression import derive_attempt_outcome, wilson_interval
 
 
@@ -21,9 +22,10 @@ def attempt(
     recovered=False,
     error=None,
     usage=None,
+    phase="first",
 ):
     return {
-        "phase": "first",
+        "phase": phase,
         "latency_ms": 120.0,
         "usage": {} if usage is None else usage,
         "error": error,
@@ -38,6 +40,222 @@ def attempt(
             "details": {} if details is None else details,
         },
     }
+
+
+def make_run(tier_outcomes, infra_indexes=()):
+    tasks = []
+    index = 0
+    for tier, outcomes in tier_outcomes.items():
+        for exact in outcomes:
+            first = attempt(exact=exact, partial=1.0 if exact else 0.5)
+            if index in infra_indexes:
+                first = attempt(error="TimeoutError: timed out")
+            tasks.append(
+                {
+                    "task_id": f"task-{index + 1}",
+                    "tier": tier,
+                    "kind": "semantic_match",
+                    "attempts": [first],
+                }
+            )
+            index += 1
+
+    scored_by_tier = {}
+    for task in tasks:
+        first = next(item for item in task["attempts"] if item["phase"] == "first")
+        if first.get("score") is None:
+            continue
+        row = scored_by_tier.setdefault(task["tier"], [0, 0])
+        row[0] += int(first["score"]["exact"])
+        row[1] += 1
+    frontier = 0
+    for tier in sorted(scored_by_tier):
+        exact_count, scored_count = scored_by_tier[tier]
+        if exact_count / scored_count + 1e-12 < 2 / 3:
+            break
+        frontier = tier
+    peak = max(
+        (
+            task["tier"]
+            for task in tasks
+            for first in task["attempts"]
+            if first["phase"] == "first"
+            and first.get("score")
+            and first["score"]["exact"]
+        ),
+        default=0,
+    )
+    return {
+        "run_id": "run-1",
+        "suite_hash": "suite-a",
+        "suite_seed": 42,
+        "benchmark_version": "test",
+        "taxonomy": {"version": "fixture"},
+        "configuration": {
+            "provider": "fixture",
+            "model": "model-a",
+            "effort": "test",
+            "output_mode": "prompt",
+            "session_mode": "isolated",
+            "retries": 0,
+            "retry_policy": "feedback",
+            "retry_context": "fresh",
+            "transport_retries": 0,
+            "tool_access": False,
+            "condition_label": "fixture",
+        },
+        "tasks": tasks,
+        "summary": {
+            "reliable_frontier_first": frontier,
+            "peak_tier_first": peak,
+            "retry_recovery_rate": None,
+            "usage_first": {},
+        },
+    }
+
+
+def test_progression_preserves_order_and_selects_first_phase_explicitly():
+    run = make_run({1: [True, True]})
+    run["tasks"][0]["attempts"] = [
+        attempt(exact=True, partial=1.0, phase="retry"),
+        attempt(exact=False, partial=0.25, phase="first"),
+    ]
+
+    view = progression.derive_progression_view(run)
+
+    assert [row["task_id"] for row in view["tasks"]] == ["task-1", "task-2"]
+    assert [row["sequence_index"] for row in view["tasks"]] == [1, 2]
+    assert view["tasks"][0]["outcome"] == "non-exact"
+    assert view["tasks"][0]["retries"][0]["outcome"] == "exact"
+
+
+def test_progression_infers_tier_size_and_leaves_infrastructure_gap():
+    run = make_run({1: [True] * 4, 2: [True, False, True, False]}, infra_indexes={4})
+
+    view = progression.derive_progression_view(run)
+
+    assert view["rolling_window_size"] == 8
+    assert view["tiers"][0]["median_latency_ms"] == 120.0
+    assert view["rolling"][4]["exact_rate"] is None
+    assert view["rolling"][3]["sample_count"] == 4
+    assert view["tasks"][4]["outcome"] == "unscored"
+    assert view["tiers"][0]["limited_evidence"] is False
+
+
+def test_two_scored_task_tier_is_labeled_limited_evidence():
+    view = progression.derive_progression_view(make_run({1: [True, False]}))
+
+    assert view["tiers"][0]["limited_evidence"] is True
+    assert view["tiers"][0]["evidence_note"] == "limited evidence · 2 scored"
+
+
+def test_frontier_zero_has_explicit_instability_meaning():
+    view = progression.derive_progression_view(make_run({1: [True, False, False, False]}))
+
+    assert view["markers"]["instability_onset"]["label"] == (
+        "No reliable tier · Tier 1 · 1/4 exact"
+    )
+
+
+def test_fully_reliable_run_has_no_observed_instability():
+    view = progression.derive_progression_view(make_run({1: [True] * 4, 2: [True] * 4}))
+
+    assert view["markers"]["instability_onset"]["label"] == "not observed"
+
+
+def test_run_without_scored_tasks_has_unmeasurable_instability():
+    view = progression.derive_progression_view(make_run({1: [True, True]}, infra_indexes={0, 1}))
+
+    assert view["markers"]["instability_onset"]["label"] == "not measurable"
+
+
+def test_two_adjacent_subthreshold_tiers_establish_sustained_breakdown():
+    run = make_run(
+        {
+            1: [True] * 4,
+            2: [True, False, False, False],
+            3: [True, False, False, False],
+        }
+    )
+
+    marker = progression.derive_progression_view(run)["markers"]["sustained_breakdown"]
+
+    assert marker["tier"] == 2
+    assert marker["combined_scored_count"] == 8
+
+
+def test_single_subthreshold_tier_does_not_establish_sustained_breakdown():
+    run = make_run({1: [True] * 4, 2: [True, False, False, False]})
+
+    marker = progression.derive_progression_view(run)["markers"]["sustained_breakdown"]
+
+    assert marker["label"] == "not established"
+
+
+def test_first_miss_and_peak_success_are_separate_frontier_markers():
+    run = make_run({1: [True, False], 2: [False], 3: [True]}, infra_indexes={0})
+
+    markers = progression.derive_progression_view(run)["markers"]
+
+    assert markers["first_miss"]["task_id"] == "task-2"
+    assert markers["first_miss"]["sequence_index"] == 2
+    assert markers["reliable_frontier"]["tier"] == 0
+    assert markers["peak_isolated_success"]["tier"] == 3
+
+
+def test_progression_composes_grounded_aggregates_and_missing_measurements():
+    run = make_run({1: [False]})
+    run["tasks"][0]["kind"] = "direct_prerequisites"
+    run["tasks"][0]["attempts"] = [
+        attempt(partial=0.5, details={"extra_count": 1})
+    ]
+
+    view = progression.derive_progression_view(run)
+
+    assert view["condition"]["suite_hash"] == "suite-a"
+    assert view["task_families"][0]["kind"] == "direct_prerequisites"
+    assert view["unsupported_output_proxy"] == {
+        "label": "unsupported-output proxy",
+        "count": 1,
+        "scored_count": 1,
+        "rate": 1.0,
+    }
+    assert view["risk_proxy"] == view["unsupported_output_proxy"]
+    assert view["scorecards"]["usage"]["total_tokens"] is None
+    assert view["scorecards"]["retry_recovery"] == {
+        "rate": None,
+        "label": "not measured",
+    }
+    assert view["routing_input"]["unsupported_output_proxy"]["rate"] == 1.0
+
+
+def test_retry_attempts_do_not_contaminate_first_pass_metrics_or_markers():
+    run = make_run({1: [True, False, True, False]})
+    baseline = progression.derive_progression_view(run)
+    run["tasks"][1]["attempts"].append(
+        attempt(exact=True, partial=1.0, phase="retry")
+    )
+
+    retried = progression.derive_progression_view(run)
+
+    first_pass_fields = ("outcome", "exact", "partial", "latency_ms", "tokens")
+    assert [
+        {field: row[field] for field in first_pass_fields}
+        for row in retried["tasks"]
+    ] == [
+        {field: row[field] for field in first_pass_fields}
+        for row in baseline["tasks"]
+    ]
+    assert retried["rolling"] == baseline["rolling"]
+    assert [
+        {key: tier[key] for key in tier if key != "tasks"}
+        for tier in retried["tiers"]
+    ] == [
+        {key: tier[key] for key in tier if key != "tasks"}
+        for tier in baseline["tiers"]
+    ]
+    assert retried["markers"] == baseline["markers"]
+    assert retried["tasks"][1]["retries"][0]["outcome"] == "exact"
 
 
 def test_wilson_interval_handles_empty_and_known_samples():
