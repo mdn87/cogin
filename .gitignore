@@ -26,6 +26,10 @@ __pycache__/
 .scaffold/project/handoff.md
 .scaffold/project/handoff-history/
 
+# Codex session handoffs
+.codex/handoff.md
+.codex/handoff-history/
+
 # Git Lanes — host-local state; never commit
 .venv
 .venv-*
