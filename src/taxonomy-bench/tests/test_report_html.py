@@ -241,6 +241,13 @@ def test_recovery_evidence_is_one_compact_collapsed_disclosure_per_retry():
         for index in range(31)
     )
     assert "row.querySelectorAll('.recovery-branch')" in rendered
+    assert re.search(
+        r'<div class="task-row">.*?'
+        r'<details class="task-details"><summary>Attempt evidence</summary>.*?'
+        r'</details></div><details class="recovery-branch"',
+        rendered,
+        flags=re.DOTALL,
+    )
     trace_height = int(
         re.search(r"\.trace-scroll\s*\{[^}]*max-height:\s*(\d+)px", rendered).group(1)
     )

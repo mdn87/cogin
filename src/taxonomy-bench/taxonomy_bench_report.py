@@ -246,9 +246,9 @@ def _render_task_row(task: Mapping[str, Any]) -> str:
         f'<span><small>Partial</small>{_esc(_fmt_number(task.get("partial"), 2))}</span>'
         f'<span><small>Latency</small>{_esc(_fmt_latency(task.get("latency_ms")))}</span>'
         f'<span><small>Tokens</small>{_esc(_fmt_tokens(task.get("tokens")))}</span>'
-        '</div>'
         '<details class="task-details"><summary>Attempt evidence</summary>'
         f'<dl class="attempt-details">{details}</dl></details>'
+        '</div>'
         f'{recovery_html}'
         '</article>'
     )
@@ -410,13 +410,14 @@ dd { margin: 2px 0 0; }
 .task-entry { border-bottom: 1px solid #222e39; scroll-margin-top: 40px; }
 .task-entry:focus, .task-entry:hover { background: #111b24; }
 .task-entry[hidden] { display: none; }
-.task-row { display: grid; grid-template-columns: 36px minmax(170px, 1.15fr) minmax(220px, 1.8fr) 75px 75px 85px; gap: 9px; align-items: center; min-height: 42px; padding: 3px 10px; }
+.task-row { display: grid; grid-template-columns: 36px minmax(170px, 1.15fr) minmax(220px, 1.8fr) 75px 75px 85px minmax(96px, .55fr); gap: 9px; align-items: center; min-height: 42px; padding: 3px 10px; }
 .sequence { color: #7e91a4; font-variant-numeric: tabular-nums; }
 .task-identity { min-width: 0; }
 .task-identity strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .task-identity small, .task-row > span > small { display: block; }
 .outcome-text { line-height: 1.25; }
-.task-details { padding: 0 10px 1px 55px; }
+.task-details { min-width: 0; padding: 0; }
+.task-details[open] { grid-column: 2 / -1; }
 summary { cursor: pointer; color: #b9c9d7; font-size: 13px; }
 .attempt-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; margin: 8px 0; }
 .attempt-details div { min-width: 0; }
@@ -447,7 +448,7 @@ footer { margin-top: 24px; border-top: 1px solid #26313d; padding-top: 12px; }
   main { padding-inline: 14px; }
   .progression-layout { grid-template-columns: 1fr; }
   .diagnostic-sidebar { position: static; }
-  .task-row { grid-template-columns: 32px minmax(150px, 1fr) minmax(190px, 1.6fr) 70px 70px 80px; overflow-x: auto; }
+  .task-row { grid-template-columns: 32px minmax(150px, 1fr) minmax(190px, 1.6fr) 70px 70px 80px minmax(90px, .55fr); overflow-x: auto; }
 }
 @media (max-width: 768px) {
   .workspace-heading { align-items: stretch; flex-direction: column; }
@@ -456,7 +457,8 @@ footer { margin-top: 24px; border-top: 1px solid #26313d; padding-top: 12px; }
   .task-row { display: grid; grid-template-columns: 30px 1fr; }
   .task-row > span:nth-child(n+3) { grid-column: 2; }
   .attempt-details { grid-template-columns: 1fr; }
-  .task-details, .recovery-branch { margin-left: 0; padding-left: 10px; }
+  .task-details { grid-column: 2; margin-left: 0; padding-left: 0; }
+  .recovery-branch { margin-left: 0; padding-left: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html, .trace-scroll { scroll-behavior: auto; }
