@@ -228,12 +228,11 @@ def _render_task_row(task: Mapping[str, Any]) -> str:
     details = _render_attempt_details(task)
     recovery_html = "".join(
         (
-            '<section class="recovery-branch" data-phase="retry">'
-            f'<h4>Recovery phase · attempt {_esc(retry.get("attempt_number"))}</h4>'
-            f'<p class="outcome-text">{_esc(_outcome_text(retry))}</p>'
-            '<details><summary>Recovery evidence</summary>'
+            '<details class="recovery-branch" data-phase="retry">'
+            f'<summary>Recovery phase · attempt {_esc(retry.get("attempt_number"))} · '
+            f'{_esc(_outcome_text(retry))}</summary>'
             f'<dl class="attempt-details">{_render_attempt_details(retry, recovery=True)}</dl>'
-            '</details></section>'
+            '</details>'
         )
         for retry in retries
     )
@@ -404,26 +403,27 @@ dd { margin: 2px 0 0; }
 .partial-series { stroke: #f5c451; stroke-dasharray: 7 5; }
 .sample-point { fill: #e6edf3; stroke: #090d12; }
 .chart-legend { display: flex; gap: 18px; }
-.trace-scroll { max-height: 590px; overflow: auto; scroll-behavior: smooth; }
+.trace-scroll { max-height: 650px; overflow: auto; scroll-behavior: smooth; }
 .tier-header { position: sticky; top: 0; z-index: 2; display: flex; align-items: baseline; gap: 12px; padding: 7px 10px; background: #17212b; border-block: 1px solid #344454; }
 .tier-header h3 { font-size: 16px; white-space: nowrap; }
 .tier-header p { color: #b8c4cf; font-size: 13px; }
 .task-entry { border-bottom: 1px solid #222e39; scroll-margin-top: 40px; }
 .task-entry:focus, .task-entry:hover { background: #111b24; }
 .task-entry[hidden] { display: none; }
-.task-row { display: grid; grid-template-columns: 36px minmax(170px, 1.15fr) minmax(220px, 1.8fr) 75px 75px 85px; gap: 9px; align-items: center; min-height: 52px; padding: 6px 10px; }
+.task-row { display: grid; grid-template-columns: 36px minmax(170px, 1.15fr) minmax(220px, 1.8fr) 75px 75px 85px; gap: 9px; align-items: center; min-height: 42px; padding: 3px 10px; }
 .sequence { color: #7e91a4; font-variant-numeric: tabular-nums; }
 .task-identity { min-width: 0; }
 .task-identity strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .task-identity small, .task-row > span > small { display: block; }
 .outcome-text { line-height: 1.25; }
-.task-details { padding: 0 10px 8px 55px; }
+.task-details { padding: 0 10px 1px 55px; }
 summary { cursor: pointer; color: #b9c9d7; font-size: 13px; }
 .attempt-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; margin: 8px 0; }
 .attempt-details div { min-width: 0; }
 pre { margin: 3px 0 0; padding: 8px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: #080d12; color: #dbe5ed; font: inherit; font-size: 13px; }
-.recovery-branch { margin: 0 10px 8px 55px; padding: 8px 10px; border-left: 2px solid #f5c451; background: #131a20; }
-.recovery-branch h4 { font-size: 15px; }
+.recovery-branch { margin: 0 10px 2px 55px; padding: 2px 8px; border-left: 2px solid #f5c451; background: #131a20; }
+.recovery-branch > summary { padding: 2px 0; font-size: 15px; line-height: 1.2; }
+.recovery-branch[open] > summary { margin-bottom: 4px; }
 .diagnostic-sidebar { position: sticky; top: 12px; border: 1px solid #2a3744; background: #0e151c; padding: 14px; min-height: 310px; }
 .diagnostic-task { font-weight: 700; overflow-wrap: anywhere; }
 .diagnostic-sidebar > p + p { margin-top: 7px; }

@@ -205,6 +205,52 @@ def test_run_report_renders_progression_trace_and_recovery_semantics():
     assert "FAIL</" not in rendered
 
 
+def test_recovery_evidence_is_one_compact_collapsed_disclosure_per_retry():
+    run = make_run()
+    template = run["tasks"][1]
+    run["tasks"] = []
+    for sequence in range(1, 33):
+        task = copy.deepcopy(template)
+        task["task_id"] = f"retry-task-{sequence:02d}"
+        task["tier"] = 1 + (sequence - 1) // 4
+        run["tasks"].append(task)
+
+    rendered = report.render_run_html(run, ATTRIBUTION)
+    branches = list(
+        re.finditer(
+            r'<details class="recovery-branch" data-phase="retry"([^>]*)>\s*'
+            r'<summary>([^<]+)</summary>',
+            rendered,
+        )
+    )
+    task_positions = [
+        match.start()
+        for match in re.finditer(r'<article class="task-entry" id="task-\d+"', rendered)
+    ]
+
+    assert len(branches) == 32
+    assert all(not match.group(1).strip() for match in branches)
+    assert all(
+        match.group(2) == "Recovery phase · attempt 2 · 1.00 exact"
+        for match in branches
+    )
+    assert '<section class="recovery-branch"' not in rendered
+    assert "<summary>Recovery evidence</summary>" not in rendered
+    assert all(
+        task_positions[index] < branches[index].start() < task_positions[index + 1]
+        for index in range(31)
+    )
+    assert "row.querySelectorAll('.recovery-branch')" in rendered
+    trace_height = int(
+        re.search(r"\.trace-scroll\s*\{[^}]*max-height:\s*(\d+)px", rendered).group(1)
+    )
+    assert 590 <= trace_height <= 650
+    assert re.search(
+        r"\.recovery-branch\s*>\s*summary\s*\{[^}]*font-size:\s*(?:1[5-9]|[2-9]\d)px",
+        rendered,
+    )
+
+
 def test_frontier_strip_renders_only_derived_marker_labels_definitions_and_evidence():
     view = derive_progression_view(make_run())
     marker_labels = {
