@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from typing import Any, Mapping
 
 from taxonomy_bench_progression import derive_condition_evidence, derive_progression_view
@@ -37,6 +38,14 @@ def _json_text(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True)
 
 
+def _safe_run_report_href(run_id: Any) -> str | None:
+    if not isinstance(run_id, str) or run_id in {"", ".", ".."}:
+        return None
+    if re.fullmatch(r"[A-Za-z0-9._-]+", run_id) is None:
+        return None
+    return f"./{run_id}/report.html"
+
+
 def _render_condition_header(
     view: Mapping[str, Any],
     evidence: Mapping[str, Any],
@@ -52,6 +61,7 @@ def _render_condition_header(
         ("Requested model", condition.get("model")),
         ("Resolved model", resolved_label),
         ("Effort", condition.get("effort")),
+        ("Repeat", condition.get("repeat")),
         ("Session / output", f"{condition.get('session_mode') or 'not reported'} / {condition.get('output_mode') or 'not reported'}"),
         ("Retry", retry_label),
         ("Suite / seed", f"{condition.get('suite_hash') or 'not reported'} / {condition.get('suite_seed') if condition.get('suite_seed') is not None else 'not reported'}"),
@@ -83,19 +93,37 @@ def _render_frontier_strip(view: Mapping[str, Any]) -> str:
     scorecards = view["scorecards"]
     recovery = scorecards["retry_recovery"]
     proxy = view["unsupported_output_proxy"]
-    values = (
-        ("Reliable frontier", markers["reliable_frontier"].get("label")),
-        ("Instability onset", markers["instability_onset"].get("label")),
-        ("Sustained breakdown", markers["sustained_breakdown"].get("label")),
-        ("Peak isolated success", markers["peak_isolated_success"].get("label")),
+    marker_values = (
+        ("First miss", markers["first_miss"]),
+        ("Reliable frontier", markers["reliable_frontier"]),
+        ("Instability onset", markers["instability_onset"]),
+        ("Sustained breakdown", markers["sustained_breakdown"]),
+        ("Peak isolated success", markers["peak_isolated_success"]),
+    )
+    marker_items = "".join(
+        (
+            '<div class="frontier-marker">'
+            f'<dt>{_esc(label)}</dt><dd>{_esc(marker.get("label"))}</dd>'
+            '<details class="marker-detail"><summary>Definition and evidence</summary>'
+            f'<p><strong>Definition</strong> · {_esc(marker.get("definition"))}</p>'
+            f'<p><strong>Evidence</strong> · {_esc(marker.get("evidence_label"))}</p>'
+            '</details></div>'
+        )
+        for label, marker in marker_values
+    )
+    metric_values = (
         ("Median first-attempt latency", _fmt_latency(scorecards["first_attempt_latency_ms"].get("median"))),
         ("Retry recovery", _fmt_percent(recovery.get("rate"), recovery.get("label") or "not measured")),
         ("Unsupported-output proxy", f"{proxy.get('count', 0)}/{proxy.get('scored_count', 0)} · {_fmt_percent(proxy.get('rate'))}"),
     )
-    items = "".join(
-        f"<div><dt>{_esc(label)}</dt><dd>{_esc(value)}</dd></div>" for label, value in values
+    metric_items = "".join(
+        f"<div><dt>{_esc(label)}</dt><dd>{_esc(value)}</dd></div>"
+        for label, value in metric_values
     )
-    return f'<section class="frontier-strip" aria-label="Progression markers"><dl>{items}</dl></section>'
+    return (
+        '<section class="frontier-strip" aria-label="Progression markers">'
+        f'<dl>{marker_items}{metric_items}</dl></section>'
+    )
 
 
 def _svg_paths(points: list[Mapping[str, Any]], key: str) -> list[str]:
@@ -269,13 +297,23 @@ def _render_diagnostic_sidebar(view: Mapping[str, Any]) -> str:
         marker_links.append(
             f'<a class="minimap-link anomaly" href="#{_esc(target)}" aria-label="Jump to {_esc(name.replace("_", " "))}">{_esc(name.replace("_", " "))}</a>'
         )
+    task_links = "".join(
+        (
+            f'<a class="task-mark" href="#task-{_esc(task.get("sequence_index"))}" '
+            f'aria-label="Task {_esc(task.get("sequence_index"))} · {_esc(task.get("task_id"))} · {_esc(task.get("outcome") or "not reported")}">'
+            f'{_esc(task.get("sequence_index"))}</a>'
+        )
+        for task in tasks
+    )
     return (
         '<aside class="diagnostic-sidebar" aria-labelledby="diagnostic-heading">'
         '<h2 id="diagnostic-heading">Diagnostic context</h2>'
         f'{diagnostic}'
         '<p class="support">Open a task row for its safe response, scorer evidence, usage, and recovery record.</p>'
         '<nav class="minimap" aria-label="Progression minimap">'
-        f'{tier_links}{"".join(marker_links)}'
+        f'<div class="minimap-primary">{tier_links}{"".join(marker_links)}</div>'
+        '<p class="support task-mark-label">Task marks</p>'
+        f'<div class="task-mark-rail">{task_links}</div>'
         '</nav></aside>'
     )
 
@@ -348,6 +386,9 @@ dd { margin: 2px 0 0; }
 .frontier-strip { margin: 18px 0; border-block: 1px solid #2b3947; background: #0d131a; }
 .frontier-strip dl, .scorecard-rail { display: flex; overflow-x: auto; margin: 0; }
 .frontier-strip dl > div, .scorecard-rail > div { min-width: 175px; padding: 10px 14px; border-right: 1px solid #26313d; }
+.frontier-marker { min-width: 230px; }
+.marker-detail { margin-top: 5px; font-size: 13px; }
+.marker-detail p { margin-top: 5px; color: #aebbc7; }
 .workspace-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 22px 0 8px; }
 .filters { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
 .filters button, .filters select { border: 1px solid #3a4a59; background: #101820; border-radius: 3px; padding: 6px 9px; min-height: 34px; }
@@ -386,9 +427,13 @@ pre { margin: 3px 0 0; padding: 8px; overflow: auto; white-space: pre-wrap; over
 .diagnostic-sidebar { position: sticky; top: 12px; border: 1px solid #2a3744; background: #0e151c; padding: 14px; min-height: 310px; }
 .diagnostic-task { font-weight: 700; overflow-wrap: anywhere; }
 .diagnostic-sidebar > p + p { margin-top: 7px; }
-.minimap { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin-top: 16px; }
+.minimap { margin-top: 16px; }
+.minimap-primary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
 .minimap-link { color: #bdd1e2; border-left: 2px solid #47647b; padding: 5px 7px; font-size: 13px; text-decoration: none; }
 .minimap-link.anomaly { border-left-color: #f5c451; }
+.task-mark-label { margin-top: 14px; }
+.task-mark-rail { display: flex; flex-wrap: wrap; gap: 4px; max-height: 160px; overflow-y: auto; padding: 4px 2px 4px 0; }
+.task-mark { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 28px; border: 1px solid #3a4a59; color: #bdd1e2; font-size: 13px; text-decoration: none; }
 .aggregate, .metadata { margin-top: 28px; }
 .scorecard-rail { border-block: 1px solid #2a3744; }
 .table-wrap { margin-top: 12px; overflow-x: auto; }
@@ -433,7 +478,7 @@ _RUN_JS = """
     rows.forEach((row) => {
       const familyMatch = family.value === 'all' || row.dataset.kind === family.value;
       const modeMatch = mode === 'all'
-        || (mode === 'non-exact' && row.dataset.outcome !== 'exact')
+        || (mode === 'non-exact' && row.dataset.outcome === 'non-exact')
         || (mode === 'retries' && row.dataset.hasRetries === 'true');
       row.hidden = !(familyMatch && modeMatch);
       row.querySelectorAll('.recovery-branch').forEach((branch) => {
@@ -579,11 +624,17 @@ def _render_condition_card(condition: Mapping[str, Any]) -> str:
     metrics_html = "".join(
         f'<div><dt>{_esc(label)}</dt><dd>{_esc(value)}</dd></div>' for label, value in metrics
     )
-    traces = "".join(
-        f'<li><a href="{_esc(str(trace.get("run_id")) + "/report.html")}">{_esc(trace.get("run_id"))}</a></li>'
-        for trace in condition.get("run_traces", ())
-        if trace.get("run_id") is not None
-    )
+    trace_items = []
+    for trace in condition.get("run_traces", ()):
+        run_id = trace.get("run_id")
+        href = _safe_run_report_href(run_id)
+        content = (
+            f'<a href="{_esc(href)}">{_esc(run_id)}</a>'
+            if href is not None
+            else _esc(run_id)
+        )
+        trace_items.append(f"<li>{content}</li>")
+    traces = "".join(trace_items)
     family_rows = "".join(
         (
             f'<tr><th scope="row">{_esc(family.get("kind"))}</th>'
@@ -616,17 +667,26 @@ def _render_condition_card(condition: Mapping[str, Any]) -> str:
 
 
 def _render_legacy_matrix(runs: list[Mapping[str, Any]]) -> str:
-    rows = "".join(
-        (
-            f'<tr><th scope="row"><a href="{_esc(str(run.get("run_id")) + "/report.html")}">{_esc(run.get("run_id"))}</a></th>'
-            f'<td>{_esc(run.get("model") if run.get("model") is not None else "not reported")}</td>'
-            f'<td>{_esc(run.get("effort") if run.get("effort") is not None else "not reported")}</td>'
-            f'<td>{_esc(_fmt_number(run.get("base_strength"), 1))}</td>'
-            f'<td>{_esc(run.get("frontier_first") if run.get("frontier_first") is not None else "not reported")}</td>'
-            f'<td>{_esc(_fmt_latency(run.get("median_latency_ms")))}</td></tr>'
+    row_fragments = []
+    for run in runs:
+        run_id = run.get("run_id")
+        href = _safe_run_report_href(run_id)
+        run_label = (
+            f'<a href="{_esc(href)}">{_esc(run_id)}</a>'
+            if href is not None
+            else _esc(run_id)
         )
-        for run in runs
-    )
+        row_fragments.append(
+            (
+                f'<tr><th scope="row">{run_label}</th>'
+                f'<td>{_esc(run.get("model") if run.get("model") is not None else "not reported")}</td>'
+                f'<td>{_esc(run.get("effort") if run.get("effort") is not None else "not reported")}</td>'
+                f'<td>{_esc(_fmt_number(run.get("base_strength"), 1))}</td>'
+                f'<td>{_esc(run.get("frontier_first") if run.get("frontier_first") is not None else "not reported")}</td>'
+                f'<td>{_esc(_fmt_latency(run.get("median_latency_ms")))}</td></tr>'
+            )
+        )
+    rows = "".join(row_fragments)
     return (
         '<h1>Legacy matrix · repeat evidence unavailable</h1>'
         '<p class="matrix-lede">Historical run rows are shown as recorded.</p>'
@@ -721,17 +781,26 @@ def render_matrix_html(matrix: Mapping[str, Any], attribution: str) -> str:
         ),
     )
     cards = "".join(_render_condition_card(condition) for condition in conditions)
-    run_rows = "".join(
-        (
-            f'<tr><th scope="row"><a href="{_esc(str(run.get("run_id")) + "/report.html")}">{_esc(run.get("run_id"))}</a></th>'
-            f'<td>{_esc(run.get("model") if run.get("model") is not None else "not reported")}</td>'
-            f'<td>{_esc(run.get("effort") if run.get("effort") is not None else "not reported")}</td>'
-            f'<td>{_esc(_fmt_tokens(run.get("reasoning_tokens")))}</td>'
-            f'<td>{_esc(_fmt_tokens(run.get("total_tokens")))}</td>'
-            f'<td>{_esc(_fmt_latency(run.get("median_latency_ms")))}</td></tr>'
+    run_row_fragments = []
+    for run in runs:
+        run_id = run.get("run_id")
+        href = _safe_run_report_href(run_id)
+        run_label = (
+            f'<a href="{_esc(href)}">{_esc(run_id)}</a>'
+            if href is not None
+            else _esc(run_id)
         )
-        for run in runs
-    )
+        run_row_fragments.append(
+            (
+                f'<tr><th scope="row">{run_label}</th>'
+                f'<td>{_esc(run.get("model") if run.get("model") is not None else "not reported")}</td>'
+                f'<td>{_esc(run.get("effort") if run.get("effort") is not None else "not reported")}</td>'
+                f'<td>{_esc(_fmt_tokens(run.get("reasoning_tokens")))}</td>'
+                f'<td>{_esc(_fmt_tokens(run.get("total_tokens")))}</td>'
+                f'<td>{_esc(_fmt_latency(run.get("median_latency_ms")))}</td></tr>'
+            )
+        )
+    run_rows = "".join(run_row_fragments)
     return f"""<!doctype html>
 <html lang="en">
 <head>

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import copy
 import re
 import sys
+from html import escape
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -11,6 +13,7 @@ sys.path.insert(0, str(ROOT))
 
 import taxonomy_bench as tb
 import taxonomy_bench_report as report
+from taxonomy_bench_progression import derive_progression_view
 
 
 ATTRIBUTION = "Fixture attribution · https://example.invalid/source"
@@ -202,6 +205,42 @@ def test_run_report_renders_progression_trace_and_recovery_semantics():
     assert "FAIL</" not in rendered
 
 
+def test_frontier_strip_renders_only_derived_marker_labels_definitions_and_evidence():
+    view = derive_progression_view(make_run())
+    marker_labels = {
+        "first_miss": "First miss",
+        "reliable_frontier": "Reliable frontier",
+        "instability_onset": "Instability onset",
+        "sustained_breakdown": "Sustained breakdown",
+        "peak_isolated_success": "Peak isolated success",
+    }
+    for key in marker_labels:
+        view["markers"][key]["definition"] = f"derived definition {key}"
+        view["markers"][key]["evidence_label"] = f"derived evidence {key}"
+
+    rendered = report._render_frontier_strip(view)
+
+    assert rendered.count('<details class="marker-detail">') == 5
+    for key, label in marker_labels.items():
+        marker = view["markers"][key]
+        assert f"<dt>{label}</dt><dd>{escape(marker['label'])}</dd>" in rendered
+        assert escape(marker["definition"]) in rendered
+        assert escape(marker["evidence_label"]) in rendered
+    assert rendered.count("<summary>Definition and evidence</summary>") == 5
+
+
+def test_run_condition_identity_reports_repeat_index_or_missing_value():
+    run = make_run()
+    run["configuration"]["repeat"] = 7
+    reported = report.render_run_html(run, ATTRIBUTION)
+    run["configuration"].pop("repeat")
+    missing = report.render_run_html(run, ATTRIBUTION)
+
+    assert "<dt>Repeat</dt><dd>7</dd>" in reported
+    assert "<dt>Repeat</dt><dd>not reported</dd>" in missing
+    assert "session evidence" in reported
+
+
 def test_run_report_has_accessible_offline_document_structure():
     rendered = report.render_run_html(make_run(), ATTRIBUTION)
     audit = _DocumentAudit()
@@ -266,6 +305,21 @@ def test_run_report_labels_missing_measurements_and_all_outcome_classes_textuall
     assert "unscored · infrastructure error" in lowered
 
 
+def test_non_exact_filter_includes_only_rows_with_non_exact_outcome_data():
+    rendered = report.render_run_html(make_run(with_retry=False), ATTRIBUTION)
+    audit = _DocumentAudit()
+    audit.feed(rendered)
+    row_outcomes = [
+        attrs.get("data-outcome")
+        for tag, attrs in audit.tags
+        if tag == "article" and "task-entry" in (attrs.get("class") or "")
+    ]
+
+    assert row_outcomes == ["exact", "non-exact", "non-exact", "unscored"]
+    assert "mode === 'non-exact' && row.dataset.outcome === 'non-exact'" in rendered
+    assert "row.dataset.outcome !== 'exact'" not in rendered
+
+
 def test_run_report_exposes_safe_details_and_rolling_svg_metadata():
     rendered = report.render_run_html(make_run(), ATTRIBUTION)
 
@@ -281,6 +335,38 @@ def test_run_report_exposes_safe_details_and_rolling_svg_metadata():
     assert "window size 8" in rendered
     assert '<svg aria-labelledby="rolling-title rolling-desc"' in rendered
     assert 'role="status" aria-live="polite"' in rendered
+
+
+def test_minimap_has_one_ordered_native_task_anchor_per_task_for_dense_runs():
+    run = make_run(with_retry=False)
+    template = run["tasks"][0]
+    run["tasks"] = []
+    for sequence in range(1, 37):
+        task = copy.deepcopy(template)
+        task["task_id"] = f"dense-task-{sequence:02d}"
+        task["tier"] = 1 + (sequence - 1) // 4
+        run["tasks"].append(task)
+    rendered = report.render_run_html(run, ATTRIBUTION)
+    audit = _DocumentAudit()
+    audit.feed(rendered)
+    task_marks = [
+        attrs
+        for tag, attrs in audit.tags
+        if tag == "a" and "task-mark" in (attrs.get("class") or "")
+    ]
+
+    assert len(task_marks) == 36
+    assert [attrs.get("href") for attrs in task_marks] == [
+        f"#task-{sequence}" for sequence in range(1, 37)
+    ]
+    assert [attrs.get("aria-label") for attrs in task_marks] == [
+        f"Task {sequence} · dense-task-{sequence:02d} · exact"
+        for sequence in range(1, 37)
+    ]
+    assert all(f">{sequence}</a>" in rendered for sequence in range(1, 37))
+    assert re.search(r"\.task-mark-rail\s*\{[^}]*flex-wrap:\s*wrap", rendered)
+    assert re.search(r"\.task-mark-rail\s*\{[^}]*overflow-y:\s*auto", rendered)
+    assert re.search(r"\.task-mark\s*\{[^}]*font-size:\s*13px", rendered)
 
 
 def test_save_run_emits_the_progression_report(tmp_path: Path):
@@ -352,7 +438,7 @@ def test_matrix_report_links_every_trace_and_separates_session_conditions():
     rendered = report.render_matrix_html(matrix, ATTRIBUTION)
 
     for run in matrix["runs"]:
-        assert f'href="{run["run_id"]}/report.html"' in rendered
+        assert f'href="./{run["run_id"]}/report.html"' in rendered
     assert '<article class="condition-card" data-session="isolated"' in rendered
     assert '<article class="condition-card" data-session="continuous"' in rendered
     assert "not reported" in rendered
@@ -396,7 +482,7 @@ def test_matrix_report_supports_exact_legacy_v1_runs_only_shape():
 
     assert "Legacy matrix · repeat evidence unavailable" in rendered
     assert "legacy-model" in rendered
-    assert 'href="legacy-run/report.html"' in rendered
+    assert 'href="./legacy-run/report.html"' in rendered
     assert all(
         forbidden not in lowered
         for forbidden in ("confidence", "consistency", "task family", "routing")
@@ -408,3 +494,72 @@ def test_core_matrix_wrapper_uses_repeat_evidence_renderer():
 
     assert "95% Wilson interval" in rendered
     assert "winner" not in rendered.lower()
+
+
+def test_safe_run_report_href_accepts_only_one_allowlisted_path_segment():
+    valid = ("run-1", "Run_2.0", "20260722T103000Z-model-effort")
+    invalid = (
+        None,
+        "",
+        ".",
+        "..",
+        "javascript:alert(1)",
+        "//host",
+        "../escape",
+        "slash/name",
+        "slash\\name",
+        "run?query",
+        "run#fragment",
+        "%2e%2e",
+        "has space",
+        "line\nfeed",
+        '<b onclick="alert(1)">markup</b>',
+        "café",
+    )
+
+    assert [report._safe_run_report_href(value) for value in valid] == [
+        f"./{value}/report.html" for value in valid
+    ]
+    assert all(report._safe_run_report_href(value) is None for value in invalid)
+
+
+def test_invalid_run_ids_are_escaped_text_without_links_in_all_matrix_locations():
+    invalid_ids = [
+        "javascript:alert(1)",
+        "//host",
+        "../escape",
+        "slash/name",
+        "slash\\name",
+        "run?query",
+        "run#fragment",
+        "%2e%2e",
+        '<b onclick="alert(1)">markup</b>',
+    ]
+    valid_id = "valid-run_1.0"
+    matrix = make_matrix()
+    matrix["conditions"] = [matrix["conditions"][0]]
+    matrix["conditions"][0]["run_traces"] = [
+        {"run_id": run_id} for run_id in [*invalid_ids, valid_id]
+    ]
+    matrix["runs"] = [
+        {"run_id": run_id, "model": "fixture", "effort": "low"}
+        for run_id in [*invalid_ids, valid_id]
+    ]
+    modern = report.render_matrix_html(matrix, ATTRIBUTION)
+    legacy = report.render_matrix_html(
+        {"format_version": 1, "runs": matrix["runs"]},
+        ATTRIBUTION,
+    )
+
+    assert modern.count(f'href="./{valid_id}/report.html"') == 2
+    assert legacy.count(f'href="./{valid_id}/report.html"') == 1
+    for run_id in invalid_ids:
+        escaped = escape(run_id, quote=True)
+        assert modern.count(escaped) >= 2
+        assert escaped in legacy
+        assert f'href="{escaped}' not in modern
+        assert f'href="{escaped}' not in legacy
+    for rendered in (modern, legacy):
+        assert "javascript:" not in " ".join(
+            match.group(1) for match in re.finditer(r'href="([^"]*)"', rendered)
+        )

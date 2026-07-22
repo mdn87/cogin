@@ -576,24 +576,88 @@ def derive_markers(
 ) -> dict[str, Any]:
     frontier = summary.get("reliable_frontier_first", 0)
     peak = summary.get("peak_tier_first", 0)
-    first_miss_row = next((row for row in task_rows if row.get("exact") is False), None)
+    sustained_definition = (
+        "First of two consecutive tiers below two-thirds exact with at least 8 "
+        "scored attempts combined."
+    )
+    scored_rows = [row for row in task_rows if row.get("exact") is not None]
+    scored_tiers = [row for row in tier_rows if row["scored_count"]]
+    first_miss_position = next(
+        (
+            position
+            for position, row in enumerate(scored_rows, start=1)
+            if row.get("exact") is False
+        ),
+        None,
+    )
+    first_miss_row = (
+        scored_rows[first_miss_position - 1]
+        if first_miss_position is not None
+        else None
+    )
     first_miss = (
         {
             "sequence_index": first_miss_row["sequence_index"],
             "task_id": first_miss_row["task_id"],
             "tier": first_miss_row["tier"],
             "label": f"Task {first_miss_row['sequence_index']} · {first_miss_row['task_id']}",
+            "definition": "Earliest scored non-exact first attempt.",
+            "evidence_label": (
+                f"Sequence {first_miss_row['sequence_index']} · "
+                f"Tier {first_miss_row['tier']} · "
+                f"scored position {first_miss_position}/{len(scored_rows)}"
+            ),
         }
         if first_miss_row
-        else {"sequence_index": None, "task_id": None, "tier": None, "label": "not observed"}
+        else {
+            "sequence_index": None,
+            "task_id": None,
+            "tier": None,
+            "label": "not observed",
+            "definition": "Earliest scored non-exact first attempt.",
+            "evidence_label": (
+                f"not observed · {len(scored_rows)} scored first attempts"
+            ),
+        }
     )
-    scored_tiers = [row for row in tier_rows if row["scored_count"]]
+    frontier_tier = next(
+        (row for row in scored_tiers if row["tier"] == frontier),
+        None,
+    )
+    if frontier_tier is not None:
+        frontier_evidence = (
+            f"Tier {frontier} · "
+            f"{frontier_tier['exact_count']}/{frontier_tier['scored_count']} exact"
+        )
+    elif frontier:
+        frontier_evidence = f"Tier {frontier} · exact/scored count not available"
+    elif scored_tiers:
+        first_scored_tier = scored_tiers[0]
+        frontier_evidence = (
+            f"No reliable tier · Tier {first_scored_tier['tier']} · "
+            f"{first_scored_tier['exact_count']}/{first_scored_tier['scored_count']} exact"
+        )
+    else:
+        frontier_evidence = "No reliable tier · no scored tiers"
+
     if not scored_tiers:
-        instability = {"tier": None, "label": "not measurable"}
+        instability = {
+            "tier": None,
+            "label": "not measurable",
+            "definition": "First scored tier after the reliable frontier.",
+            "evidence_label": "not measurable · no scored tiers",
+        }
     else:
         onset = next((row for row in scored_tiers if row["tier"] > frontier), None)
         if onset is None:
-            instability = {"tier": None, "label": "not observed"}
+            instability = {
+                "tier": None,
+                "label": "not observed",
+                "definition": "First scored tier after the reliable frontier.",
+                "evidence_label": (
+                    f"not observed · {len(scored_tiers)} scored tiers evaluated"
+                ),
+            }
         else:
             count_label = f"{onset['exact_count']}/{onset['scored_count']} exact"
             prefix = "No reliable tier · " if frontier == 0 else ""
@@ -602,8 +666,18 @@ def derive_markers(
                 "label": f"{prefix}Tier {onset['tier']} · {count_label}",
                 "exact_count": onset["exact_count"],
                 "scored_count": onset["scored_count"],
+                "definition": "First scored tier after the reliable frontier.",
+                "evidence_label": f"Tier {onset['tier']} · {count_label}",
             }
-    sustained = {"tier": None, "label": "not established"}
+    tier_word = "tier" if len(scored_tiers) == 1 else "tiers"
+    sustained = {
+        "tier": None,
+        "label": "not established",
+        "definition": sustained_definition,
+        "evidence_label": (
+            f"not established · {len(scored_tiers)} scored {tier_word} evaluated"
+        ),
+    }
     for first, second in zip(scored_tiers, scored_tiers[1:]):
         combined = first["scored_count"] + second["scored_count"]
         if (
@@ -616,19 +690,46 @@ def derive_markers(
                 "tier": first["tier"],
                 "label": f"Tier {first['tier']} · {combined} scored across two tiers",
                 "combined_scored_count": combined,
+                "definition": sustained_definition,
+                "evidence_label": (
+                    f"Tier {first['tier']} · "
+                    f"{first['exact_count']}/{first['scored_count']} exact; "
+                    f"Tier {second['tier']} · "
+                    f"{second['exact_count']}/{second['scored_count']} exact; "
+                    f"combined n={combined}"
+                ),
             }
             break
+    peak_tier = next((row for row in scored_tiers if row["tier"] == peak), None)
+    exact_first_count = sum(row.get("exact") is True for row in scored_rows)
+    if peak_tier is not None:
+        peak_evidence = (
+            f"Tier {peak} · {peak_tier['exact_count']}/{peak_tier['scored_count']} exact"
+        )
+    elif peak:
+        peak_evidence = f"Tier {peak} · exact/scored count not available"
+    else:
+        peak_evidence = (
+            f"not observed · {exact_first_count}/{len(scored_rows)} exact first attempts"
+        )
     return {
         "first_miss": first_miss,
         "reliable_frontier": {
             "tier": frontier,
             "label": f"Tier {frontier}" if frontier else "No reliable tier",
+            "definition": (
+                "Highest consecutive tier from Tier 1 with at least two-thirds "
+                "exact first attempts."
+            ),
+            "evidence_label": frontier_evidence,
         },
         "instability_onset": instability,
         "sustained_breakdown": sustained,
         "peak_isolated_success": {
             "tier": peak,
             "label": f"Tier {peak}" if peak else "not observed",
+            "definition": "Highest tier containing an exact first attempt.",
+            "evidence_label": peak_evidence,
         },
     }
 

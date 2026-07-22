@@ -283,6 +283,112 @@ def test_two_adjacent_subthreshold_tiers_establish_sustained_breakdown():
     assert marker["combined_scored_count"] == 8
 
 
+def test_marker_definitions_and_evidence_labels_cover_observed_breakdown():
+    run = make_run(
+        {
+            1: [True] * 4,
+            2: [True, False, False, False],
+            3: [True, False, False, False],
+        }
+    )
+
+    markers = progression.derive_progression_view(run)["markers"]
+
+    assert markers["first_miss"]["definition"] == (
+        "Earliest scored non-exact first attempt."
+    )
+    assert markers["first_miss"]["evidence_label"] == (
+        "Sequence 6 · Tier 2 · scored position 6/12"
+    )
+    assert markers["reliable_frontier"]["definition"] == (
+        "Highest consecutive tier from Tier 1 with at least two-thirds exact first attempts."
+    )
+    assert markers["reliable_frontier"]["evidence_label"] == (
+        "Tier 1 · 4/4 exact"
+    )
+    assert markers["instability_onset"]["definition"] == (
+        "First scored tier after the reliable frontier."
+    )
+    assert markers["instability_onset"]["evidence_label"] == (
+        "Tier 2 · 1/4 exact"
+    )
+    assert markers["sustained_breakdown"]["definition"] == (
+        "First of two consecutive tiers below two-thirds exact with at least 8 scored attempts combined."
+    )
+    assert markers["sustained_breakdown"]["evidence_label"] == (
+        "Tier 2 · 1/4 exact; Tier 3 · 1/4 exact; combined n=8"
+    )
+    assert markers["peak_isolated_success"]["definition"] == (
+        "Highest tier containing an exact first attempt."
+    )
+    assert markers["peak_isolated_success"]["evidence_label"] == (
+        "Tier 3 · 1/4 exact"
+    )
+
+
+def test_marker_evidence_labels_cover_frontier_zero_and_unestablished_breakdown():
+    markers = progression.derive_progression_view(
+        make_run({1: [True, False, False, False]})
+    )["markers"]
+
+    assert markers["first_miss"]["evidence_label"] == (
+        "Sequence 2 · Tier 1 · scored position 2/4"
+    )
+    assert markers["reliable_frontier"]["evidence_label"] == (
+        "No reliable tier · Tier 1 · 1/4 exact"
+    )
+    assert markers["instability_onset"]["evidence_label"] == (
+        "Tier 1 · 1/4 exact"
+    )
+    assert markers["sustained_breakdown"]["evidence_label"] == (
+        "not established · 1 scored tier evaluated"
+    )
+    assert markers["peak_isolated_success"]["evidence_label"] == (
+        "Tier 1 · 1/4 exact"
+    )
+
+
+def test_marker_evidence_labels_cover_fully_reliable_and_unscored_runs():
+    reliable = progression.derive_progression_view(
+        make_run({1: [True] * 4, 2: [True] * 4})
+    )["markers"]
+    unscored = progression.derive_progression_view(
+        make_run({1: [True, True]}, infra_indexes={0, 1})
+    )["markers"]
+
+    assert reliable["first_miss"]["evidence_label"] == (
+        "not observed · 8 scored first attempts"
+    )
+    assert reliable["reliable_frontier"]["evidence_label"] == (
+        "Tier 2 · 4/4 exact"
+    )
+    assert reliable["instability_onset"]["evidence_label"] == (
+        "not observed · 2 scored tiers evaluated"
+    )
+    assert reliable["sustained_breakdown"]["evidence_label"] == (
+        "not established · 2 scored tiers evaluated"
+    )
+    assert reliable["peak_isolated_success"]["evidence_label"] == (
+        "Tier 2 · 4/4 exact"
+    )
+
+    assert unscored["first_miss"]["evidence_label"] == (
+        "not observed · 0 scored first attempts"
+    )
+    assert unscored["reliable_frontier"]["evidence_label"] == (
+        "No reliable tier · no scored tiers"
+    )
+    assert unscored["instability_onset"]["evidence_label"] == (
+        "not measurable · no scored tiers"
+    )
+    assert unscored["sustained_breakdown"]["evidence_label"] == (
+        "not established · 0 scored tiers evaluated"
+    )
+    assert unscored["peak_isolated_success"]["evidence_label"] == (
+        "not observed · 0/0 exact first attempts"
+    )
+
+
 def test_single_subthreshold_tier_does_not_establish_sustained_breakdown():
     run = make_run({1: [True] * 4, 2: [True, False, False, False]})
 
