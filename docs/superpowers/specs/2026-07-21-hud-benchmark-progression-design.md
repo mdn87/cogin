@@ -17,8 +17,11 @@ The first implementation target is Taxonomy Bench's generated, standalone `repor
 - **Taxonomy graph**: Marble's prerequisite directed acyclic graph (DAG). It contains branches and many valid topological traversals.
 - **Benchmark progression**: the deterministic linear order produced by the current suite generator: tiers 1 through 8, with independently sampled tasks within each tier.
 - **Curriculum path**: a future suite built from one declared topological walk or connected prerequisite chain. It is not the current benchmark.
-- **First-pass progression**: the suite-ordered sequence of first attempts. This is the primary trace.
-- **Recovery phase**: cognitive retries, which currently run only after every first attempt is complete.
+- **Task family**: the run record's `kind` value. The eight current kinds are `semantic_match`, `direct_prerequisites`, `reverse_unlocks`, `transitive_prerequisites`, `topological_order`, `shortest_path`, `mastery_plan`, and `integrity_audit`.
+- **First-pass progression**: the run-ordered sequence whose attempt records have `phase="first"`. This is the primary trace.
+- **Recovery phase**: attempt records with `phase="retry"`. These cognitive retries run only after every first attempt is complete.
+- **Blind retry**: `retry_policy="blind"`.
+- **Feedback retry**: `retry_policy="feedback"`; the UI may describe this as diagnostic feedback, but must retain the stored policy value in details.
 
 The UI must say **Benchmark Progression**, not **Marble Curriculum Path**. Current tasks do not form one cumulative reasoning chain, and one task's answer does not become the next task's input.
 
@@ -108,7 +111,7 @@ Selecting a row exposes:
 - retry policy/context and recovery sequence
 - infrastructure error text when applicable
 
-The standard report does not require the private expected answer. If an operator explicitly generates a private local report with the suite available, an expected-versus-actual diff may be shown. Public/exported reports must never expose private scorer constraints or answer keys.
+The standard report does not require the private expected answer. If an operator explicitly generates a private local report with the suite available, a canonical expected-versus-actual diff may be shown for `id`, `ids_set`, and `issues_set` scorers. `topological_order`, `shortest_path`, and `mastery_plan` can have multiple valid answers; their private detail view shows constraint validation—required nodes, allowed edges, endpoint/length requirements, dependency order, and target position—rather than pretending there is one canonical sequence. Public/exported reports must never expose private scorer constraints or answer keys.
 
 ### Retry representation
 
@@ -121,7 +124,6 @@ The first-pass trace remains the basis for the degradation curve. Retry results 
 - A compact right-side minimap has one mark per task and supports jumping to a tier or anomaly.
 - Filters include all tasks, non-exact only, task family, and retries.
 - Expanding a row must not alter ordering.
-- If the same component later receives live events, following the newest row pauses as soon as the operator scrolls away and resumes only through an explicit `Resume follow` control.
 
 ## Derived markers
 
@@ -137,7 +139,7 @@ Use the benchmark's existing definition unchanged: the highest consecutive tier,
 
 ### Instability onset
 
-The first scored tier immediately after the reliable frontier. The label includes its exact count, for example `Tier 5 · 2/4 exact`, so the threshold is not hidden. If every evaluated tier is reliable, report `not observed`.
+The first scored tier immediately after the reliable frontier. The label includes its exact count, for example `Tier 5 · 2/4 exact`, so the threshold is not hidden. If the reliable frontier is `0` because Tier 1 is below threshold, instability onset is Tier 1 and the HUD says `No reliable tier · Tier 1 · x/y exact`. If every evaluated tier is reliable, report `not observed`; if no tier has a scored task, report `not measurable`.
 
 ### Sustained breakdown
 
@@ -149,7 +151,7 @@ The highest tier containing any exact first attempt. It is shown separately from
 
 ### Rolling degradation curve
 
-Plot trailing first-attempt exact rate and trailing mean partial score. The default window is `max(8, 2 × tasks_per_tier)` scored tasks and is displayed beside the chart. Before the window fills, show the actual smaller sample size. Infrastructure errors are gaps, not failures.
+Plot trailing first-attempt exact rate and trailing mean partial score. Infer the typical tier size from `run.json` as the median count of task records across populated tiers, rounded up. The default window is `max(8, 2 × inferred tier size)` scored tasks and is displayed beside the chart. Before the window fills, show the actual smaller sample size. Infrastructure errors are gaps, not failures. No private suite fields are required.
 
 ## Repeats and uncertainty
 
@@ -168,22 +170,26 @@ The HUD follows the benchmark guidance of at least three repeats for model-level
 
 ## Failure taxonomy and risk proxy
 
-The renderer maps existing scorer feedback/details into stable diagnostic codes. A task can have more than one code.
+The derivation layer maps `kind`, parse flags, scorer feedback, and scorer-specific details into stable diagnostic codes. The run does not store scorer type directly, so `kind` is the required disambiguator. A task can have more than one code.
 
-- `format.unparseable`
-- `selection.incorrect`
-- `set.missing`
-- `set.extra`
-- `sequence.duplicate`
-- `order.precedence`
-- `path.endpoint`
-- `path.invalid_edge`
-- `path.non_shortest`
-- `plan.dependency`
-- `plan.target_not_last`
-- `integrity.miss`
-- `integrity.false_positive`
-- `infrastructure`
+| Task `kind` | Scorer | Diagnostic derivation |
+|---|---|---|
+| `semantic_match` | `id` | `selection.incorrect` when a string ID is present but not exact; `format.wrong_shape` when `actual_type` is not `str` |
+| `direct_prerequisites` | `ids_set` | `set.missing`, `set.extra`, and `sequence.duplicate` from the corresponding counts |
+| `reverse_unlocks` | `ids_set` | `set.missing`, `set.extra`, and `sequence.duplicate` from the corresponding counts |
+| `transitive_prerequisites` | `ids_set` | `set.missing`, `set.extra`, and `sequence.duplicate` from the corresponding counts |
+| `topological_order` | `topological_order` | `order.node_coverage` when `node_f1 < 1`; `order.precedence` when `violated_edges > 0`; `sequence.duplicate` from `duplicate_count` |
+| `shortest_path` | `shortest_path` | `path.endpoint` when endpoints fail; `path.invalid_edge` when step compliance is below 1; `path.non_shortest` when length fails; `sequence.duplicate` when `unique` is false |
+| `mastery_plan` | `mastery_plan` | `plan.coverage` when `set_f1 < 1`; `plan.dependency` when edge compliance is below 1; `plan.target_not_last` when false; `sequence.duplicate` from `duplicate_count` |
+| `integrity_audit` | `issues_set` | `integrity.miss` from `missing_count`; `integrity.false_positive` from `extra_count`; `sequence.duplicate` from `duplicate_count` |
+
+Format and infrastructure codes apply before task-specific codes:
+
+- `format.unparseable`: neither strict nor recovered JSON produced a JSON object.
+- `format.wrong_shape`: JSON parsed, but the required field/type validation failed.
+- `infrastructure`: the attempt has an infrastructure `error` and no cognitive score.
+
+When a format or infrastructure code applies, do not invent task-specific codes from absent scorer details.
 
 The HUD may calculate an **unsupported-output proxy** from extra IDs/issues and invalid graph steps. It must not label that number as a general hallucination rate; Taxonomy Bench can detect unsupported graph outputs, not every kind of factual hallucination relevant to coding.
 
@@ -192,6 +198,7 @@ The HUD may calculate an **unsupported-output proxy** from extra IDs/issues and 
 The benchmark supports routing through capability proxies:
 
 - semantic matching and direct prerequisites: bounded selection and immediate dependency identification
+- reverse unlocks: reverse-dependency tracing, downstream impact analysis, and blast-radius estimation
 - transitive prerequisites and topological order: multi-hop dependency reasoning and ordering
 - shortest path and mastery plan: constrained planning and efficient sequencing
 - integrity audit: contradiction and structural-error detection
@@ -224,14 +231,14 @@ The renderer consumes the view model and produces the standalone report. It owns
 
 A separate rule layer consumes explicit evidence fields and emits a recommendation plus the evidence references used. Keeping it separate allows the wording or routing policy to change without changing scoring.
 
-### Future HUD adapter
+### Deferred / forward compatibility
 
-A future adapter can consume the same view model. It is not implemented in this slice and must not force a framework or event protocol into the static report.
+A future HUD adapter can consume the same view model, but it is not implemented in this slice and must not force a framework or event protocol into the static report. Live-follow behavior is also deferred: if a later component receives live events, following the newest row pauses when the operator scrolls away and resumes only through an explicit `Resume follow` control. Neither event ingestion nor follow-mode controls belong in the current implementation plan.
 
 ## Data flow
 
 ```text
-suite order + run.json + summary.json
+run.json (task order, attempts, embedded summary)
                   |
                   v
         progression derivation
@@ -247,7 +254,16 @@ suite order + run.json + summary.json
    standalone report    future HUD adapter
 ```
 
-The existing run format already records task ID, tier, kind, attempts, score details, latency, usage, and errors. The first implementation derives the view from those fields and does not require a run-format migration.
+The existing run format already records task ID, tier, kind, attempts, score details, latency, usage, errors, and the summary. The first implementation derives the view from those fields and does not require a run-format migration or access to the private suite.
+
+## Intentional new derivations
+
+These display semantics intentionally differ from current aggregate-report defaults and must be computed from raw run records:
+
+- Missing token usage becomes `not reported`; do not reuse paths that default absent token counts to zero.
+- No retry budget becomes `not measured`; do not render a missing recovery rate as `0%`.
+- Per-tier median latency is computed from first-attempt `latency_ms` values because it is not stored in `summary.json`.
+- Typical tier size and rolling-window size are inferred from task-record counts, not private suite metadata.
 
 ## Missing and incompatible data
 
@@ -264,13 +280,13 @@ The existing run format already records task ID, tier, kind, attempts, score det
 
 ### Derivation tests
 
-- trace order exactly matches suite/run task order
-- exact, non-exact, unparseable, and infrastructure outcomes map correctly
+- trace order exactly matches run task order
+- exact, non-exact, unparseable, wrong-shape, and infrastructure outcomes map correctly
 - reliable frontier remains identical to `summarize_run`
 - first miss, instability onset, sustained breakdown, and peak success cover boundary cases
 - rolling windows exclude infrastructure failures without treating them as successes
 - retry branches never alter first-pass metrics
-- failure codes map correctly for every scorer type
+- the explicit `kind`-to-scorer mapping produces all applicable failure codes, including topological node coverage
 - missing usage and zero-retry runs produce `not reported`/`not measured`
 
 ### Repeat tests
