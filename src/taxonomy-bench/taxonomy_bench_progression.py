@@ -407,10 +407,52 @@ def derive_attempt_outcome(kind: str, attempt: Mapping[str, Any]) -> dict[str, A
 
 
 def _sanitize_scorer_feedback(kind: str, score: Mapping[str, Any]) -> str:
-    feedback = str(score.get("feedback") or "Non-exact response.")
-    if kind == "shortest_path" and not score.get("exact") and score.get("details"):
+    if score.get("exact"):
+        return "Correct."
+    if not score.get("strict_json") and not score.get("recovered_json"):
+        return "The response was not parseable as the required JSON object."
+
+    details = score.get("details") or {}
+    scorer_type = KIND_SCORERS.get(kind)
+    if kind == "semantic_match":
+        return "The selected topic ID is incorrect."
+    if scorer_type in {"ids_set", "issues_set"}:
+        field = "ids" if scorer_type == "ids_set" else "issues"
+        if not details:
+            return f"The '{field}' field must be an array of strings."
+        return (
+            "The set is incorrect. "
+            f"Missing count: {_safe_count(details, 'missing_count')}. "
+            f"Extra count: {_safe_count(details, 'extra_count')}. "
+            f"Duplicate count: {_safe_count(details, 'duplicate_count')}."
+        )
+    if kind == "topological_order":
+        if not details:
+            return "The 'ids' field must be an array of strings."
+        return (
+            "The order has node coverage, duplication, or precedence errors. "
+            "Violated or unevaluable edge count: "
+            f"{_safe_count(details, 'violated_edges')}."
+        )
+    if kind == "shortest_path":
+        if not details:
+            return "The 'ids' field must be an array of strings."
         return "The path has an endpoint, edge-direction, cycle, or shortest-length error."
-    return feedback
+    if kind == "mastery_plan":
+        if not details:
+            return "The 'ids' field must be an array of strings."
+        return (
+            "The plan has missing or unnecessary topics, dependency-order violations, "
+            "duplicates, or does not end with the target."
+        )
+    return "Non-exact response."
+
+
+def _safe_count(details: Mapping[str, Any], key: str) -> str:
+    value = details.get(key)
+    if isinstance(value, int) and not isinstance(value, bool):
+        return str(value)
+    return "not reported"
 
 
 def _whitelisted_scorer_details(

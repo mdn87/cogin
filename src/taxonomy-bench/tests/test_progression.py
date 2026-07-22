@@ -695,6 +695,29 @@ def test_shortest_path_progression_hides_private_minimum_edge_constraint():
     assert str(private_minimum) not in serialized
 
 
+def test_attempt_evidence_replaces_untrusted_scorer_feedback():
+    raw_attempt = attempt(
+        details={
+            "node_f1": 0.75,
+            "edge_compliance": 0.5,
+            "duplicate_count": 1,
+            "violated_edges": 2,
+        },
+        feedback="PRIVATE_EXPECTED_ANSWER requires PRIVATE_EDGE_SOURCE first.",
+    )
+
+    outcome = derive_attempt_outcome("topological_order", raw_attempt)
+    safe_feedback = (
+        "The order has node coverage, duplication, or precedence errors. "
+        "Violated or unevaluable edge count: 2."
+    )
+
+    assert outcome["scorer_feedback"] == safe_feedback
+    assert outcome["failure_summary"] == safe_feedback
+    assert "PRIVATE_EXPECTED_ANSWER" not in json.dumps(outcome)
+    assert "PRIVATE_EDGE_SOURCE" not in json.dumps(outcome)
+
+
 def test_attempt_outcome_exposes_only_safe_named_evidence_fields():
     raw_attempt = attempt(
         partial=0.6,
@@ -723,7 +746,10 @@ def test_attempt_outcome_exposes_only_safe_named_evidence_fields():
         "attempt_number": 2,
         "phase": "retry",
         "response_text": '{"ids":["model-output"]}',
-        "scorer_feedback": "The order has precedence errors.",
+        "scorer_feedback": (
+            "The order has node coverage, duplication, or precedence errors. "
+            "Violated or unevaluable edge count: 2."
+        ),
         "scorer_details": {
             "node_f1": 0.75,
             "edge_compliance": 0.5,
@@ -741,7 +767,10 @@ def test_attempt_outcome_exposes_only_safe_named_evidence_fields():
         "outcome": "non-exact",
         "label": "Non-exact",
         "codes": ["order.node_coverage", "order.precedence", "sequence.duplicate"],
-        "failure_summary": "The order has precedence errors.",
+        "failure_summary": (
+            "The order has node coverage, duplication, or precedence errors. "
+            "Violated or unevaluable edge count: 2."
+        ),
         "tokens": 16,
     }
     serialized = json.dumps(outcome)

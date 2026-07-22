@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import subprocess
 import sys
+import zipfile
 from collections import defaultdict, deque
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -17,6 +22,69 @@ def test_package_and_runtime_versions_match():
     match = re.search(r'^version = "([^"]+)"$', text, flags=re.MULTILINE)
     assert match is not None
     assert match.group(1) == tb.BENCHMARK_VERSION == "0.2.0"
+
+
+def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
+    pwsh = shutil.which("pwsh")
+    if pwsh is None:
+        pytest.skip("PowerShell is required to exercise the release packager")
+
+    project = tmp_path / "taxonomy-bench"
+    script = project / "scripts" / "package-release.ps1"
+    script.parent.mkdir(parents=True)
+    shutil.copy2(ROOT / "scripts" / "package-release.ps1", script)
+
+    fixture_paths = (
+        ".gitignore",
+        "BENCHMARK_SPEC.md",
+        "LICENSE",
+        "NOTICE.md",
+        "README.md",
+        "VALIDATION.md",
+        "pyproject.toml",
+        "sample_data/dependencies.json",
+        "sample_data/manifest.json",
+        "sample_data/topics.json",
+        "taxonomy_bench.py",
+        "taxonomy_bench_progression.py",
+        "taxonomy_bench_report.py",
+        "tests/test_progression.py",
+        "tests/test_report_html.py",
+        "tests/test_taxonomy_bench.py",
+    )
+    for relative_path in fixture_paths:
+        path = project / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"fixture for {relative_path}\n", encoding="utf-8")
+
+    disguised_wheel = tmp_path / "taxonomy_bench-0.2.0-py3-none-any.whl"
+    with zipfile.ZipFile(disguised_wheel, "w") as wheel:
+        wheel.writestr(
+            "taxonomy_bench-0.2.0.dist-info/METADATA",
+            "Metadata-Version: 2.1\nName: taxonomy-bench\nVersion: 0.1.0\n",
+        )
+
+    archive = tmp_path / "taxonomy-bench.zip"
+    result = subprocess.run(
+        [
+            pwsh,
+            "-NoProfile",
+            "-File",
+            str(script),
+            "-WheelPath",
+            str(disguised_wheel),
+            "-ArchivePath",
+            str(archive),
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "Wheel METADATA version must be 0.2.0" in (result.stdout + result.stderr)
+    assert not archive.exists()
 
 
 def correct_answer(task: dict) -> str:

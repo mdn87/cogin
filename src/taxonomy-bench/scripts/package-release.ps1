@@ -9,6 +9,38 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$expectedWheelName = 'taxonomy_bench-0.2.0-py3-none-any.whl'
+$wheelFullPath = (Resolve-Path $WheelPath).Path
+
+if ([System.IO.Path]::GetFileName($wheelFullPath) -cne $expectedWheelName) {
+  throw "Wheel filename must be $expectedWheelName."
+}
+
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+$wheelArchive = [System.IO.Compression.ZipFile]::OpenRead($wheelFullPath)
+try {
+  $metadataEntry = $wheelArchive.GetEntry('taxonomy_bench-0.2.0.dist-info/METADATA')
+  if ($null -eq $metadataEntry) {
+    throw 'Wheel must contain taxonomy_bench-0.2.0.dist-info/METADATA.'
+  }
+  $metadataReader = [System.IO.StreamReader]::new($metadataEntry.Open())
+  try {
+    $wheelMetadata = $metadataReader.ReadToEnd()
+  } finally {
+    $metadataReader.Dispose()
+  }
+} finally {
+  $wheelArchive.Dispose()
+}
+
+if ($wheelMetadata -notmatch '(?m)^Name:\s*taxonomy-bench\s*$') {
+  throw 'Wheel METADATA name must be taxonomy-bench.'
+}
+if ($wheelMetadata -notmatch '(?m)^Version:\s*0\.2\.0\s*$') {
+  throw 'Wheel METADATA version must be 0.2.0.'
+}
 
 if (-not $ArchivePath) {
   $ArchivePath = Join-Path (Split-Path $projectRoot -Parent) 'taxonomy-bench.zip'
@@ -21,7 +53,7 @@ $releaseEntries = [ordered]@{
   'NOTICE.md' = Join-Path $projectRoot 'NOTICE.md'
   'README.md' = Join-Path $projectRoot 'README.md'
   'VALIDATION.md' = Join-Path $projectRoot 'VALIDATION.md'
-  'dist/taxonomy_bench-0.2.0-py3-none-any.whl' = (Resolve-Path $WheelPath).Path
+  'dist/taxonomy_bench-0.2.0-py3-none-any.whl' = $wheelFullPath
   'pyproject.toml' = Join-Path $projectRoot 'pyproject.toml'
   'sample_data/dependencies.json' = Join-Path $projectRoot 'sample_data/dependencies.json'
   'sample_data/manifest.json' = Join-Path $projectRoot 'sample_data/manifest.json'
@@ -84,9 +116,6 @@ if (-not (Test-Path -LiteralPath $archiveParent -PathType Container)) {
 }
 $newArchivePath = "$archiveFullPath.new"
 $fixedTimestamp = [System.DateTimeOffset]::new(1980, 1, 1, 0, 0, 0, [System.TimeSpan]::Zero)
-
-Add-Type -AssemblyName System.IO.Compression
-Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $archiveStream = [System.IO.File]::Open(
   $newArchivePath,
