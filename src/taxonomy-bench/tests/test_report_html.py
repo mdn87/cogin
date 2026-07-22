@@ -511,6 +511,19 @@ def test_matrix_report_warns_when_resolved_model_changes():
 
     assert 'role="alert"' in rendered
     assert "Resolved model changed" in rendered
+
+
+def test_matrix_condition_cards_can_shrink_without_page_overflow():
+    rendered = report.render_matrix_html(make_matrix(), ATTRIBUTION)
+
+    assert re.search(
+        r"\.condition-card\s*\{[^}]*min-width:\s*0",
+        rendered,
+    )
+    assert re.search(
+        r"\.matrix-table-wrap\s*\{[^}]*overflow-x:\s*auto",
+        rendered,
+    )
     assert "resolved-model-v2" in rendered
 
 

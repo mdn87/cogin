@@ -712,7 +712,7 @@ p { margin: 0; }
 .matrix-eyebrow, .matrix-lede, dt, footer { color: #98a8b7; font-size: 13px; }
 .matrix-lede { margin-top: 8px; max-width: 860px; }
 .matrix-conditions { display: grid; gap: 16px; margin-top: 22px; }
-.condition-card { border: 1px solid #2c3946; background: #0d141b; }
+.condition-card { min-width: 0; border: 1px solid #2c3946; background: #0d141b; }
 .condition-card-header { padding: 15px 16px 0; }
 .condition-identity, .condition-metrics { display: flex; flex-wrap: wrap; margin: 13px 0 0; border-block: 1px solid #293642; }
 .condition-identity > div, .condition-metrics > div { min-width: 190px; flex: 1 1 190px; padding: 8px 14px 8px 0; margin-right: 14px; border-right: 1px solid #25313c; }
