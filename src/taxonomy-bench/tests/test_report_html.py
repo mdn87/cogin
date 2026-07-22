@@ -288,3 +288,123 @@ def test_save_run_emits_the_progression_report(tmp_path: Path):
 
     rendered = (tmp_path / "report.html").read_text(encoding="utf-8")
     assert "Benchmark Progression" in rendered
+
+
+def make_matrix() -> dict:
+    isolated_runs = []
+    for repeat in range(1, 4):
+        run = make_run()
+        run["run_id"] = f"z-isolated-{repeat}"
+        run["configuration"]["model"] = "z-model"
+        run["configuration"]["effort"] = "low"
+        run["configuration"]["repeat"] = repeat
+        isolated_runs.append(run)
+    isolated_runs[-1]["tasks"][0]["attempts"][0]["score"].update(
+        exact=False,
+        partial=0.25,
+        feedback="One downstream dependency was missed.",
+        details={"missing_count": 1},
+    )
+    isolated_runs[-1]["tasks"][0]["attempts"][0]["resolved_model"] = "resolved-model-v2"
+
+    continuous = make_run(with_retry=False)
+    continuous["run_id"] = "z-continuous-1"
+    continuous["configuration"].update(
+        model="z-model",
+        effort="low",
+        session_mode="continuous",
+        repeat=1,
+    )
+
+    alpha_low = make_run(with_retry=False)
+    alpha_low["run_id"] = "a-low-1"
+    alpha_low["configuration"].update(model="a-model", effort="low", repeat=1)
+    alpha_high = make_run(with_retry=False)
+    alpha_high["run_id"] = "a-high-1"
+    alpha_high["configuration"].update(model="a-model", effort="high", repeat=1)
+
+    matrix = tb.aggregate_matrix([*isolated_runs, continuous, alpha_low, alpha_high])
+    matrix["conditions"] = list(reversed(matrix["conditions"]))
+    for index, condition in enumerate(matrix["conditions"]):
+        condition["composite_score"] = 10_000 - index
+    return matrix
+
+
+def test_matrix_report_renders_repeat_evidence_without_ranking_language():
+    matrix = make_matrix()
+    rendered = report.render_matrix_html(matrix, ATTRIBUTION)
+    lowered = rendered.lower()
+
+    for expected in (
+        "repeated model evidence",
+        "95% Wilson interval",
+        "outcome flip rate",
+        "unsupported-output proxy",
+        "success by task family",
+    ):
+        assert expected in rendered
+    assert "winner" not in lowered
+    assert "composite" not in lowered
+
+
+def test_matrix_report_links_every_trace_and_separates_session_conditions():
+    matrix = make_matrix()
+    rendered = report.render_matrix_html(matrix, ATTRIBUTION)
+
+    for run in matrix["runs"]:
+        assert f'href="{run["run_id"]}/report.html"' in rendered
+    assert '<article class="condition-card" data-session="isolated"' in rendered
+    assert '<article class="condition-card" data-session="continuous"' in rendered
+    assert "not reported" in rendered
+
+
+def test_matrix_report_sorts_conditions_by_requested_model_then_effort():
+    rendered = report.render_matrix_html(make_matrix(), ATTRIBUTION)
+
+    alpha_high = rendered.index("a-model · high")
+    alpha_low = rendered.index("a-model · low")
+    z_model = rendered.index("z-model · low")
+    assert alpha_high < alpha_low < z_model
+
+
+def test_matrix_report_warns_when_resolved_model_changes():
+    rendered = report.render_matrix_html(make_matrix(), ATTRIBUTION)
+
+    assert 'role="alert"' in rendered
+    assert "Resolved model changed" in rendered
+    assert "resolved-model-v2" in rendered
+
+
+def test_matrix_report_supports_exact_legacy_v1_runs_only_shape():
+    legacy = {
+        "format_version": 1,
+        "benchmark_version": "0.1.0",
+        "runs": [
+            {
+                "run_id": "legacy-run",
+                "model": "legacy-model",
+                "effort": "low",
+                "base_strength": 50.0,
+                "frontier_first": 3,
+                "median_latency_ms": 250.0,
+            }
+        ],
+    }
+
+    rendered = report.render_matrix_html(legacy, ATTRIBUTION)
+    lowered = rendered.lower()
+
+    assert "Legacy matrix · repeat evidence unavailable" in rendered
+    assert "legacy-model" in rendered
+    assert 'href="legacy-run/report.html"' in rendered
+    assert all(
+        forbidden not in lowered
+        for forbidden in ("confidence", "consistency", "task family", "routing")
+    )
+
+
+def test_core_matrix_wrapper_uses_repeat_evidence_renderer():
+    rendered = tb.render_matrix_html(make_matrix())
+
+    assert "95% Wilson interval" in rendered
+    assert "winner" not in rendered.lower()

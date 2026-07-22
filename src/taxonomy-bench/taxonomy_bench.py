@@ -15,7 +15,6 @@ import argparse
 import dataclasses
 import datetime as dt
 import hashlib
-import html
 import json
 import math
 import os
@@ -30,7 +29,10 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 from taxonomy_bench_progression import derive_condition_evidence, wilson_interval
-from taxonomy_bench_report import render_run_html as _render_run_html
+from taxonomy_bench_report import (
+    render_matrix_html as _render_matrix_html,
+    render_run_html as _render_run_html,
+)
 
 FORMAT_VERSION = 1
 BENCHMARK_VERSION = "0.1.0"
@@ -1812,14 +1814,6 @@ def save_run(run: Mapping[str, Any], out_dir: Path) -> None:
     (out_dir / "report.html").write_text(render_run_html(run), encoding="utf-8")
 
 
-def _fmt_percent(value: Any) -> str:
-    return "n/a" if value is None else f"{100 * float(value):.1f}%"
-
-
-def _fmt_num(value: Any, digits: int = 1) -> str:
-    return "n/a" if value is None else f"{float(value):.{digits}f}"
-
-
 def render_run_html(run: Mapping[str, Any]) -> str:
     return _render_run_html(run, attribution=ATTRIBUTION)
 
@@ -1951,35 +1945,7 @@ def aggregate_matrix(runs: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 
 
 def render_matrix_html(matrix: Mapping[str, Any]) -> str:
-    rows_html = []
-    sorted_rows = sorted(
-        matrix["runs"],
-        key=lambda row: (
-            -(row.get("base_strength") or -1),
-            row.get("median_latency_ms") or float("inf"),
-        ),
-    )
-    for row in sorted_rows:
-        rows_html.append(
-            "<tr>"
-            f"<td>{html.escape(str(row.get('model')))}</td>"
-            f"<td>{html.escape(', '.join(row.get('resolved_models') or []))}</td>"
-            f"<td>{html.escape(str(row.get('effort')))}</td>"
-            f"<td>{row.get('repeat')}</td>"
-            f"<td>{_fmt_num(row.get('base_strength'))}</td>"
-            f"<td>{_fmt_num(row.get('eventual_strength'))}</td>"
-            f"<td>{_fmt_num(row.get('retry_lift'))}</td>"
-            f"<td>{_fmt_percent(row.get('recovery'))}</td>"
-            f"<td>{row.get('frontier_first')}</td>"
-            f"<td>{_fmt_num(row.get('median_latency_ms'), 0)}</td>"
-            f"<td>{row.get('reasoning_tokens')}</td>"
-            f"<td>{row.get('total_tokens')}</td>"
-            f"<td>{_fmt_num(row.get('points_per_minute'), 2)}</td>"
-            f"<td>{row.get('infra_errors')}</td>"
-            "</tr>"
-        )
-    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Taxonomy Bench matrix</title><style>
-body{{font-family:Inter,system-ui,sans-serif;margin:0;background:#0e1116;color:#e8edf3}}main{{max-width:1400px;margin:auto;padding:32px 20px}}h1{{font-size:44px;letter-spacing:-.04em}}table{{width:100%;border-collapse:collapse;background:#151a21;border:1px solid #2a3440}}th,td{{padding:10px;border-bottom:1px solid #2a3440;text-align:left;white-space:nowrap}}th{{color:#9da8b5;font-size:12px;text-transform:uppercase}}.wrap{{overflow:auto}}footer{{margin-top:24px;color:#9da8b5;font-size:12px}}</style></head><body><main><h1>Taxonomy Bench matrix</h1><p>Ranked by difficulty-weighted first-attempt strength, then median latency.</p><div class="wrap"><table><thead><tr><th>Requested model</th><th>Resolved model</th><th>Effort</th><th>Repeat</th><th>Base</th><th>Eventual</th><th>Lift</th><th>Recovery</th><th>Frontier</th><th>Median ms</th><th>Reasoning tok</th><th>Total tok</th><th>Pts/min</th><th>Infra</th></tr></thead><tbody>{''.join(rows_html)}</tbody></table></div><footer>{html.escape(ATTRIBUTION)}</footer></main></body></html>"""
+    return _render_matrix_html(matrix, attribution=ATTRIBUTION)
 
 
 def build_provider(args: argparse.Namespace, model: str | None = None, effort: str | None = None) -> Provider:

@@ -502,3 +502,251 @@ def render_run_html(run: Mapping[str, Any], attribution: str) -> str:
 <script>{_RUN_JS}</script>
 </body>
 </html>"""
+
+
+def _render_repeat_task_table(condition: Mapping[str, Any]) -> str:
+    rows = "".join(
+        (
+            f'<tr><th scope="row">{_esc(task.get("task_id"))}</th>'
+            f'<td>{_esc(task.get("tier"))}</td>'
+            f'<td>{_esc(task.get("kind"))}</td>'
+            f'<td>{_esc(task.get("exact_count"))}/{_esc(task.get("observed_count"))}</td>'
+            f'<td>{_esc(_fmt_number(task.get("median_partial"), 2, "not measured"))}</td>'
+            f'<td>{_esc(_fmt_percent(task.get("flip_rate")))}</td></tr>'
+        )
+        for task in condition.get("tasks", ())
+    )
+    return (
+        '<div class="matrix-table-wrap"><table class="repeat-task-table">'
+        '<caption>Aligned task evidence</caption>'
+        '<thead><tr><th>Task</th><th>Tier</th><th>Family</th><th>Exact sample</th><th>Median partial</th><th>Outcome flip rate</th></tr></thead>'
+        f'<tbody>{rows}</tbody></table></div>'
+    )
+
+
+def _render_condition_card(condition: Mapping[str, Any]) -> str:
+    configuration = condition.get("configuration") or {}
+    requested_model = configuration.get("model") or "not reported"
+    effort = configuration.get("effort") or "not reported"
+    resolved_models = condition.get("resolved_models") or []
+    resolved_label = ", ".join(str(model) for model in resolved_models) or "not reported"
+    confidence = condition.get("exact_rate_confidence") or {}
+    interval = confidence.get("wilson_95") or [None, None]
+    lower = interval[0] if len(interval) > 0 else None
+    upper = interval[1] if len(interval) > 1 else None
+    frontier = condition.get("frontier_distribution") or {}
+    consistency = condition.get("consistency") or {}
+    flip_rate = consistency.get("flip_rate") if consistency.get("measured") else None
+    unsupported = condition.get("unsupported_output_proxy") or {}
+    routing = condition.get("routing_interpretation") or {}
+    identity = (
+        ("Requested model", requested_model),
+        ("Resolved model", resolved_label),
+        ("Effort", effort),
+        ("Session / output", f"{configuration.get('session_mode') or 'not reported'} / {configuration.get('output_mode') or 'not reported'}"),
+        ("Retry identity", f"{configuration.get('retries', 0)} · {configuration.get('retry_policy') or 'not reported'} / {configuration.get('retry_context') or 'not reported'}"),
+        ("Evidence", f"{condition.get('evidence_level') or 'session evidence'} · {condition.get('repeat_count', 0)} repeat(s)"),
+    )
+    identity_html = "".join(
+        f'<div><dt>{_esc(label)}</dt><dd>{_esc(value)}</dd></div>' for label, value in identity
+    )
+    warning = (
+        '<p class="resolved-warning" role="alert"><strong>Resolved model changed</strong> · '
+        f'{_esc(resolved_label)}</p>'
+        if condition.get("resolved_model_changed")
+        else ""
+    )
+    metrics = (
+        (
+            "Aggregate exact sample",
+            f"{confidence.get('exact_count', 0)}/{confidence.get('sample_count', 0)} exact · {_fmt_percent(confidence.get('exact_rate'))}",
+        ),
+        (
+            "95% Wilson interval",
+            f"{_fmt_percent(lower)} – {_fmt_percent(upper)} · n={confidence.get('sample_count', 0)}",
+        ),
+        (
+            "Reliable frontier min / median / max",
+            f"{_fmt_number(frontier.get('minimum'), 0, 'not measured')} / {_fmt_number(frontier.get('median'), 1, 'not measured')} / {_fmt_number(frontier.get('maximum'), 0, 'not measured')}",
+        ),
+        ("Median first-pass latency", _fmt_latency((condition.get("first_pass_latency_ms") or {}).get("median"))),
+        ("outcome flip rate", _fmt_percent(flip_rate)),
+        (
+            unsupported.get("label") or "unsupported-output proxy",
+            f"{unsupported.get('count', 0)}/{unsupported.get('scored_count', 0)} · {_fmt_percent(unsupported.get('rate'))}",
+        ),
+    )
+    metrics_html = "".join(
+        f'<div><dt>{_esc(label)}</dt><dd>{_esc(value)}</dd></div>' for label, value in metrics
+    )
+    traces = "".join(
+        f'<li><a href="{_esc(str(trace.get("run_id")) + "/report.html")}">{_esc(trace.get("run_id"))}</a></li>'
+        for trace in condition.get("run_traces", ())
+        if trace.get("run_id") is not None
+    )
+    family_rows = "".join(
+        (
+            f'<tr><th scope="row">{_esc(family.get("kind"))}</th>'
+            f'<td>{_esc(family.get("proxy_label") or "not reported")}</td>'
+            f'<td>{_esc(family.get("exact_count"))}/{_esc(family.get("sample_count"))}</td>'
+            f'<td>{_esc(_fmt_percent(family.get("exact_rate")))}</td>'
+            f'<td>{_esc(_fmt_number(family.get("median_partial"), 2, "not measured"))}</td></tr>'
+        )
+        for family in condition.get("task_families", ())
+    )
+    return (
+        f'<article class="condition-card" data-session="{_esc(configuration.get("session_mode") or "not reported")}">'
+        '<header class="condition-card-header">'
+        f'<p class="matrix-eyebrow">Requested condition</p><h2>{_esc(requested_model)} · {_esc(effort)}</h2>'
+        f'{warning}<dl class="condition-identity">{identity_html}</dl>'
+        '</header>'
+        f'<dl class="condition-metrics">{metrics_html}</dl>'
+        '<section class="condition-routing" aria-label="Routing interpretation">'
+        '<h3>Routing heuristic</h3>'
+        f'<p>{_esc(routing.get("recommendation") or "Routing evidence is not measured.")}</p>'
+        '</section>'
+        '<section class="trace-links"><h3>Individual run traces</h3>'
+        f'<ul>{traces}</ul></section>'
+        '<section class="family-evidence"><h3>success by task family</h3>'
+        '<div class="matrix-table-wrap"><table><thead><tr><th>Task family</th><th>Capability proxy</th><th>Exact sample</th><th>Exact rate</th><th>Median partial</th></tr></thead>'
+        f'<tbody>{family_rows}</tbody></table></div></section>'
+        f'{_render_repeat_task_table(condition)}'
+        '</article>'
+    )
+
+
+def _render_legacy_matrix(runs: list[Mapping[str, Any]]) -> str:
+    rows = "".join(
+        (
+            f'<tr><th scope="row"><a href="{_esc(str(run.get("run_id")) + "/report.html")}">{_esc(run.get("run_id"))}</a></th>'
+            f'<td>{_esc(run.get("model") if run.get("model") is not None else "not reported")}</td>'
+            f'<td>{_esc(run.get("effort") if run.get("effort") is not None else "not reported")}</td>'
+            f'<td>{_esc(_fmt_number(run.get("base_strength"), 1))}</td>'
+            f'<td>{_esc(run.get("frontier_first") if run.get("frontier_first") is not None else "not reported")}</td>'
+            f'<td>{_esc(_fmt_latency(run.get("median_latency_ms")))}</td></tr>'
+        )
+        for run in runs
+    )
+    return (
+        '<h1>Legacy matrix · repeat evidence unavailable</h1>'
+        '<p class="matrix-lede">Historical run rows are shown as recorded.</p>'
+        '<div class="matrix-table-wrap legacy-table"><table>'
+        '<thead><tr><th>Run</th><th>Model</th><th>Effort</th><th>Base strength</th><th>Frontier</th><th>Median latency</th></tr></thead>'
+        f'<tbody>{rows}</tbody></table></div>'
+    )
+
+
+_MATRIX_CSS = """
+:root { color-scheme: dark; font-family: ui-sans-serif, system-ui, sans-serif; background: #090d12; color: #e6edf3; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #090d12; color: #e6edf3; font-size: 15px; line-height: 1.45; }
+a { color: #b9dbf3; }
+a:focus-visible, summary:focus-visible { outline: 2px solid #f5c451; outline-offset: 3px; }
+main { max-width: 1500px; margin: auto; padding: 26px 24px 52px; }
+h1 { margin: 0; font-size: clamp(32px, 4vw, 52px); letter-spacing: -.035em; line-height: 1.05; }
+h2 { margin: 0; font-size: 23px; }
+h3 { margin: 18px 0 7px; font-size: 16px; }
+p { margin: 0; }
+.matrix-eyebrow, .matrix-lede, dt, footer { color: #98a8b7; font-size: 13px; }
+.matrix-lede { margin-top: 8px; max-width: 860px; }
+.matrix-conditions { display: grid; gap: 16px; margin-top: 22px; }
+.condition-card { border: 1px solid #2c3946; background: #0d141b; }
+.condition-card-header { padding: 15px 16px 0; }
+.condition-identity, .condition-metrics { display: flex; flex-wrap: wrap; margin: 13px 0 0; border-block: 1px solid #293642; }
+.condition-identity > div, .condition-metrics > div { min-width: 190px; flex: 1 1 190px; padding: 8px 14px 8px 0; margin-right: 14px; border-right: 1px solid #25313c; }
+dd { margin: 2px 0 0; }
+.resolved-warning { margin-top: 9px; border-left: 3px solid #f5c451; background: #211b10; padding: 8px 10px; }
+.condition-metrics { margin-inline: 16px; }
+.condition-routing, .trace-links, .family-evidence { margin-inline: 16px; }
+.condition-routing { border-left: 3px solid #75a7c7; padding: 8px 11px; background: #101a23; }
+.condition-routing h3 { margin-top: 0; }
+.trace-links ul { display: flex; flex-wrap: wrap; gap: 7px 16px; margin: 0; padding-left: 20px; }
+.matrix-table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+caption { color: #e6edf3; font-weight: 700; text-align: left; padding: 16px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid #26323d; text-align: left; white-space: nowrap; }
+thead th { color: #98a8b7; font-size: 13px; }
+.family-evidence .matrix-table-wrap { border-top: 1px solid #26323d; }
+.repeat-task-table { margin-top: 10px; }
+.run-index { margin-top: 26px; }
+.run-index h2 { margin-bottom: 8px; }
+.legacy-table { margin-top: 20px; border: 1px solid #2c3946; }
+footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid #26323d; }
+@media (max-width: 768px) {
+  main { padding-inline: 14px; }
+  .condition-identity, .condition-metrics { display: grid; grid-template-columns: 1fr; }
+  .condition-identity > div, .condition-metrics > div { border-right: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto; }
+}
+"""
+
+
+_LEGACY_MATRIX_CSS = """
+:root { color-scheme: dark; font-family: ui-sans-serif, system-ui, sans-serif; background: #090d12; color: #e6edf3; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #090d12; color: #e6edf3; font-size: 15px; line-height: 1.45; }
+main { max-width: 1200px; margin: auto; padding: 26px 24px 52px; }
+h1 { margin: 0; font-size: clamp(32px, 4vw, 52px); letter-spacing: -.035em; }
+.matrix-lede, footer { color: #98a8b7; font-size: 13px; }
+.matrix-lede { margin-top: 8px; }
+.matrix-table-wrap { overflow-x: auto; }
+.legacy-table { margin-top: 20px; border: 1px solid #2c3946; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 8px 10px; border-bottom: 1px solid #26323d; text-align: left; white-space: nowrap; }
+thead th { color: #98a8b7; font-size: 13px; }
+a { color: #b9dbf3; }
+a:focus-visible { outline: 2px solid #f5c451; outline-offset: 3px; }
+footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid #26323d; }
+@media (max-width: 768px) { main { padding-inline: 14px; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+"""
+
+
+def render_matrix_html(matrix: Mapping[str, Any], attribution: str) -> str:
+    runs = list(matrix.get("runs") or [])
+    if "conditions" not in matrix:
+        legacy_content = _render_legacy_matrix(runs)
+        return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Legacy Taxonomy Bench matrix</title><style>{_LEGACY_MATRIX_CSS}</style></head>
+<body><main>{legacy_content}<footer>{_esc(attribution)}</footer></main></body></html>"""
+
+    conditions = sorted(
+        matrix.get("conditions") or [],
+        key=lambda condition: (
+            str((condition.get("configuration") or {}).get("model") or ""),
+            str((condition.get("configuration") or {}).get("effort") or ""),
+        ),
+    )
+    cards = "".join(_render_condition_card(condition) for condition in conditions)
+    run_rows = "".join(
+        (
+            f'<tr><th scope="row"><a href="{_esc(str(run.get("run_id")) + "/report.html")}">{_esc(run.get("run_id"))}</a></th>'
+            f'<td>{_esc(run.get("model") if run.get("model") is not None else "not reported")}</td>'
+            f'<td>{_esc(run.get("effort") if run.get("effort") is not None else "not reported")}</td>'
+            f'<td>{_esc(_fmt_tokens(run.get("reasoning_tokens")))}</td>'
+            f'<td>{_esc(_fmt_tokens(run.get("total_tokens")))}</td>'
+            f'<td>{_esc(_fmt_latency(run.get("median_latency_ms")))}</td></tr>'
+        )
+        for run in runs
+    )
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Taxonomy Bench · repeat evidence matrix</title>
+<style>{_MATRIX_CSS}</style>
+</head>
+<body><main>
+<header><p class="matrix-eyebrow">Taxonomy Bench · operator evidence</p><h1>Repeat evidence matrix</h1>
+<p class="matrix-lede">Condition scorecards preserve uncertainty, consistency, task-family behavior, and links to each benchmark progression trace.</p></header>
+<section class="matrix-conditions" aria-label="Benchmark conditions">{cards}</section>
+<section class="run-index" aria-labelledby="run-index-heading"><h2 id="run-index-heading">Individual run index</h2>
+<div class="matrix-table-wrap"><table><thead><tr><th>Run trace</th><th>Requested model</th><th>Effort</th><th>Reasoning tokens</th><th>Total tokens</th><th>Median latency</th></tr></thead>
+<tbody>{run_rows}</tbody></table></div></section>
+<footer>{_esc(attribution)}</footer>
+</main></body>
+</html>"""
