@@ -135,7 +135,7 @@ Retries are displayed under their originating task in a later Recovery phase. Th
 
 Unsupported-output is a graph-output proxy, not a general hallucination rate. Any Marble-to-agentic-coding mapping is a routing heuristic, not proof of coding performance. Missing provider usage is reported as "not reported"; an uncollected retry measurement is "not measured."
 
-`matrix.html` groups only runs with the same fixed suite and identical condition boundaries: requested and resolved model identifiers, provider and adapter versions, effort, output mode, session mode, retry configuration, transport retries, tool access, instructions, and relevant environment metadata. It aligns comparisons only by fixed task ID. It labels one, two, and three-or-more repeats as session, limited, and repeated evidence, respectively; shows Wilson intervals, flip rates, task-family behavior, and links to every individual run. It does not select a composite winner.
+`matrix.html` groups only runs with the same fixed suite and requested condition: provider, requested model, effort, output mode, session mode, retry count/policy/context, transport retries, tool access, and condition label. Resolved-model changes within such a condition are flagged rather than silently split or pooled away. The matrix aligns comparisons only by fixed task ID. It labels one, two, and three-or-more repeats as session, limited, and repeated evidence, respectively; shows Wilson intervals, flip rates, task-family behavior, and links to every individual run. It does not select a composite winner.
 
 ## Statistical guidance
 
