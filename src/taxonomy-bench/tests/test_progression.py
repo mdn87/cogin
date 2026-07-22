@@ -14,6 +14,9 @@ import taxonomy_bench as tb
 from taxonomy_bench_progression import derive_attempt_outcome, wilson_interval
 
 
+_UNSET = object()
+
+
 def attempt(
     *,
     exact=False,
@@ -23,13 +26,23 @@ def attempt(
     strict=True,
     recovered=False,
     error=None,
-    usage=None,
+    usage=_UNSET,
     phase="first",
+    attempt_number=1,
+    response_text=None,
+    resolved_model=None,
+    status=None,
+    incomplete_reason=None,
 ):
     return {
+        "attempt": attempt_number,
         "phase": phase,
+        "text": response_text,
         "latency_ms": 120.0,
-        "usage": {} if usage is None else usage,
+        "usage": {} if usage is _UNSET else usage,
+        "resolved_model": resolved_model,
+        "status": status,
+        "incomplete_reason": incomplete_reason,
         "error": error,
         "score": None
         if error
@@ -149,6 +162,49 @@ def test_progression_preserves_order_and_selects_first_phase_explicitly():
     assert view["tasks"][0]["retries"][0]["outcome"] == "exact"
 
 
+def test_retry_evidence_preserves_attempt_order_number_and_recovery_configuration():
+    run = make_run({1: [False]})
+    run["configuration"]["retry_policy"] = "feedback"
+    run["configuration"]["retry_context"] = "continued"
+    run["tasks"][0]["attempts"].extend(
+        [
+            attempt(
+                partial=0.75,
+                phase="retry",
+                attempt_number=2,
+                response_text='{"id":"second"}',
+            ),
+            attempt(
+                exact=True,
+                partial=1.0,
+                phase="retry",
+                attempt_number=3,
+                response_text='{"id":"third"}',
+            ),
+        ]
+    )
+
+    view = progression.derive_progression_view(run)
+    row = view["tasks"][0]
+
+    assert row["attempt_number"] == 1
+    assert [item["attempt_number"] for item in row["retries"]] == [2, 3]
+    assert [item["response_text"] for item in row["retries"]] == [
+        '{"id":"second"}',
+        '{"id":"third"}',
+    ]
+    assert [item["phase"] for item in row["retries"]] == ["retry", "retry"]
+    assert [item["retry_policy"] for item in row["retries"]] == [
+        "feedback",
+        "feedback",
+    ]
+    assert [item["retry_context"] for item in row["retries"]] == [
+        "continued",
+        "continued",
+    ]
+    assert view["retry_branches"][0]["attempts"] == row["retries"]
+
+
 def test_progression_infers_tier_size_and_leaves_infrastructure_gap():
     run = make_run({1: [True] * 4, 2: [True, False, True, False]}, infra_indexes={4})
 
@@ -160,6 +216,29 @@ def test_progression_infers_tier_size_and_leaves_infrastructure_gap():
     assert view["rolling"][3]["sample_count"] == 4
     assert view["tasks"][4]["outcome"] == "unscored"
     assert view["tiers"][0]["limited_evidence"] is False
+
+
+def test_first_attempt_latency_includes_unscored_rows_but_accuracy_does_not():
+    run = make_run({1: [True, False, True]}, infra_indexes={2})
+    run["tasks"][0]["attempts"][0]["latency_ms"] = 100.0
+    run["tasks"][1]["attempts"][0]["latency_ms"] = 300.0
+    run["tasks"][2]["attempts"][0]["latency_ms"] = 1000.0
+
+    view = progression.derive_progression_view(run)
+    tier = view["tiers"][0]
+    condition = progression.derive_condition_evidence([run])[0]
+
+    assert tier["median_latency_ms"] == 300.0
+    assert view["scorecards"]["first_attempt_latency_ms"]["median"] == 300.0
+    assert condition["first_pass_latency_ms"] == {
+        "sample_count": 3,
+        "median": 300.0,
+    }
+    assert tier["scored_count"] == 2
+    assert tier["exact_count"] == 1
+    assert tier["exact_rate"] == pytest.approx(0.5)
+    assert tier["partial_mean"] == pytest.approx(0.75)
+    assert condition["exact_rate_confidence"]["sample_count"] == 2
 
 
 def test_two_scored_task_tier_is_labeled_limited_evidence():
@@ -467,6 +546,196 @@ def test_matrix_preserves_run_rows_adds_conditions_and_keeps_missing_usage_null(
     assert len(matrix["conditions"]) == 2
 
 
+def test_shortest_path_progression_hides_private_minimum_edge_constraint():
+    private_minimum = 7
+    task = {
+        "kind": "shortest_path",
+        "scorer": {
+            "type": "shortest_path",
+            "source": "a",
+            "target": "b",
+            "edges": [["a", "b"]],
+            "minimum_edges": private_minimum,
+        },
+    }
+    response_text = '{"ids":["a","b"]}'
+    score = tb.score_text(task, response_text)
+    assert score["strict_json"] is True
+    assert score["exact"] is False
+    assert f"minimum edge count is {private_minimum}" in score["feedback"]
+    run = make_run({1: [False]})
+    run["tasks"][0]["kind"] = "shortest_path"
+    run["tasks"][0]["attempts"][0].update(
+        {"attempt": 1, "text": response_text, "score": score}
+    )
+
+    view = progression.derive_progression_view(run)
+    row = view["tasks"][0]
+    serialized = json.dumps(view, ensure_ascii=False).lower()
+
+    assert row["failure_summary"] == (
+        "The path has an endpoint, edge-direction, cycle, or shortest-length error."
+    )
+    assert row["scorer_details"] == {
+        "endpoints_ok": True,
+        "step_compliance": 1.0,
+        "length_ok": False,
+        "unique": True,
+    }
+    assert row["partial"] == pytest.approx(0.8)
+    assert row["codes"] == ["path.non_shortest"]
+    assert "minimum edge count" not in serialized
+    assert "minimum_edges" not in serialized
+    assert str(private_minimum) not in serialized
+
+
+def test_attempt_outcome_exposes_only_safe_named_evidence_fields():
+    raw_attempt = attempt(
+        partial=0.6,
+        details={
+            "node_f1": 0.75,
+            "edge_compliance": 0.5,
+            "duplicate_count": 1,
+            "violated_edges": 2,
+            "nodes": ["private-node"],
+            "edges": [["private-a", "private-b"]],
+            "minimum_edges": 99,
+        },
+        feedback="The order has precedence errors.",
+        usage={"input_tokens": 11, "output_tokens": 5, "total_tokens": 16},
+        attempt_number=2,
+        phase="retry",
+        response_text='{"ids":["model-output"]}',
+        resolved_model="resolved-model",
+        status="incomplete",
+        incomplete_reason="max_output_tokens",
+    )
+
+    outcome = derive_attempt_outcome("topological_order", raw_attempt)
+
+    assert outcome == {
+        "attempt_number": 2,
+        "phase": "retry",
+        "response_text": '{"ids":["model-output"]}',
+        "scorer_feedback": "The order has precedence errors.",
+        "scorer_details": {
+            "node_f1": 0.75,
+            "edge_compliance": 0.5,
+            "duplicate_count": 1,
+            "violated_edges": 2,
+        },
+        "latency_ms": 120.0,
+        "usage": {"input_tokens": 11, "output_tokens": 5, "total_tokens": 16},
+        "error": None,
+        "resolved_model": "resolved-model",
+        "status": "incomplete",
+        "incomplete_reason": "max_output_tokens",
+        "exact": False,
+        "partial": 0.6,
+        "outcome": "non-exact",
+        "label": "Non-exact",
+        "codes": ["order.node_coverage", "order.precedence", "sequence.duplicate"],
+        "failure_summary": "The order has precedence errors.",
+        "tokens": 16,
+    }
+    serialized = json.dumps(outcome)
+    assert '"score"' not in serialized
+    assert "private-node" not in serialized
+    assert "private-a" not in serialized
+    assert "minimum_edges" not in serialized
+    assert "99" not in serialized
+
+
+@pytest.mark.parametrize(
+    ("kind", "details", "expected"),
+    [
+        ("semantic_match", {"actual_type": "list"}, {"actual_type": "list"}),
+        (
+            "direct_prerequisites",
+            {"missing_count": 1, "extra_count": 2, "duplicate_count": 3},
+            {"missing_count": 1, "extra_count": 2, "duplicate_count": 3},
+        ),
+        (
+            "reverse_unlocks",
+            {"missing_count": 1, "extra_count": 2, "duplicate_count": 3},
+            {"missing_count": 1, "extra_count": 2, "duplicate_count": 3},
+        ),
+        (
+            "transitive_prerequisites",
+            {"missing_count": 1, "extra_count": 2, "duplicate_count": 3},
+            {"missing_count": 1, "extra_count": 2, "duplicate_count": 3},
+        ),
+        (
+            "topological_order",
+            {
+                "node_f1": 0.5,
+                "edge_compliance": 0.75,
+                "duplicate_count": 1,
+                "violated_edges": 2,
+            },
+            {
+                "node_f1": 0.5,
+                "edge_compliance": 0.75,
+                "duplicate_count": 1,
+                "violated_edges": 2,
+            },
+        ),
+        (
+            "shortest_path",
+            {
+                "endpoints_ok": False,
+                "step_compliance": 0.5,
+                "length_ok": False,
+                "unique": True,
+            },
+            {
+                "endpoints_ok": False,
+                "step_compliance": 0.5,
+                "length_ok": False,
+                "unique": True,
+            },
+        ),
+        (
+            "mastery_plan",
+            {
+                "set_f1": 0.5,
+                "edge_compliance": 0.75,
+                "target_last": False,
+                "duplicate_count": 1,
+            },
+            {
+                "set_f1": 0.5,
+                "edge_compliance": 0.75,
+                "target_last": False,
+                "duplicate_count": 1,
+            },
+        ),
+        (
+            "integrity_audit",
+            {"missing_count": 1, "extra_count": 2, "duplicate_count": 3},
+            {"missing_count": 1, "extra_count": 2, "duplicate_count": 3},
+        ),
+    ],
+)
+def test_scorer_details_are_whitelisted_by_task_kind(kind, details, expected):
+    private_details = {
+        **details,
+        "expected": ["private-expected"],
+        "nodes": ["private-node"],
+        "edges": [["private-a", "private-b"]],
+        "required": ["private-required"],
+        "source": "private-source",
+        "target": "private-target",
+        "minimum_edges": 99,
+        "scorer": {"type": "private"},
+    }
+
+    outcome = derive_attempt_outcome(kind, attempt(partial=0.5, details=private_details))
+
+    assert outcome["scorer_details"] == expected
+    assert set(outcome["scorer_details"]) == set(expected)
+
+
 def test_wilson_interval_handles_empty_and_known_samples():
     assert wilson_interval(0, 0) == (None, None)
     assert wilson_interval(8, 10) == pytest.approx((0.4902, 0.9433), abs=0.0001)
@@ -589,6 +858,79 @@ def test_list_output_wrong_shape_is_detected_for_every_scorer_family(kind, field
     assert outcome["codes"] == ["format.wrong_shape"]
 
 
+@pytest.mark.parametrize(
+    ("kind", "scorer", "response_text"),
+    [
+        (
+            "semantic_match",
+            {"type": "id", "expected": "topic-a"},
+            '{"id":["topic-a"]}',
+        ),
+        (
+            "direct_prerequisites",
+            {"type": "ids_set", "expected": ["topic-a"]},
+            '{"ids":"topic-a"}',
+        ),
+        (
+            "reverse_unlocks",
+            {"type": "ids_set", "expected": ["topic-a"]},
+            '{"ids":{"topic":"a"}}',
+        ),
+        (
+            "transitive_prerequisites",
+            {"type": "ids_set", "expected": ["topic-a"]},
+            '{"ids":[1]}',
+        ),
+        (
+            "integrity_audit",
+            {"type": "issues_set", "expected": ["issue-a"]},
+            '{"issues":"issue-a"}',
+        ),
+        (
+            "topological_order",
+            {"type": "topological_order", "nodes": ["a"], "edges": []},
+            '{"ids":null}',
+        ),
+        (
+            "shortest_path",
+            {
+                "type": "shortest_path",
+                "source": "a",
+                "target": "b",
+                "edges": [["a", "b"]],
+                "minimum_edges": 1,
+            },
+            '{"ids":42}',
+        ),
+        (
+            "mastery_plan",
+            {
+                "type": "mastery_plan",
+                "required": ["a"],
+                "target": "a",
+                "edges": [],
+            },
+            '{"ids":{"unexpected":true}}',
+        ),
+    ],
+)
+def test_real_scorer_wrong_shapes_map_only_to_format_code(kind, scorer, response_text):
+    score = tb.score_text({"kind": kind, "scorer": scorer}, response_text)
+    raw_attempt = attempt(response_text=response_text)
+    raw_attempt["score"] = score
+
+    outcome = derive_attempt_outcome(kind, raw_attempt)
+
+    assert score["strict_json"] is True
+    assert score["exact"] is False
+    assert outcome["codes"] == ["format.wrong_shape"]
+    assert outcome["scorer_feedback"] in {
+        "The selected topic ID is incorrect.",
+        "The 'ids' field must be an array of strings.",
+        "The 'issues' field must be an array of strings.",
+    }
+
+
 def test_unparseable_precedes_wrong_shape_feedback():
     outcome = derive_attempt_outcome(
         "topological_order",
@@ -604,13 +946,27 @@ def test_unparseable_precedes_wrong_shape_feedback():
 def test_exact_and_unscored_outcomes_have_factual_metadata():
     exact = derive_attempt_outcome(
         "semantic_match",
-        attempt(exact=True, partial=1.0, feedback="Correct.", usage={"total_tokens": 0}),
+        attempt(
+            exact=True,
+            partial=1.0,
+            details={"actual_type": "str"},
+            feedback="Correct.",
+            usage={"total_tokens": 0},
+            response_text='{"id":"topic"}',
+            resolved_model="model-a",
+            status="completed",
+        ),
     )
-    missing_score_attempt = attempt()
+    missing_score_attempt = attempt(usage=None)
     missing_score_attempt["score"] = None
     unscored = derive_attempt_outcome("semantic_match", missing_score_attempt)
 
     assert exact == {
+        "attempt_number": 1,
+        "phase": "first",
+        "response_text": '{"id":"topic"}',
+        "scorer_feedback": "Correct.",
+        "scorer_details": {"actual_type": "str"},
         "exact": True,
         "partial": 1.0,
         "outcome": "exact",
@@ -618,9 +974,19 @@ def test_exact_and_unscored_outcomes_have_factual_metadata():
         "codes": [],
         "failure_summary": None,
         "latency_ms": 120.0,
+        "usage": {"total_tokens": 0},
+        "error": None,
+        "resolved_model": "model-a",
+        "status": "completed",
+        "incomplete_reason": None,
         "tokens": 0,
     }
     assert unscored == {
+        "attempt_number": 1,
+        "phase": "first",
+        "response_text": None,
+        "scorer_feedback": None,
+        "scorer_details": {},
         "exact": None,
         "partial": None,
         "outcome": "unscored",
@@ -628,8 +994,34 @@ def test_exact_and_unscored_outcomes_have_factual_metadata():
         "codes": ["infrastructure"],
         "failure_summary": "Score unavailable.",
         "latency_ms": 120.0,
+        "usage": None,
+        "error": None,
+        "resolved_model": None,
+        "status": None,
+        "incomplete_reason": None,
         "tokens": None,
     }
+
+
+def test_attempt_usage_preserves_none_and_empty_and_error_is_dedicated():
+    no_usage = derive_attempt_outcome(
+        "semantic_match",
+        attempt(exact=True, partial=1.0, feedback="Correct.", usage=None),
+    )
+    empty_usage = derive_attempt_outcome(
+        "semantic_match",
+        attempt(exact=True, partial=1.0, feedback="Correct.", usage={}),
+    )
+    errored = derive_attempt_outcome(
+        "semantic_match",
+        attempt(error="TimeoutError: timed out", usage={}),
+    )
+
+    assert no_usage["usage"] is None
+    assert empty_usage["usage"] == {}
+    assert errored["error"] == "TimeoutError: timed out"
+    assert errored["scorer_feedback"] is None
+    assert errored["scorer_details"] == {}
 
 
 def test_non_exact_outcome_preserves_feedback_and_missing_token_measurement():

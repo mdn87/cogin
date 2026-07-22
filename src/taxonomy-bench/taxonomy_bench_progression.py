@@ -50,6 +50,22 @@ CAPABILITY_PROXIES = {
     "integrity_audit": "contradiction and structural-error detection",
 }
 
+SCORER_DETAIL_FIELDS = {
+    "semantic_match": ("actual_type",),
+    "direct_prerequisites": ("missing_count", "extra_count", "duplicate_count"),
+    "reverse_unlocks": ("missing_count", "extra_count", "duplicate_count"),
+    "transitive_prerequisites": ("missing_count", "extra_count", "duplicate_count"),
+    "topological_order": (
+        "node_f1",
+        "edge_compliance",
+        "duplicate_count",
+        "violated_edges",
+    ),
+    "shortest_path": ("endpoints_ok", "step_compliance", "length_ok", "unique"),
+    "mastery_plan": ("set_f1", "edge_compliance", "target_last", "duplicate_count"),
+    "integrity_audit": ("missing_count", "extra_count", "duplicate_count"),
+}
+
 
 def wilson_interval(
     successes: int,
@@ -206,9 +222,14 @@ def derive_condition_evidence(runs: list[Mapping[str, Any]]) -> list[dict[str, A
             for observation in task["observations"]
             if observation["exact"] is not None
         ]
+        first_attempt_observations = [
+            observation
+            for task in task_evidence
+            for observation in task["observations"]
+        ]
         latencies = [
             float(item["latency_ms"])
-            for item in scored_observations
+            for item in first_attempt_observations
             if item["latency_ms"] is not None
         ]
         unsupported_count = sum(
@@ -319,35 +340,49 @@ def derive_attempt_outcome(kind: str, attempt: Mapping[str, Any]) -> dict[str, A
     latency_ms = attempt.get("latency_ms")
     error = attempt.get("error")
     score = attempt.get("score")
+    attempt_evidence = {
+        "attempt_number": attempt.get("attempt_number", attempt.get("attempt")),
+        "phase": attempt.get("phase"),
+        "response_text": attempt.get("response_text", attempt.get("text")),
+        "latency_ms": latency_ms,
+        "usage": dict(usage) if isinstance(usage, Mapping) else None,
+        "error": error,
+        "resolved_model": attempt.get("resolved_model"),
+        "status": attempt.get("status"),
+        "incomplete_reason": attempt.get("incomplete_reason"),
+        "tokens": tokens,
+    }
 
     if error or score is None:
         return {
+            **attempt_evidence,
+            "scorer_feedback": None,
+            "scorer_details": {},
             "exact": None,
             "partial": None,
             "outcome": "unscored",
             "label": "Unscored",
             "codes": ["infrastructure"],
             "failure_summary": str(error) if error else "Score unavailable.",
-            "latency_ms": latency_ms,
-            "tokens": tokens,
         }
 
     exact = bool(score.get("exact"))
     partial = score.get("partial")
+    details = score.get("details") or {}
+    feedback = _sanitize_scorer_feedback(kind, score)
     if exact:
         return {
+            **attempt_evidence,
+            "scorer_feedback": feedback,
+            "scorer_details": _whitelisted_scorer_details(kind, details),
             "exact": True,
             "partial": partial,
             "outcome": "exact",
             "label": "Exact",
             "codes": [],
             "failure_summary": None,
-            "latency_ms": latency_ms,
-            "tokens": tokens,
         }
 
-    details = score.get("details") or {}
-    feedback = score.get("feedback") or "Non-exact response."
     if not score.get("strict_json") and not score.get("recovered_json"):
         codes = ["format.unparseable"]
     elif (
@@ -359,14 +394,33 @@ def derive_attempt_outcome(kind: str, attempt: Mapping[str, Any]) -> dict[str, A
         codes = _derive_kind_codes(kind, details)
 
     return {
+        **attempt_evidence,
+        "scorer_feedback": feedback,
         "exact": False,
         "partial": partial,
         "outcome": "non-exact",
         "label": "Non-exact",
         "codes": codes,
         "failure_summary": feedback,
-        "latency_ms": latency_ms,
-        "tokens": tokens,
+        "scorer_details": _whitelisted_scorer_details(kind, details),
+    }
+
+
+def _sanitize_scorer_feedback(kind: str, score: Mapping[str, Any]) -> str:
+    feedback = str(score.get("feedback") or "Non-exact response.")
+    if kind == "shortest_path" and not score.get("exact") and score.get("details"):
+        return "The path has an endpoint, edge-direction, cycle, or shortest-length error."
+    return feedback
+
+
+def _whitelisted_scorer_details(
+    kind: str,
+    details: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        key: details[key]
+        for key in SCORER_DETAIL_FIELDS.get(kind, ())
+        if key in details
     }
 
 
@@ -433,7 +487,7 @@ def derive_tier_rows(task_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         scored = [row for row in tasks if row.get("exact") is not None]
         exact_count = sum(row["exact"] is True for row in scored)
         partials = [float(row["partial"]) for row in scored if row.get("partial") is not None]
-        latencies = [float(row["latency_ms"]) for row in scored if row.get("latency_ms") is not None]
+        latencies = [float(row["latency_ms"]) for row in tasks if row.get("latency_ms") is not None]
         scored_count = len(scored)
         limited = scored_count < 4
         tiers.append(
@@ -581,6 +635,7 @@ def derive_markers(
 
 def derive_progression_view(run: Mapping[str, Any]) -> dict[str, Any]:
     task_rows: list[dict[str, Any]] = []
+    configuration = run.get("configuration", {})
     for sequence_index, record in enumerate(run.get("tasks", ()), start=1):
         attempts = list(record.get("attempts", ()))
         first = next((item for item in attempts if item.get("phase") == "first"), None)
@@ -588,7 +643,12 @@ def derive_progression_view(run: Mapping[str, Any]) -> dict[str, Any]:
             continue
         kind = str(record.get("kind", ""))
         retries = [
-            {**derive_attempt_outcome(kind, item), "phase": "retry"}
+            {
+                **derive_attempt_outcome(kind, item),
+                "phase": "retry",
+                "retry_policy": configuration.get("retry_policy"),
+                "retry_context": configuration.get("retry_context"),
+            }
             for item in attempts
             if item.get("phase") == "retry"
         ]
@@ -618,7 +678,7 @@ def derive_progression_view(run: Mapping[str, Any]) -> dict[str, Any]:
         "scored_count": len(scored_rows),
         "rate": unsupported_count / len(scored_rows) if scored_rows else None,
     }
-    latencies = [float(row["latency_ms"]) for row in scored_rows if row.get("latency_ms") is not None]
+    latencies = [float(row["latency_ms"]) for row in task_rows if row.get("latency_ms") is not None]
     usage = summary.get("usage_first") or {}
     retry_recovery_rate = summary.get("retry_recovery_rate")
     scorecards = {
@@ -641,7 +701,7 @@ def derive_progression_view(run: Mapping[str, Any]) -> dict[str, Any]:
         "benchmark_version": run.get("benchmark_version"),
         "taxonomy": run.get("taxonomy"),
         "resolved_models": summary.get("resolved_models", []),
-        **dict(run.get("configuration", {})),
+        **dict(configuration),
     }
     markers = derive_markers(task_rows, tier_rows, summary)
     retry_branches = [
