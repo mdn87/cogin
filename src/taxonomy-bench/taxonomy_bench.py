@@ -35,7 +35,7 @@ from taxonomy_bench_report import (
 )
 
 FORMAT_VERSION = 1
-BENCHMARK_VERSION = "0.1.0"
+BENCHMARK_VERSION = "0.2.0"
 ATTRIBUTION = (
     "Marble Skill Taxonomy (v1) · © Generative Spark, Inc. (Marble) · "
     "https://withmarble.com · licensed under ODbL 1.0 (database) and "

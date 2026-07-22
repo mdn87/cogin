@@ -144,6 +144,10 @@ The output directory contains:
 - `report.html`
 - a copy of the private suite and public prompt file
 
+`report.html` is an evidence-first trace of Benchmark Progression, not a curriculum path. It labels each first attempt as exact, non-exact with partial/diagnostic evidence, unparseable/wrong-shape, or unscored infrastructure. Retries appear below their originating task as later Recovery-phase attempts; they never change first-pass curves.
+
+The progression view marks the first miss, the reliable frontier (the highest consecutive tier meeting the existing two-thirds exact-pass rule), instability onset, sustained breakdown, and any peak isolated success. Its rolling window uses scored tasks only and shows infrastructure gaps rather than treating them as incorrect answers. Unsupported-output is a graph-output proxy, not a general hallucination rate. Marble-to-agentic-coding mapping is a routing heuristic, not proof of coding performance. Missing usage is shown as **not reported**; a condition without retry measurement is **not measured**.
+
 Reasoning effort values are passed through to the provider because supported values are model-dependent.
 
 ## Compare models and effort levels
@@ -164,7 +168,7 @@ python taxonomy_bench.py matrix \
   --out matrix-runs
 ```
 
-`matrix.html` ranks individual runs by first-attempt difficulty-weighted strength, then latency. Repeats remain separate so variance is visible rather than hidden by one aggregate number.
+`matrix.html` groups fixed-suite, identical conditions and labels 1, 2, and 3+ repeats as session, limited, and repeated evidence. It shows Wilson intervals, flip rates, task-family behavior, and links to every individual run. It does not produce a composite winner or rank individual runs.
 
 For an inexpensive smoke test, use `--max-tier 4 --tasks-per-tier 2 --repeats 1`.
 

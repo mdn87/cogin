@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from collections import defaultdict, deque
 from pathlib import Path
@@ -9,6 +10,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import taxonomy_bench as tb
+
+
+def test_package_and_runtime_versions_match():
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    match = re.search(r'^version = "([^"]+)"$', text, flags=re.MULTILINE)
+    assert match is not None
+    assert match.group(1) == tb.BENCHMARK_VERSION == "0.2.0"
 
 
 def correct_answer(task: dict) -> str:
