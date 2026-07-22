@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 from taxonomy_bench_progression import derive_condition_evidence, wilson_interval
+from taxonomy_bench_report import render_run_html as _render_run_html
 
 FORMAT_VERSION = 1
 BENCHMARK_VERSION = "0.1.0"
@@ -1820,100 +1821,7 @@ def _fmt_num(value: Any, digits: int = 1) -> str:
 
 
 def render_run_html(run: Mapping[str, Any]) -> str:
-    summary = run["summary"]
-    config = run["configuration"]
-    cards = [
-        ("Base strength", _fmt_num(summary.get("base_strength_0_100")), "difficulty-weighted first-attempt score"),
-        ("Eventual strength", _fmt_num(summary.get("eventual_strength_0_100")), "after cognitive retries"),
-        ("Retry lift", _fmt_num(summary.get("retry_lift_points")), "weighted score points"),
-        ("First accuracy", _fmt_percent(summary.get("first_attempt_accuracy")), "exact answers"),
-        ("Recovery", _fmt_percent(summary.get("retry_recovery_rate")), "failed first attempts corrected"),
-        ("Frontier", str(summary.get("reliable_frontier_first", 0)), "reliable first-attempt tier"),
-        ("Median latency", _fmt_num(summary.get("latency_ms", {}).get("first_median"), 0) + " ms", "first attempts"),
-        ("Coverage", _fmt_percent(summary.get("scored_coverage")), "tasks with a scored first response"),
-        ("Strict JSON", _fmt_percent(summary.get("strict_json_rate_first")), "no parser recovery needed"),
-    ]
-    card_html = "".join(
-        f'<section class="card"><span>{html.escape(label)}</span><strong>{html.escape(value)}</strong><small>{html.escape(note)}</small></section>'
-        for label, value, note in cards
-    )
-
-    tier_rows = []
-    for tier, row in summary.get("by_tier", {}).items():
-        tier_rows.append(
-            "<tr>"
-            f"<td>{tier}</td>"
-            f"<td>{row['scored']}</td>"
-            f"<td>{_fmt_percent(row['first_accuracy'])}</td>"
-            f"<td>{_fmt_percent(row['eventual_accuracy'])}</td>"
-            f"<td>{_fmt_num(row['first_partial_mean'], 3)}</td>"
-            f"<td>{_fmt_num(row['eventual_partial_mean'], 3)}</td>"
-            "</tr>"
-        )
-
-    task_rows = []
-    for task in run["tasks"]:
-        first = task["attempts"][0]
-        first_exact = bool(first.get("score", {}).get("exact")) if first.get("score") else False
-        eventual_exact = any(
-            bool(attempt.get("score", {}).get("exact")) for attempt in task["attempts"] if attempt.get("score")
-        )
-        status = "infra error" if first.get("error") else ("pass" if first_exact else ("recovered" if eventual_exact else "fail"))
-        total_latency = sum(float(attempt.get("latency_ms", 0)) for attempt in task["attempts"])
-        details = html.escape(json.dumps(task["attempts"], ensure_ascii=False, indent=2))
-        task_rows.append(
-            "<tr>"
-            f"<td>{html.escape(task['task_id'])}</td>"
-            f"<td>{task['tier']}</td>"
-            f"<td>{html.escape(task['kind'])}</td>"
-            f"<td><span class=\"status {status.replace(' ', '-')}\">{status}</span></td>"
-            f"<td>{len(task['attempts'])}</td>"
-            f"<td>{total_latency:.0f}</td>"
-            f"<td><details><summary>attempts</summary><pre>{details}</pre></details></td>"
-            "</tr>"
-        )
-
-    configuration = html.escape(json.dumps(config, ensure_ascii=False, indent=2))
-    taxonomy = html.escape(json.dumps(run.get("taxonomy", {}), ensure_ascii=False, indent=2))
-    return f"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Taxonomy Bench - {html.escape(run['run_id'])}</title>
-<style>
-:root {{ color-scheme: light dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }}
-body {{ margin: 0; background: #0e1116; color: #e8edf3; }}
-main {{ max-width: 1220px; margin: 0 auto; padding: 36px 24px 64px; }}
-h1 {{ font-size: clamp(28px, 5vw, 56px); line-height: 1; margin: 0 0 8px; letter-spacing: -0.04em; }}
-p.lede {{ color: #9da8b5; margin: 0 0 30px; }}
-.grid {{ display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 12px; margin: 24px 0 36px; }}
-.card {{ border: 1px solid #2a3440; background: #151a21; padding: 16px; border-radius: 10px; display: grid; gap: 6px; }}
-.card span,.card small {{ color: #9da8b5; }} .card strong {{ font-size: 28px; }}
-h2 {{ margin-top: 42px; }}
-table {{ width: 100%; border-collapse: collapse; background: #151a21; border: 1px solid #2a3440; }}
-th,td {{ padding: 10px 12px; text-align: left; border-bottom: 1px solid #2a3440; vertical-align: top; }}
-th {{ color: #9da8b5; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }}
-.status {{ display: inline-block; padding: 3px 8px; border: 1px solid #45515f; border-radius: 999px; font-size: 12px; }}
-.status.pass {{ border-color: #3a8b5f; }} .status.recovered {{ border-color: #9b7a31; }} .status.fail,.status.infra-error {{ border-color: #9a4a4a; }}
-pre {{ max-width: 70vw; max-height: 420px; overflow: auto; white-space: pre-wrap; background: #0e1116; padding: 12px; border-radius: 6px; }}
-details.meta {{ margin: 10px 0; }} footer {{ margin-top: 40px; color: #9da8b5; font-size: 12px; }}
-@media (max-width: 720px) {{ table {{ display: block; overflow-x: auto; }} main {{ padding: 24px 14px 48px; }} }}
-</style>
-</head>
-<body><main>
-<h1>Taxonomy Bench</h1>
-<p class="lede">{html.escape(run['run_id'])}</p>
-<div class="grid">{card_html}</div>
-<h2>Difficulty profile</h2>
-<table><thead><tr><th>Tier</th><th>Tasks</th><th>First accuracy</th><th>Eventual accuracy</th><th>First partial</th><th>Eventual partial</th></tr></thead><tbody>{''.join(tier_rows)}</tbody></table>
-<h2>Task results</h2>
-<table><thead><tr><th>Task</th><th>Tier</th><th>Kind</th><th>Status</th><th>Attempts</th><th>Total ms</th><th>Details</th></tr></thead><tbody>{''.join(task_rows)}</tbody></table>
-<h2>Run metadata</h2>
-<details class="meta"><summary>Configuration</summary><pre>{configuration}</pre></details>
-<details class="meta"><summary>Taxonomy</summary><pre>{taxonomy}</pre></details>
-<footer>{html.escape(ATTRIBUTION)}</footer>
-</main></body></html>"""
+    return _render_run_html(run, attribution=ATTRIBUTION)
 
 
 def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
