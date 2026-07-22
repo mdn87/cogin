@@ -75,10 +75,7 @@ def derive_attempt_outcome(kind: str, attempt: Mapping[str, Any]) -> dict[str, A
         codes = ["format.unparseable"]
     elif (
         (kind == "semantic_match" and details.get("actual_type") != "str")
-        or (
-            KIND_SCORERS.get(kind) in {"ids_set", "issues_set"}
-            and "must be an array of strings." in feedback
-        )
+        or "must be an array of strings." in feedback
     ):
         codes = ["format.wrong_shape"]
     else:

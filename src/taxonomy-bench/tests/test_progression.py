@@ -143,6 +143,37 @@ def test_semantic_match_wrong_shape_suppresses_selection_code():
     assert outcome["codes"] == ["format.wrong_shape"]
 
 
+@pytest.mark.parametrize(
+    ("kind", "field"),
+    [
+        ("direct_prerequisites", "ids"),
+        ("integrity_audit", "issues"),
+        ("topological_order", "ids"),
+        ("shortest_path", "ids"),
+        ("mastery_plan", "ids"),
+    ],
+)
+def test_list_output_wrong_shape_is_detected_for_every_scorer_family(kind, field):
+    outcome = derive_attempt_outcome(
+        kind,
+        attempt(feedback=f"The '{field}' field must be an array of strings."),
+    )
+
+    assert outcome["codes"] == ["format.wrong_shape"]
+
+
+def test_unparseable_precedes_wrong_shape_feedback():
+    outcome = derive_attempt_outcome(
+        "topological_order",
+        attempt(
+            strict=False,
+            feedback="The 'ids' field must be an array of strings.",
+        ),
+    )
+
+    assert outcome["codes"] == ["format.unparseable"]
+
+
 def test_exact_and_unscored_outcomes_have_factual_metadata():
     exact = derive_attempt_outcome(
         "semantic_match",
