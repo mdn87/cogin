@@ -1,6 +1,6 @@
 # Cogin HUD Benchmark Progression Design
 
-Status: design approved; written specification pending user review
+Status: approved and final
 
 Date: 2026-07-21
 
