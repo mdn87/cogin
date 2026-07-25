@@ -25,7 +25,9 @@ role-matched pair order is:
 3. Claude Fable 5 and GPT-5.6 Luna
 
 Runs within the same subscription family are sequential. This prevents models
-from competing with sibling lanes for the same subscription capacity.
+from competing with sibling lanes for the same subscription capacity. Pair
+N+1 does not start until both lanes in Pair N have completed and the coordinator
+has rendered that pair's report.
 
 The top-level CLI session is the run operator, not the benchmark subject. It
 reads a model-specific runplan and drives Cogin. Cogin launches fresh,
@@ -37,19 +39,24 @@ answer a benchmark task or make the private suite visible to a subject.
 Every lane uses the same locked manifest and suite hash.
 
 - Seed: 42
-- Calibration: tiers 1-4, two tasks per tier, one repeat, no cognitive retries
+- Calibration: a fixed eight-task subset of the full suite containing the first
+  two task IDs in ascending lexical order from each of tiers 1-4, recorded in
+  the manifest, one repeat, no cognitive retries
 - Primary baseline: tiers 1-8, four tasks per tier, three repeats
 - Session mode: isolated
 - Reasoning effort: medium
 - Output mode: prompt JSON
 - Tool access: none
 - Transport retries: zero
-- Recovery study: two cognitive retries, diagnostic feedback, continued
+- Recovery study: up to two cognitive retries per first-attempt failure,
+  stopping after exact success, with diagnostic feedback and continued
   task-local context
-- Ordering: all first attempts finish before any cognitive retry begins
+- Ordering: within each independent 32-task repeat, all first attempts finish
+  before any cognitive retry for that repeat begins
 
 The controller may run one Claude and one Codex lane at the same time. Repeats
-inside a lane remain sequential.
+inside a lane remain sequential. Recovery for repeat N completes before repeat
+N+1 begins; there is no lane-wide, pair-wide, or wave-wide retry barrier.
 
 ## Isolation Boundary
 
@@ -59,8 +66,11 @@ shape.
 
 Subject sessions run from a sterile directory with no repository checkout,
 private suite, project instructions, plugins, MCP servers, web access, or file
-tools. A run is invalid if a subject can inspect the private suite or if an
-operator provides task answers.
+tools. Each task receives its own session. For a primary repeat, that task-local
+session identifier and public conversation state may persist only until its
+continued retries finish; it is never reused by another task. Calibration
+sessions, which have no retries, are ephemeral. A run is invalid if a subject
+can inspect the private suite or if an operator provides task answers.
 
 ## Model Resolution
 
@@ -77,15 +87,29 @@ A mismatch stops the lane before calibration.
 
 1. Validate the Cogin checkout and run the automated tests.
 2. Validate subscription authentication without exposing credentials.
-3. Create and lock the Wave 1 manifest before any calibration run.
+3. Generate the full 32-task private suite, select and record the fixed
+   calibration task IDs from that suite, then lock the Wave 1 manifest and suite
+   hash before any calibration run.
 4. Preflight the requested selector and capture the resolved model, CLI
    version, effort, session mode, and enabled tools.
 5. Run calibration.
-6. Inspect coverage, parsing, infrastructure failures, and output provenance.
+6. Apply the objective calibration admission gate:
+   - all eight first attempts have durable attempt records;
+   - requested and resolved models match and no fallback occurs;
+   - suite hash, task IDs, instruction hash, tool-policy hash, invocation hash,
+     and CLI version match the manifest;
+   - all eight tasks are scored and have nonnegative latency;
+   - no infrastructure, isolation, parser-process, or report-generation failure
+     occurs.
+   A subject's malformed JSON is a scored model outcome and does not fail
+   calibration. A parser crash, missing attempt, or unscored harness result does.
 7. If calibration passes, run the three primary repeats.
-8. Run recovery attempts only after all first attempts are complete.
-9. Render per-run and paired matrix reports.
-10. Record completion or a precise invalidation reason.
+8. Within each repeat, run recovery attempts only after that repeat's 32 first
+   attempts are complete.
+9. Render per-run and lane reports.
+10. After both lanes in a pair complete, have the Wave 1 coordinator run the
+    post-pair aggregation once and render the paired matrix report.
+11. Record completion or a precise invalidation reason.
 
 Rate limits, authentication failures, unavailable models, and provider
 outages are infrastructure outcomes. They are never scored as incorrect model
@@ -100,12 +124,28 @@ Execution requires native subscription CLI adapters that:
 - parse machine-readable CLI output;
 - record requested and resolved model identifiers;
 - enforce sterile, tool-free subject sessions;
-- preserve task-local session identifiers for continued retries;
+- preserve task-local session identifiers for continued retries and discard
+  them after the task's recovery phase;
 - detect fallback, rate-limit, authentication, timeout, and process failures;
 - keep run outputs isolated by lane and repeat.
 
-The existing generic command provider does not satisfy this contract. Run
-operators must not substitute it silently.
+It also requires controller support that:
+
+- creates an immutable manifest containing the full-suite hash, fixed
+  calibration task IDs, protocol version, base-instruction hash, tool-policy
+  hash, invocation-configuration hash, and diagnostic-feedback-policy hash;
+- enforces a cross-process family lock allowing at most one Claude and one
+  Codex lane;
+- checkpoints first-attempt and recovery phases within each repeat;
+- abandons and restarts an entire repeat after infrastructure interruption
+  while preserving the abandoned run's provenance;
+- records lane completion and lets one Wave 1 coordinator aggregate a pair only
+  after both lanes are complete.
+
+The existing generic command provider does not satisfy this contract. The
+native adapters and the controller capabilities above are both implementation
+work. Run operators must not substitute incomplete or generic behavior
+silently.
 
 ## Artifacts
 
@@ -124,7 +164,7 @@ answer keys.
 - No run exposes private scorer data to a subject.
 - Calibration completes without unresolved infrastructure or parsing defects.
 - Each primary lane produces three complete repeats and a rendered report.
+- Calibration run IDs and any abandoned run IDs remain in provenance.
 - Requested and resolved model identifiers are visible in every result.
 - Cross-provider reports describe CLI session configurations and do not claim a
   raw-model or general-intelligence winner.
-

@@ -17,11 +17,12 @@ invalidates the lane.
 
 ## Subject Contract
 
-Use fresh, ephemeral Codex subject sessions in a sterile directory. Ignore
-user configuration and project rules, disable the shell tool and web search,
-load no MCP servers or plugins, and use a read-only sandbox. Consume
-machine-readable event output and preserve a task-local session only for
-continued retries.
+Use fresh Codex subject sessions in a sterile directory. Calibration sessions
+are ephemeral. During a primary repeat, preserve each task's session identifier
+only until that task's continued retries finish; never reuse it for another
+task. Ignore user configuration and project rules, disable the shell tool and
+web search, load no MCP servers or plugins, and use a read-only sandbox.
+Consume machine-readable event output.
 
 ## Run Sequence
 
@@ -30,9 +31,11 @@ continued retries.
 3. Validate exact model resolution, strict/recoverable JSON rates, scored
    coverage, latency capture, and absence of fallback.
 4. Run three full repeats sequentially.
-5. After all first attempts, run up to two diagnostic continued-context
-   retries for each first-attempt failure.
-6. Render the lane report and Pair 1 comparison.
+5. Within each repeat, after all 32 first attempts, run up to two diagnostic
+   continued-context retries for each first-attempt failure, stopping after
+   exact success.
+6. Render the lane report. The Wave 1 coordinator renders the Pair 1 comparison
+   after both lanes complete.
 
 ## Stop Conditions
 
@@ -43,6 +46,6 @@ failures.
 
 ## Completion Evidence
 
-Report the requested and resolved model, Codex CLI version, suite hash, three
-run IDs, attempt counts, retry counts, infrastructure gaps, and artifact paths.
-
+Report the requested and resolved model, Codex CLI version, suite hash,
+calibration run ID, three successful primary run IDs, abandoned run IDs,
+attempt counts, retry counts, infrastructure gaps, and artifact paths.

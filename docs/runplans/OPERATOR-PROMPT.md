@@ -33,18 +33,22 @@ runplan names one. Do not invent a different protocol. If readiness passes:
 5. Validate coverage, JSON parsing, provenance, isolation, and infrastructure
    status.
 6. If calibration passes, run the three primary repeats sequentially.
-7. Complete recovery attempts only after all first attempts.
-8. Render and inspect the run and matrix reports.
+7. Within each repeat, complete all 32 first attempts before that repeat's
+   recovery attempts; finish recovery before starting the next repeat.
+8. Render and inspect the run and lane reports. Do not render the pair report;
+   the Wave 1 coordinator owns post-pair aggregation after both lanes finish.
 9. Return the exact artifact paths, requested and resolved model identifiers,
-   CLI version, suite hash, run counts, invalidations, and verification results.
+   CLI version, suite hash, calibration run ID, three successful primary run
+   IDs, abandoned run IDs, invalidations, and verification results.
 
 Only one Claude lane and one Codex lane may run concurrently. Never overlap two
-lanes from the same subscription family. Rate limits and provider failures are
-infrastructure outcomes; restart the affected repeat after recovery instead of
-scoring them as incorrect.
+lanes from the same subscription family, and do not start the next pair until
+both current-pair lanes and their coordinator-owned pair report are complete.
+Rate limits and provider failures are infrastructure outcomes; abandon and
+restart the entire affected repeat after recovery instead of scoring them as
+incorrect.
 
 Do not stop after an obvious intermediate step. Continue until the target lane
 is complete or a genuine readiness, entitlement, isolation, or infrastructure
 blocker is proven.
 ```
-
