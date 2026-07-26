@@ -9,6 +9,7 @@
 |------|---------|--------|-------------|
 | project-brief.md | Project concept and goals | Draft | 2026-07-21 |
 | architecture.md | System boundaries and decisions | Draft | 2026-07-21 |
+| NEXT-STEPS.md | Subscription CLI Wave 1 implementation plan | Ready to execute | 2026-07-25 |
 | decisions/ | Architecture Decision Records | — | — |
 | runplans/README.md | Subscription CLI experiment runplan index | Ready for review | 2026-07-25 |
 | runplans/OPERATOR-PROMPT.md | Reusable top-level run operator prompt | Ready for review | 2026-07-25 |
