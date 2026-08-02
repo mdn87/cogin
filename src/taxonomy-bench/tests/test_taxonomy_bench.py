@@ -15,6 +15,38 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import taxonomy_bench as tb
+import taxonomy_bench_cli
+import taxonomy_bench_protocol
+
+
+# ---------------------------------------------------------------------------
+# Provider seam compatibility tests (Task 2)
+# ---------------------------------------------------------------------------
+
+
+def test_provider_types_remain_public():
+    """Provider and Completion must be accessible from taxonomy_bench."""
+    assert tb.Provider is taxonomy_bench_cli.Provider
+    assert tb.Completion is taxonomy_bench_cli.Completion
+    completion = tb.Completion(text="{}", latency_ms=1.0)
+    assert completion.error_kind is None
+    assert completion.provider_metadata == {}
+
+
+def test_instruction_hash_has_one_source():
+    """BASE_INSTRUCTIONS must have a single owner in the protocol module."""
+    assert tb.BASE_INSTRUCTIONS is taxonomy_bench_protocol.BASE_INSTRUCTIONS
+    assert len(tb.BASE_INSTRUCTIONS) > 0
+
+
+def test_openai_provider_uses_protocol_instructions():
+    """OpenAIProvider must reference the protocol BASE_INSTRUCTIONS."""
+    from taxonomy_bench_protocol import BASE_INSTRUCTIONS as proto_instructions
+    # Parse the source to verify the module-level reference
+    import taxonomy_bench as tb_module
+    import inspect
+    src = inspect.getsource(tb_module.OpenAIProvider.complete)
+    assert "BASE_INSTRUCTIONS" in src
 
 
 def test_package_and_runtime_versions_match():

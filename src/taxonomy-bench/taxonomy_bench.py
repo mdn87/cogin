@@ -28,7 +28,9 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from taxonomy_bench_cli import Completion, Provider
 from taxonomy_bench_progression import derive_condition_evidence, wilson_interval
+from taxonomy_bench_protocol import BASE_INSTRUCTIONS, BenchError
 from taxonomy_bench_report import (
     render_matrix_html as _render_matrix_html,
     render_run_html as _render_run_html,
@@ -42,15 +44,6 @@ ATTRIBUTION = (
     "CC BY-SA 4.0 (content)."
 )
 RELATION_RULE = "In every edge, topicId depends on prerequisiteId."
-BASE_INSTRUCTIONS = (
-    "You are being evaluated on closed-book reasoning over a supplied graph. "
-    "Use only the supplied context. Follow the requested output schema exactly. "
-    "Return one JSON object and no explanation, markdown, or surrounding text."
-)
-
-
-class BenchError(RuntimeError):
-    """Raised for invalid benchmark configuration or data."""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1225,31 +1218,6 @@ def score_text(task: Mapping[str, Any], text: str) -> dict[str, Any]:
     return {**base, "feedback": f"Unknown scorer type: {scorer_type}"}
 
 
-@dataclasses.dataclass
-class Completion:
-    text: str
-    latency_ms: float
-    resolved_model: str | None = None
-    response_id: str | None = None
-    request_id: str | None = None
-    usage: dict[str, int] = dataclasses.field(default_factory=dict)
-    status: str | None = None
-    incomplete_reason: str | None = None
-    error: str | None = None
-
-
-class Provider:
-    supports_sessions = False
-
-    def complete(
-        self,
-        prompt: str,
-        output_schema: Mapping[str, Any],
-        previous_response_id: str | None = None,
-    ) -> Completion:
-        raise NotImplementedError
-
-
 class OpenAIProvider(Provider):
     supports_sessions = True
 
@@ -1426,6 +1394,8 @@ def _attempt_record(
         "status": completion.status,
         "incomplete_reason": completion.incomplete_reason,
         "error": completion.error,
+        "error_kind": completion.error_kind,
+        "provider_metadata": completion.provider_metadata,
         "score": dict(score) if score is not None else None,
     }
 
