@@ -1549,6 +1549,9 @@ def execute_run(
                 if score and score["exact"]:
                     break
 
+    if attempt_checkpoint is None:
+        run["run_id"] = str(run_id_override or run_id(run_meta, suite))
+        run["created_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
     run["summary"] = summarize_run(run)
     return run
 
@@ -2174,6 +2177,18 @@ def command_wave_preflight(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_wave_run(args: argparse.Namespace) -> int:
+    return int(_wave_controller(args).run_lane(args.lane))
+
+
+def command_wave_aggregate(args: argparse.Namespace) -> int:
+    import taxonomy_bench_wave as wave
+
+    report = wave.aggregate_pair(Path(args.manifest), args.pair)
+    print(_json({"pair": args.pair, "report_dir": str(report)}))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Generate and run a progressive AI reasoning benchmark from the Marble Skill Taxonomy."
@@ -2248,6 +2263,23 @@ def build_parser() -> argparse.ArgumentParser:
     ))
     wave_preflight.add_argument("--subject-root", required=True)
     wave_preflight.set_defaults(func=command_wave_preflight)
+
+    wave_run = wave_subparsers.add_parser(
+        "run", help="Execute or resume one Wave lane"
+    )
+    wave_run.add_argument("--manifest", required=True)
+    wave_run.add_argument("--lane", required=True, choices=sorted(
+        __import__("taxonomy_bench_wave").WAVE1_LANES
+    ))
+    wave_run.add_argument("--subject-root", required=True)
+    wave_run.set_defaults(func=command_wave_run)
+
+    wave_aggregate = wave_subparsers.add_parser(
+        "aggregate", help="Publish one completed role-matched pair"
+    )
+    wave_aggregate.add_argument("--manifest", required=True)
+    wave_aggregate.add_argument("--pair", required=True, type=int)
+    wave_aggregate.set_defaults(func=command_wave_aggregate)
 
     return parser
 

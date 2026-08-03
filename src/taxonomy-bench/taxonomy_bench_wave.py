@@ -59,6 +59,15 @@ def _sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
+def _find_checkout_root(path: Path) -> Path | None:
+    resolved = path.resolve()
+    start = resolved if resolved.is_dir() else resolved.parent
+    for candidate in (start, *start.parents):
+        if (candidate / ".git").exists():
+            return candidate
+    return None
+
+
 def _atomic_write_json(path: Path, value: Mapping[str, Any]) -> None:
     """Durably replace one JSON file without deleting prior evidence."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -187,6 +196,14 @@ def prepare_manifest(
     if not control_root.exists() or not control_root.is_dir():
         raise BenchError(
             f"Control root {control_root} must already exist and be a directory"
+        )
+    checkout_root = _find_checkout_root(suite_path)
+    resolved_control = control_root.resolve()
+    if checkout_root is not None and (
+        resolved_control == checkout_root or checkout_root in resolved_control.parents
+    ):
+        raise BenchError(
+            f"Control root {resolved_control} must be outside the Cogin checkout"
         )
     manifest_path = out_dir / "manifest.json"
     lane_metadata = dict(provider_metadata.get("lanes", {}))
@@ -340,6 +357,10 @@ class LaneState:
     current_phase: str = "init"
     invalidation_reason: str | None = None
     completed_at: str | None = None
+    provider_metadata: dict[str, Any] = dataclasses.field(default_factory=dict)
+    abandoned_run_reasons: dict[str, str] = dataclasses.field(default_factory=dict)
+    report_path: str | None = None
+    report_hash: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
@@ -369,7 +390,30 @@ class LaneState:
         # Check provider hashes
         invocation = getattr(provider, "invocation_hash", "")
         tool_policy = getattr(provider, "tool_policy_hash", "")
-        combined = canonical_hash({"invocation": invocation, "tool_policy": tool_policy})
+        if self.provider_metadata:
+            current = {
+                **self.provider_metadata,
+                "invocation_hash": invocation,
+                "tool_policy_hash": tool_policy,
+                "auth_mode": getattr(
+                    provider, "auth_mode", self.provider_metadata.get("auth_mode")
+                ),
+                "requested_model": getattr(
+                    provider, "selector", self.provider_metadata.get("requested_model")
+                ),
+                "resolved_model": getattr(
+                    provider,
+                    "expected_model",
+                    self.provider_metadata.get("resolved_model"),
+                ),
+            }
+            if hasattr(provider, "_cli_version"):
+                current["cli_version"] = provider._cli_version()
+            combined = canonical_hash(current)
+        else:
+            combined = canonical_hash(
+                {"invocation": invocation, "tool_policy": tool_policy}
+            )
         if self.provider_fingerprint != combined:
             raise BenchError(
                 f"Provider fingerprint drift for lane {self.lane}; lane is invalidated"
@@ -567,13 +611,24 @@ def redact_task_sessions(
 
 def make_wave_checkpoint(state_dir: Path) -> Callable[[str, Mapping[str, Any]], None]:
     """Persist every attempt, redact closed sessions, then abort on infra."""
+    seen_attempt_counts: dict[str, dict[str, int]] = {}
 
     def checkpoint(run_id: str, envelope: Mapping[str, Any]) -> None:
         mutable = envelope  # execute_run supplies its live mutable envelope
         tasks = list(mutable.get("tasks", []))
         if not tasks:
             return
+        previous_counts = seen_attempt_counts.setdefault(run_id, {})
         current = tasks[-1]
+        for task in tasks:
+            task_id = str(task.get("task_id", ""))
+            count = len(task.get("attempts", []))
+            if count > previous_counts.get(task_id, 0):
+                current = task
+        seen_attempt_counts[run_id] = {
+            str(task.get("task_id", "")): len(task.get("attempts", []))
+            for task in tasks
+        }
         attempts = list(current.get("attempts", []))
         last = attempts[-1]
         error_kind = last.get("error_kind")
@@ -638,6 +693,13 @@ class WaveController:
         subject = self.subject_root.resolve()
         if not subject.exists() or not subject.is_dir():
             raise BenchError(f"Subject root {subject} does not exist or is not a directory")
+        checkout_root = _find_checkout_root(self.manifest_path)
+        if checkout_root is not None and (
+            subject == checkout_root or checkout_root in subject.parents
+        ):
+            raise BenchError(
+                f"Subject root {subject} must be outside the Cogin checkout"
+            )
         # Check for disallowed contents
         disallowed = {".git", "AGENTS.md", "CLAUDE.md", "manifest.json"}
         entries = set()
@@ -716,3 +778,563 @@ class WaveController:
                 provider, "invocation_hash", lane_meta.get("invocation_hash")
             ),
         }
+
+    def _pair_index(self, lane_id: str) -> int:
+        for index, pair in enumerate(self.manifest["pairs"], start=1):
+            if lane_id in pair:
+                return index
+        raise BenchError(f"Lane {lane_id} is not assigned to a pair")
+
+    def _state_dir(self, lane_id: str) -> Path:
+        return self.wave_dir / "lanes" / lane_id
+
+    def _provider_metadata(
+        self,
+        lane_id: str,
+        provider: Provider,
+        preflight: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        lane = self.manifest["lanes"][lane_id]
+        expected = self.manifest.get("lane_metadata", {}).get(lane_id, {})
+        cli_version = (
+            provider._cli_version()
+            if hasattr(provider, "_cli_version")
+            else preflight.get("cli_version", expected.get("cli_version", "unknown"))
+        )
+        return {
+            "auth_mode": getattr(provider, "auth_mode", "subscription"),
+            "requested_model": getattr(provider, "selector", lane["selector"]),
+            "resolved_model": preflight.get(
+                "resolved_model",
+                getattr(provider, "expected_model", lane["expected_model"]),
+            ),
+            "cli_version": cli_version,
+            "invocation_hash": getattr(
+                provider, "invocation_hash", expected.get("invocation_hash")
+            ),
+            "tool_policy_hash": getattr(
+                provider, "tool_policy_hash", expected.get("tool_policy_hash")
+            ),
+        }
+
+    def _validate_provider_metadata(
+        self, lane_id: str, metadata: Mapping[str, Any]
+    ) -> None:
+        expected = self.manifest.get("lane_metadata", {}).get(lane_id, {})
+        for key in (
+            "auth_mode",
+            "requested_model",
+            "expected_model",
+            "cli_version",
+            "invocation_hash",
+            "tool_policy_hash",
+        ):
+            actual_key = "resolved_model" if key == "expected_model" else key
+            expected_value = expected.get(key)
+            if expected_value is not None and metadata.get(actual_key) != expected_value:
+                raise BenchError(
+                    f"Provider {actual_key} drift for lane {lane_id}: "
+                    f"expected {expected_value}, got {metadata.get(actual_key)}"
+                )
+
+    def _load_suite(self) -> dict[str, Any]:
+        import taxonomy_bench as tb
+
+        suite_path = self.wave_dir / self.manifest.get(
+            "suite_filename", "suite.private.json"
+        )
+        if (
+            not suite_path.exists()
+            or compute_suite_sha256(suite_path) != self.manifest["suite_sha256"]
+        ):
+            raise BenchError("Manifest-bound private suite is missing or changed")
+        return tb.load_suite(suite_path)
+
+    def _execute_wave_run(
+        self,
+        *,
+        suite: Mapping[str, Any],
+        provider: Provider,
+        lane_id: str,
+        phase: str,
+        repeat: int,
+        retries: int,
+    ) -> dict[str, Any]:
+        import taxonomy_bench as tb
+
+        lane = self.manifest["lanes"][lane_id]
+        lane_meta = self.manifest.get("lane_metadata", {}).get(lane_id, {})
+        unique_id = (
+            f"wave-{lane_id}-{phase}-{repeat}-"
+            f"{dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')}-"
+            f"{uuid.uuid4().hex[:12]}"
+        )
+        run = tb.execute_run(
+            suite=suite,
+            provider=provider,
+            run_meta={
+                "_run_id": unique_id,
+                "provider": f"{lane['family']}-cli",
+                "lane": lane_id,
+                "model": lane["selector"],
+                "requested_model": lane["selector"],
+                "resolved_model": lane["expected_model"],
+                "effort": "medium",
+                "repeat": repeat,
+                "wave_phase": phase,
+                "output_mode": "prompt",
+                "transport_retries": 0,
+                "tool_access": "none",
+                "suite_sha256": self.manifest["suite_sha256"],
+                "base_instruction_hash": self.manifest["base_instruction_hash"],
+                "tool_policy_hash": getattr(
+                    provider,
+                    "tool_policy_hash",
+                    lane_meta.get("tool_policy_hash"),
+                ),
+                "invocation_hash": getattr(
+                    provider,
+                    "invocation_hash",
+                    lane_meta.get("invocation_hash"),
+                ),
+                "cli_version": lane_meta.get("cli_version"),
+                "cli_versions": self.manifest["cli_versions"],
+                "manifest_hash": self.manifest["manifest_hash"],
+            },
+            retries=retries,
+            retry_policy="feedback",
+            retry_context="continued",
+            session_mode="isolated",
+            progress=False,
+            attempt_checkpoint=make_wave_checkpoint(self.wave_dir / "envelopes"),
+        )
+        run["suite_sha256"] = self.manifest["suite_sha256"]
+        run["base_instruction_hash"] = self.manifest["base_instruction_hash"]
+        run["tool_policy_hash"] = getattr(
+            provider, "tool_policy_hash", lane_meta.get("tool_policy_hash")
+        )
+        run["invocation_hash"] = getattr(
+            provider, "invocation_hash", lane_meta.get("invocation_hash")
+        )
+        run["cli_versions"] = self.manifest["cli_versions"]
+        run["requested_model"] = lane["selector"]
+        resolved = run.get("summary", {}).get("resolved_models", [])
+        run["resolved_model"] = (
+            resolved[0] if len(resolved) == 1 else lane["expected_model"]
+        )
+        run["task_ids"] = [task["task_id"] for task in run["tasks"]]
+        return run
+
+    def _save_run(self, run: Mapping[str, Any]) -> None:
+        import taxonomy_bench as tb
+
+        tb.save_run(run, self.wave_dir / "runs" / str(run["run_id"]))
+
+    def _record_abandonment(
+        self, state: LaneState, abort: WaveInfrastructureAbort
+    ) -> None:
+        if abort.run_id not in state.abandoned_run_ids:
+            state.abandoned_run_ids.append(abort.run_id)
+        state.abandoned_run_reasons[abort.run_id] = abort.error_kind
+        state.current_phase = "abandoned"
+        state.save(self._state_dir(state.lane))
+
+    def run_lane(self, lane_id: str) -> int:
+        """Run calibration and three restartable primary repeats for one lane."""
+        if lane_id not in self.manifest["lanes"]:
+            raise BenchError(f"Unknown lane: {lane_id}")
+        lane = self.manifest["lanes"][lane_id]
+        pair_index = self._pair_index(lane_id)
+        state_dir = self._state_dir(lane_id)
+
+        with FamilyLock(self.control_root, lane["family"]):
+            if not pair_can_start(self.manifest, self.control_root, pair_index):
+                raise BenchError(
+                    f"Pair {pair_index} cannot start until Pair {pair_index - 1} "
+                    "has been aggregated"
+                )
+            self.validate_subject_root()
+            calibration_provider = self.build_provider(lane_id, persistent=False)
+            preflight = calibration_provider.preflight()
+            provider_meta = self._provider_metadata(
+                lane_id, calibration_provider, preflight
+            )
+            self._validate_provider_metadata(lane_id, provider_meta)
+            fingerprint = canonical_hash(provider_meta)
+
+            if (state_dir / "state.json").exists():
+                state = LaneState.load(state_dir)
+                state.validate_continuation(self.manifest, calibration_provider)
+                if state.status == "invalidated":
+                    raise BenchError(
+                        f"Lane {lane_id} is invalidated: {state.invalidation_reason}"
+                    )
+                if state.status == "complete":
+                    publish_lane_report(state, self.manifest, self.wave_dir)
+                    return 0
+            else:
+                state = LaneState(
+                    lane=lane_id,
+                    pair_index=pair_index,
+                    manifest_hash=self.manifest["manifest_hash"],
+                    provider_fingerprint=fingerprint,
+                    provider_metadata=provider_meta,
+                    status="pending",
+                )
+                state.save(state_dir)
+
+            suite = self._load_suite()
+            if not state.calibration_run_id:
+                calibration_ids = set(self.manifest["calibration_ids"])
+                calibration_suite = {
+                    **suite,
+                    "tasks": [
+                        task
+                        for task in suite["tasks"]
+                        if task["id"] in calibration_ids
+                    ],
+                }
+                order = {
+                    task_id: index
+                    for index, task_id in enumerate(self.manifest["calibration_ids"])
+                }
+                calibration_suite["tasks"].sort(key=lambda task: order[task["id"]])
+                state.status = "calibrating"
+                state.current_phase = "calibration"
+                state.save(state_dir)
+                try:
+                    calibration = self._execute_wave_run(
+                        suite=calibration_suite,
+                        provider=calibration_provider,
+                        lane_id=lane_id,
+                        phase="calibration",
+                        repeat=0,
+                        retries=0,
+                    )
+                except WaveInfrastructureAbort as abort:
+                    self._record_abandonment(state, abort)
+                    return 2
+                admission = admit_calibration(
+                    calibration, self.manifest, lane_id
+                )
+                self._save_run(calibration)
+                if not admission.passed:
+                    state.status = "invalidated"
+                    state.current_phase = "calibration_rejected"
+                    state.invalidation_reason = ",".join(admission.reasons)
+                    state.save(state_dir)
+                    return 2
+                state.calibration_run_id = calibration["run_id"]
+                state.status = "running"
+                state.current_phase = "primary"
+                state.save(state_dir)
+
+            provider = self.build_provider(lane_id, persistent=True)
+            resumed_preflight = provider.preflight()
+            resumed_meta = self._provider_metadata(
+                lane_id, provider, resumed_preflight
+            )
+            self._validate_provider_metadata(lane_id, resumed_meta)
+            if canonical_hash(resumed_meta) != state.provider_fingerprint:
+                state.status = "invalidated"
+                state.invalidation_reason = "provider_fingerprint_drift"
+                state.save(state_dir)
+                raise BenchError(
+                    f"Provider fingerprint drift for lane {lane_id}; lane invalidated"
+                )
+
+            for repeat in range(1, WAVE1_PROTOCOL["primary_repeats"] + 1):
+                if repeat in state.completed_primary_repeat_numbers:
+                    continue
+                state.current_phase = f"primary_repeat_{repeat}"
+                state.save(state_dir)
+                try:
+                    run = self._execute_wave_run(
+                        suite=suite,
+                        provider=provider,
+                        lane_id=lane_id,
+                        phase="primary",
+                        repeat=repeat,
+                        retries=WAVE1_PROTOCOL["max_feedback_retries"],
+                    )
+                except WaveInfrastructureAbort as abort:
+                    self._record_abandonment(state, abort)
+                    return 2
+                self._save_run(run)
+                state.completed_primary_repeat_numbers.append(repeat)
+                state.accepted_run_ids.append(run["run_id"])
+                state.save(state_dir)
+
+            publish_lane_report(state, self.manifest, self.wave_dir)
+            return 0
+
+
+# ---------------------------------------------------------------------------
+# Atomic lane and pair report publication
+# ---------------------------------------------------------------------------
+
+
+def _load_run(wave_dir: Path, run_id: str) -> dict[str, Any]:
+    path = wave_dir / "runs" / run_id / "run.json"
+    if not path.exists():
+        raise BenchError(f"Run artifact is missing: {run_id}")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _write_staged_file(path: Path, text: str) -> None:
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _report_hashes(directory: Path, names: Sequence[str]) -> dict[str, str]:
+    return {
+        name: _sha256_bytes((directory / name).read_bytes())
+        for name in names
+    }
+
+
+def _validate_report_dir(
+    directory: Path,
+    *,
+    kind: str,
+    manifest_hash: str,
+    run_ids: Sequence[str],
+) -> dict[str, Any]:
+    marker_path = directory / "hashes.json"
+    if not marker_path.exists():
+        raise BenchError(f"Invalid {kind} report at {directory}: no hash marker")
+    try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise BenchError(f"Invalid {kind} report marker at {directory}") from exc
+    if marker.get("kind") != kind:
+        raise BenchError(f"Conflicting report kind at {directory}")
+    if marker.get("manifest_hash") != manifest_hash:
+        raise BenchError(f"Conflicting report manifest at {directory}")
+    if marker.get("run_ids") != list(run_ids):
+        raise BenchError(f"Conflicting report inputs at {directory}")
+    expected_names = (
+        ("lane.json", "lane.html")
+        if kind == "lane"
+        else ("matrix.json", "matrix.html")
+    )
+    if marker.get("files") != _report_hashes(directory, expected_names):
+        raise BenchError(f"Invalid {kind} report hashes at {directory}")
+    return marker
+
+
+def _promote_report(
+    *,
+    staging_root: Path,
+    final: Path,
+    kind: str,
+    manifest_hash: str,
+    run_ids: Sequence[str],
+    json_name: str,
+    json_payload: Mapping[str, Any],
+    html_name: str,
+    html: str,
+) -> Path:
+    if final.exists():
+        _validate_report_dir(
+            final,
+            kind=kind,
+            manifest_hash=manifest_hash,
+            run_ids=run_ids,
+        )
+        return final
+
+    staging_root.mkdir(parents=True, exist_ok=True)
+    for existing in sorted(staging_root.iterdir()):
+        if not existing.is_dir():
+            continue
+        try:
+            _validate_report_dir(
+                existing,
+                kind=kind,
+                manifest_hash=manifest_hash,
+                run_ids=run_ids,
+            )
+        except BenchError:
+            continue
+        final.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            os.replace(existing, final)
+        except OSError:
+            if not final.exists():
+                raise
+        _validate_report_dir(
+            final,
+            kind=kind,
+            manifest_hash=manifest_hash,
+            run_ids=run_ids,
+        )
+        return final
+
+    attempt = staging_root / uuid.uuid4().hex
+    attempt.mkdir()
+    _write_staged_file(attempt / json_name, canonical_json(json_payload) + "\n")
+    _write_staged_file(attempt / html_name, html)
+    marker = {
+        "kind": kind,
+        "manifest_hash": manifest_hash,
+        "run_ids": list(run_ids),
+        "files": _report_hashes(attempt, (json_name, html_name)),
+    }
+    _write_staged_file(attempt / "hashes.json", canonical_json(marker) + "\n")
+    _validate_report_dir(
+        attempt,
+        kind=kind,
+        manifest_hash=manifest_hash,
+        run_ids=run_ids,
+    )
+    final.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        os.replace(attempt, final)
+    except OSError:
+        if not final.exists():
+            raise
+    _validate_report_dir(
+        final,
+        kind=kind,
+        manifest_hash=manifest_hash,
+        run_ids=run_ids,
+    )
+    return final
+
+
+def publish_lane_report(
+    state: LaneState,
+    manifest: Mapping[str, Any],
+    wave_dir: Path,
+) -> Path:
+    """Publish one lane only after calibration and exactly three primary runs."""
+    import taxonomy_bench as tb
+
+    if not state.calibration_run_id:
+        raise BenchError(f"Lane {state.lane} has no admitted calibration")
+    if (
+        len(state.accepted_run_ids) != WAVE1_PROTOCOL["primary_repeats"]
+        or len(state.completed_primary_repeat_numbers)
+        != WAVE1_PROTOCOL["primary_repeats"]
+    ):
+        raise BenchError(
+            f"Lane {state.lane} requires exactly three accepted primary repeats"
+        )
+    runs = [_load_run(wave_dir, run_id) for run_id in state.accepted_run_ids]
+    matrix = tb.aggregate_matrix(runs)
+    lane_meta = manifest.get("lane_metadata", {}).get(state.lane, {})
+    payload = {
+        "format_version": 1,
+        "kind": "wave_lane",
+        "manifest_hash": manifest["manifest_hash"],
+        "lane": state.lane,
+        "requested_model": lane_meta.get(
+            "requested_model", manifest["lanes"][state.lane]["selector"]
+        ),
+        "resolved_model": lane_meta.get(
+            "expected_model", manifest["lanes"][state.lane]["expected_model"]
+        ),
+        "cli_version": lane_meta.get("cli_version"),
+        "calibration_run_id": state.calibration_run_id,
+        "accepted_run_ids": list(state.accepted_run_ids),
+        "abandoned_run_ids": list(state.abandoned_run_ids),
+        "matrix": matrix,
+    }
+    transaction = canonical_hash({
+        "manifest_hash": manifest["manifest_hash"],
+        "run_ids": list(state.accepted_run_ids),
+    })
+    final = _promote_report(
+        staging_root=(
+            wave_dir / "staging" / f"lane-{state.lane}" / transaction
+        ),
+        final=wave_dir / "reports" / f"lane-{state.lane}",
+        kind="lane",
+        manifest_hash=manifest["manifest_hash"],
+        run_ids=state.accepted_run_ids,
+        json_name="lane.json",
+        json_payload=payload,
+        html_name="lane.html",
+        html=tb.render_matrix_html(matrix),
+    )
+    marker = _validate_report_dir(
+        final,
+        kind="lane",
+        manifest_hash=manifest["manifest_hash"],
+        run_ids=state.accepted_run_ids,
+    )
+    state.status = "complete"
+    state.current_phase = "complete"
+    state.completed_at = dt.datetime.now(dt.timezone.utc).isoformat()
+    state.report_path = str(final)
+    state.report_hash = canonical_hash(marker)
+    state.save(wave_dir / "lanes" / state.lane)
+    return final
+
+
+def aggregate_pair(manifest_path: Path, pair_index: int) -> Path:
+    """Publish a single-owner pair matrix from exactly six accepted runs."""
+    import taxonomy_bench as tb
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    content = {k: v for k, v in manifest.items() if k != "manifest_hash"}
+    if canonical_hash(content) != manifest.get("manifest_hash"):
+        raise BenchError("Manifest content hash mismatch")
+    if pair_index < 1 or pair_index > len(manifest["pairs"]):
+        raise BenchError(f"Pair index must be between 1 and {len(manifest['pairs'])}")
+    wave_dir = manifest_path.parent
+    control_root = Path(manifest["control_root"])
+
+    with PairLock(control_root, pair_index):
+        lane_ids = list(manifest["pairs"][pair_index - 1])
+        states = [
+            LaneState.load(wave_dir / "lanes" / lane_id)
+            for lane_id in lane_ids
+        ]
+        if not pair_can_aggregate(
+            manifest, control_root, pair_index, states
+        ):
+            raise BenchError(
+                f"Pair {pair_index} requires two complete lanes with three runs each"
+            )
+        run_ids = [
+            run_id
+            for state in states
+            for run_id in state.accepted_run_ids
+        ]
+        if len(run_ids) != 6:
+            raise BenchError(f"Pair {pair_index} requires exactly six primary runs")
+        runs = [_load_run(wave_dir, run_id) for run_id in run_ids]
+        matrix = tb.aggregate_matrix(runs)
+        matrix.update({
+            "kind": "wave_pair",
+            "manifest_hash": manifest["manifest_hash"],
+            "pair_index": pair_index,
+            "lanes": lane_ids,
+            "accepted_run_ids": run_ids,
+        })
+        transaction = canonical_hash({
+            "manifest_hash": manifest["manifest_hash"],
+            "pair_index": pair_index,
+            "run_ids": run_ids,
+        })
+        final = _promote_report(
+            staging_root=(
+                wave_dir / "staging" / f"pair-{pair_index}" / transaction
+            ),
+            final=wave_dir / "reports" / f"pair-{pair_index}",
+            kind="pair",
+            manifest_hash=manifest["manifest_hash"],
+            run_ids=run_ids,
+            json_name="matrix.json",
+            json_payload=matrix,
+            html_name="matrix.html",
+            html=tb.render_matrix_html(matrix),
+        )
+        record_aggregation(
+            control_root, manifest["manifest_hash"], pair_index
+        )
+        return final

@@ -15,6 +15,7 @@ import taxonomy_bench_protocol
 import taxonomy_bench_wave as wave
 from taxonomy_bench_cli import Completion, ProcessResult
 from taxonomy_bench_protocol import BASE_INSTRUCTIONS, BenchError, canonical_hash
+from test_taxonomy_bench import correct_answer
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -86,6 +87,70 @@ def _calibration_run(manifest: dict, lane_id: str = "claude-opus-5") -> dict:
             for task_id in manifest["calibration_ids"]
         ],
     }
+
+
+class WaveOracleProvider(taxonomy_bench_cli.Provider):
+    supports_sessions = True
+    auth_mode = "subscription"
+
+    def __init__(
+        self,
+        suite: dict,
+        manifest: dict,
+        lane_id: str,
+        *,
+        persistent: bool,
+        fail_on: int | None = None,
+        error_kind: str = "rate_limit",
+    ) -> None:
+        self.selector = manifest["lanes"][lane_id]["selector"]
+        self.expected_model = manifest["lanes"][lane_id]["expected_model"]
+        lane_meta = manifest["lane_metadata"][lane_id]
+        self.invocation_hash = lane_meta["invocation_hash"]
+        self.tool_policy_hash = lane_meta["tool_policy_hash"]
+        self.persistent = persistent
+        self.fail_on = fail_on
+        self.error_kind = error_kind
+        self.calls: list[tuple[str, str | None]] = []
+        self._answers = {
+            task["prompt"]: correct_answer(task)
+            for task in suite["tasks"]
+        }
+        self._prompt_by_session: dict[str, str] = {}
+
+    def preflight(self):
+        return {
+            "auth_mode": "subscription",
+            "resolved_model": self.expected_model,
+        }
+
+    def complete(self, prompt, output_schema, previous_response_id=None):
+        self.calls.append((prompt, previous_response_id))
+        call_number = len(self.calls)
+        if self.fail_on == call_number:
+            return Completion(
+                text="",
+                latency_ms=1.0,
+                error="synthetic infrastructure failure",
+                error_kind=self.error_kind,
+            )
+        if prompt in self._answers:
+            original = prompt
+        elif previous_response_id in self._prompt_by_session:
+            original = self._prompt_by_session[previous_response_id]
+        else:
+            matches = [value for value in self._answers if prompt.startswith(value)]
+            assert matches
+            original = matches[0]
+        session_id = f"raw-session-{id(self)}-{call_number}"
+        self._prompt_by_session[session_id] = original
+        return Completion(
+            text=self._answers[original],
+            latency_ms=1.0,
+            resolved_model=self.expected_model,
+            response_id=session_id if self.persistent else None,
+            status="completed",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -534,3 +599,169 @@ class TestWaveCli:
         assert "subscription" in output
         assert "claude-opus-5" in output
         assert "raw-secret-session" not in output
+
+
+class TestWaveLaneExecution:
+    def _controller(
+        self,
+        *,
+        manifest: dict,
+        control: Path,
+        out: Path,
+        subject: Path,
+        suite: dict,
+        fail_primary_on: int | None = None,
+    ) -> tuple[wave.WaveController, list[WaveOracleProvider]]:
+        providers: list[WaveOracleProvider] = []
+
+        def factory(lane_id: str, persistent: bool):
+            provider = WaveOracleProvider(
+                suite,
+                manifest,
+                lane_id,
+                persistent=persistent,
+                fail_on=fail_primary_on if persistent else None,
+            )
+            providers.append(provider)
+            return provider
+
+        return (
+            wave.WaveController(
+                manifest_path=out / "manifest.json",
+                control_root=control,
+                subject_root=subject,
+                wave_dir=out,
+                provider_factory=factory,
+            ),
+            providers,
+        )
+
+    def test_wave_run_calibrates_then_publishes_three_repeats(
+        self, tmp_path: Path
+    ):
+        manifest, suite_path, control, out = _prepared_wave(tmp_path)
+        suite = tb.load_suite(suite_path)
+        subject = tmp_path / "subject"
+        subject.mkdir()
+        controller, providers = self._controller(
+            manifest=manifest,
+            control=control,
+            out=out,
+            subject=subject,
+            suite=suite,
+        )
+        assert controller.run_lane("claude-opus-5") == 0
+        state = wave.LaneState.load(out / "lanes" / "claude-opus-5")
+        assert state.status == "complete"
+        assert len(state.accepted_run_ids) == 3
+        assert state.completed_primary_repeat_numbers == [1, 2, 3]
+        calibration = json.loads(
+            (
+                out / "runs" / state.calibration_run_id / "run.json"
+            ).read_text(encoding="utf-8")
+        )
+        assert calibration["task_ids"] == manifest["calibration_ids"]
+        assert (out / "reports" / "lane-claude-opus-5" / "lane.json").exists()
+        assert len(providers[0].calls) == 8
+        assert len(providers[1].calls) == 32 * 3
+        for run_id in state.accepted_run_ids:
+            text = (out / "runs" / run_id / "run.json").read_text(
+                encoding="utf-8"
+            )
+            assert "raw-session-" not in text
+
+    def test_wave_run_abandons_and_restarts_current_repeat(
+        self, tmp_path: Path
+    ):
+        manifest, suite_path, control, out = _prepared_wave(tmp_path)
+        suite = tb.load_suite(suite_path)
+        subject = tmp_path / "subject"
+        subject.mkdir()
+        controller, providers = self._controller(
+            manifest=manifest,
+            control=control,
+            out=out,
+            subject=subject,
+            suite=suite,
+            fail_primary_on=3,
+        )
+        assert controller.run_lane("claude-opus-5") == 2
+        state = wave.LaneState.load(out / "lanes" / "claude-opus-5")
+        assert state.calibration_run_id
+        assert state.accepted_run_ids == []
+        assert len(state.abandoned_run_ids) == 1
+        assert len(providers[-1].calls) == 3
+        abandoned = state.abandoned_run_ids[0]
+        envelope = (
+            out / "envelopes" / f"{abandoned}.envelope.json"
+        ).read_text(encoding="utf-8")
+        assert "raw-session-" not in envelope
+
+        resumed, resumed_providers = self._controller(
+            manifest=manifest,
+            control=control,
+            out=out,
+            subject=subject,
+            suite=suite,
+        )
+        assert resumed.run_lane("claude-opus-5") == 0
+        final = wave.LaneState.load(out / "lanes" / "claude-opus-5")
+        assert final.status == "complete"
+        assert final.calibration_run_id == state.calibration_run_id
+        assert final.abandoned_run_ids == [abandoned]
+        assert len(resumed_providers) == 2
+
+    def test_lane_report_rejects_incomplete_state(self, tmp_path: Path):
+        manifest, _, _, out = _prepared_wave(tmp_path)
+        state = wave.LaneState(
+            lane="claude-opus-5",
+            pair_index=1,
+            manifest_hash=manifest["manifest_hash"],
+            provider_fingerprint="x",
+            status="running",
+            calibration_run_id="calibration",
+        )
+        with pytest.raises(BenchError, match="exactly three"):
+            wave.publish_lane_report(state, manifest, out)
+
+
+class TestWavePairAggregation:
+    def test_pair_aggregation_uses_six_primary_runs_and_opens_barrier(
+        self, tmp_path: Path
+    ):
+        manifest, suite_path, control, out = _prepared_wave(tmp_path)
+        suite = tb.load_suite(suite_path)
+        subject = tmp_path / "subject"
+        subject.mkdir()
+
+        for lane_id in manifest["pairs"][0]:
+            def factory(
+                requested_lane: str,
+                persistent: bool,
+                lane_id=lane_id,
+            ):
+                assert requested_lane == lane_id
+                return WaveOracleProvider(
+                    suite,
+                    manifest,
+                    lane_id,
+                    persistent=persistent,
+                )
+
+            controller = wave.WaveController(
+                manifest_path=out / "manifest.json",
+                control_root=control,
+                subject_root=subject,
+                wave_dir=out,
+                provider_factory=factory,
+            )
+            assert controller.run_lane(lane_id) == 0
+
+        report = wave.aggregate_pair(out / "manifest.json", 1)
+        matrix = json.loads(
+            (report / "matrix.json").read_text(encoding="utf-8")
+        )
+        assert len(matrix["accepted_run_ids"]) == 6
+        assert len(matrix["runs"]) == 6
+        assert wave.pair_can_start(manifest, control, 2)
+        assert wave.aggregate_pair(out / "manifest.json", 1) == report
