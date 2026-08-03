@@ -26,7 +26,7 @@ import sys
 import time
 from collections import defaultdict, deque
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from taxonomy_bench_cli import Completion, Provider
 from taxonomy_bench_progression import derive_condition_evidence, wilson_interval
@@ -1439,6 +1439,7 @@ def execute_run(
     retry_context: str,
     session_mode: str,
     progress: bool = True,
+    attempt_checkpoint: Callable[[str, Mapping[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     if session_mode == "continuous" and not provider.supports_sessions:
         raise BenchError("The selected provider does not support continuous sessions")
@@ -1450,6 +1451,26 @@ def execute_run(
     tasks = list(suite["tasks"])
     records: list[dict[str, Any]] = []
     session_previous_id: str | None = None
+    configuration = dict(run_meta)
+    run_id_override = configuration.pop("_run_id", None)
+    run = {
+        "format_version": FORMAT_VERSION,
+        "benchmark_version": BENCHMARK_VERSION,
+        "run_id": str(run_id_override or run_id(run_meta, suite)),
+        "created_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "suite_hash": suite.get("suite_hash") or suite_hash(suite),
+        "suite_seed": suite.get("seed"),
+        "taxonomy": suite.get("taxonomy", {}),
+        "configuration": {
+            **configuration,
+            "retries": retries,
+            "retry_policy": retry_policy,
+            "retry_context": retry_context,
+            "retry_schedule": "after_first_pass",
+            "session_mode": session_mode,
+        },
+        "tasks": records,
+    }
 
     # Phase 1: run every first attempt before any cognitive retries. This keeps the
     # no-retry baseline paired and uncontaminated by earlier retries.
@@ -1475,6 +1496,8 @@ def execute_run(
             "attempts": [_attempt_record(1, completion, score, "first")],
         }
         records.append(record)
+        if attempt_checkpoint is not None:
+            attempt_checkpoint(run["run_id"], run)
         if session_mode == "continuous" and completion.response_id:
             session_previous_id = completion.response_id
 
@@ -1516,6 +1539,8 @@ def execute_run(
                 score = None if completion.error else score_text(task, completion.text)
                 attempt = _attempt_record(attempt_number, completion, score, "retry")
                 record["attempts"].append(attempt)
+                if attempt_checkpoint is not None:
+                    attempt_checkpoint(run["run_id"], run)
                 if completion.error:
                     break
                 previous_attempt = attempt
@@ -1524,24 +1549,6 @@ def execute_run(
                 if score and score["exact"]:
                     break
 
-    run = {
-        "format_version": FORMAT_VERSION,
-        "benchmark_version": BENCHMARK_VERSION,
-        "run_id": run_id(run_meta, suite),
-        "created_at": dt.datetime.now(dt.timezone.utc).isoformat(),
-        "suite_hash": suite.get("suite_hash") or suite_hash(suite),
-        "suite_seed": suite.get("seed"),
-        "taxonomy": suite.get("taxonomy", {}),
-        "configuration": {
-            **dict(run_meta),
-            "retries": retries,
-            "retry_policy": retry_policy,
-            "retry_context": retry_context,
-            "retry_schedule": "after_first_pass",
-            "session_mode": session_mode,
-        },
-        "tasks": records,
-    }
     run["summary"] = summarize_run(run)
     return run
 
@@ -1921,6 +1928,11 @@ def render_matrix_html(matrix: Mapping[str, Any]) -> str:
 def build_provider(args: argparse.Namespace, model: str | None = None, effort: str | None = None) -> Provider:
     selected_model = model if model is not None else getattr(args, "model", None)
     selected_effort = effort if effort is not None else (getattr(args, "effort", None) or "default")
+    if args.provider in ("claude-cli", "codex-cli"):
+        raise BenchError(
+            f"Provider '{args.provider}' is manifest-bound. Use "
+            "'taxonomy-bench wave preflight' or 'taxonomy-bench wave run'."
+        )
     if args.provider == "openai":
         if not selected_model:
             raise BenchError("--model is required for the OpenAI provider")
@@ -1967,7 +1979,11 @@ def add_suite_source_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_provider_args(parser: argparse.ArgumentParser, matrix: bool = False) -> None:
-    parser.add_argument("--provider", choices=["openai", "command"], default="openai")
+    parser.add_argument(
+        "--provider",
+        choices=["openai", "command", "claude-cli", "codex-cli"],
+        default="openai",
+    )
     if not matrix:
         parser.add_argument(
             "--model",
@@ -2117,6 +2133,47 @@ def command_score(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_wave_prepare(args: argparse.Namespace) -> int:
+    import taxonomy_bench_wave as wave
+
+    suite_path = Path(args.suite)
+    control_root = Path(args.control_root)
+    out_dir = Path(args.out)
+    if not control_root.exists() or not control_root.is_dir():
+        raise BenchError(
+            f"Control root {control_root} must already exist and be a directory"
+        )
+    suite = load_suite(suite_path)
+    metadata = wave.collect_provider_metadata()
+    manifest = wave.prepare_manifest(
+        suite, suite_path, control_root, metadata, out_dir
+    )
+    print(_json({
+        "manifest": str(out_dir / "manifest.json"),
+        "manifest_hash": manifest["manifest_hash"],
+    }))
+    return 0
+
+
+def _wave_controller(args: argparse.Namespace):
+    import taxonomy_bench_wave as wave
+
+    manifest_path = Path(args.manifest)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    return wave.WaveController(
+        manifest_path=manifest_path,
+        control_root=Path(manifest["control_root"]),
+        subject_root=Path(args.subject_root),
+        wave_dir=manifest_path.parent,
+    )
+
+
+def command_wave_preflight(args: argparse.Namespace) -> int:
+    controller = _wave_controller(args)
+    print(_json(controller.preflight_lane(args.lane)))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Generate and run a progressive AI reasoning benchmark from the Marble Skill Taxonomy."
@@ -2166,6 +2223,31 @@ def build_parser() -> argparse.ArgumentParser:
     score_parser.add_argument("--notes", default="")
     score_parser.add_argument("--out", default="scored-runs")
     score_parser.set_defaults(func=command_score)
+
+    wave_parser = subparsers.add_parser(
+        "wave", help="Wave 1 subscription benchmark controller"
+    )
+    wave_subparsers = wave_parser.add_subparsers(
+        dest="wave_command", required=True
+    )
+
+    wave_prepare = wave_subparsers.add_parser(
+        "prepare", help="Create an immutable Wave manifest"
+    )
+    wave_prepare.add_argument("--suite", required=True)
+    wave_prepare.add_argument("--out", required=True)
+    wave_prepare.add_argument("--control-root", required=True)
+    wave_prepare.set_defaults(func=command_wave_prepare)
+
+    wave_preflight = wave_subparsers.add_parser(
+        "preflight", help="Verify one manifest-bound subscription lane"
+    )
+    wave_preflight.add_argument("--manifest", required=True)
+    wave_preflight.add_argument("--lane", required=True, choices=sorted(
+        __import__("taxonomy_bench_wave").WAVE1_LANES
+    ))
+    wave_preflight.add_argument("--subject-root", required=True)
+    wave_preflight.set_defaults(func=command_wave_preflight)
 
     return parser
 

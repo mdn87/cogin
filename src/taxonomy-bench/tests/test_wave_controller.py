@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 from pathlib import Path
 
@@ -47,6 +48,44 @@ def _claude_success_json(model: str = "claude-fable-5") -> str:
         },
         "permission_denials": [], "terminal_reason": "completed",
     })
+
+
+def _prepared_wave(tmp_path: Path) -> tuple[dict, Path, Path, Path]:
+    suite = _fake_suite(tasks_per_tier=4)
+    suite_path = tmp_path / "suite.private.json"
+    suite_path.write_text(json.dumps(suite), encoding="utf-8")
+    control_root = tmp_path / "control"
+    control_root.mkdir()
+    out_dir = tmp_path / "wave-1"
+    metadata = wave.collect_provider_metadata()
+    manifest = wave.prepare_manifest(
+        suite, suite_path, control_root, metadata, out_dir
+    )
+    return manifest, suite_path, control_root, out_dir
+
+
+def _calibration_run(manifest: dict, lane_id: str = "claude-opus-5") -> dict:
+    lane = manifest["lanes"][lane_id]
+    lane_meta = manifest["lane_metadata"][lane_id]
+    return {
+        "suite_sha256": manifest["suite_sha256"],
+        "task_ids": list(manifest["calibration_ids"]),
+        "requested_model": lane["selector"],
+        "resolved_model": lane["expected_model"],
+        "base_instruction_hash": manifest["base_instruction_hash"],
+        "tool_policy_hash": lane_meta["tool_policy_hash"],
+        "invocation_hash": lane_meta["invocation_hash"],
+        "cli_versions": manifest["cli_versions"],
+        "attempts": [
+            {
+                "task_id": task_id,
+                "scored": True,
+                "latency_ms": 12.0,
+                "error_kind": None,
+            }
+            for task_id in manifest["calibration_ids"]
+        ],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -249,7 +288,115 @@ class TestPairBarriers:
 
 
 class TestCalibrationAdmission:
-    pass  # Expanded in later tests with run orchestration
+    def test_admits_complete_calibration(self, tmp_path: Path):
+        manifest, *_ = _prepared_wave(tmp_path)
+        result = wave.admit_calibration(
+            _calibration_run(manifest), manifest, "claude-opus-5"
+        )
+        assert result.passed
+        assert result.reasons == ()
+
+    @pytest.mark.parametrize(
+        ("mutation", "reason"),
+        [
+            (lambda run: run["attempts"].pop(), "attempt_count"),
+            (
+                lambda run: run["attempts"][0].update(scored=False),
+                "unscored:",
+            ),
+            (
+                lambda run: run["attempts"][0].update(latency_ms=-1),
+                "latency:",
+            ),
+            (
+                lambda run: run.update(suite_sha256="changed"),
+                "suite_hash_mismatch",
+            ),
+            (
+                lambda run: run["task_ids"].reverse(),
+                "task_ids_mismatch",
+            ),
+            (
+                lambda run: run.update(resolved_model="fallback"),
+                "resolved_model_mismatch",
+            ),
+            (
+                lambda run: run.update(invocation_hash="changed"),
+                "invocation_hash_mismatch",
+            ),
+            (
+                lambda run: run["attempts"][0].update(error_kind="rate_limit"),
+                "infrastructure:",
+            ),
+        ],
+    )
+    def test_rejects_invalid_calibration(
+        self, tmp_path: Path, mutation, reason: str
+    ):
+        manifest, *_ = _prepared_wave(tmp_path)
+        run = _calibration_run(manifest)
+        mutation(run)
+        result = wave.admit_calibration(run, manifest, "claude-opus-5")
+        assert not result.passed
+        assert any(reason in item for item in result.reasons)
+
+    def test_malformed_subject_json_is_still_scored(self, tmp_path: Path):
+        manifest, *_ = _prepared_wave(tmp_path)
+        run = _calibration_run(manifest)
+        run["attempts"][0]["text"] = "not json"
+        assert wave.admit_calibration(
+            run, manifest, "claude-opus-5"
+        ).passed
+
+
+class TestWaveCheckpoint:
+    def test_persists_then_aborts_on_infrastructure(self, tmp_path: Path):
+        envelope = {
+            "configuration": {"retries": 2},
+            "tasks": [{
+                "task_id": "t1",
+                "base_previous_response_id": None,
+                "attempts": [{
+                    "attempt": 1,
+                    "response_id": "raw-session",
+                    "error_kind": "rate_limit",
+                    "score": None,
+                }],
+            }],
+        }
+        checkpoint = wave.make_wave_checkpoint(tmp_path)
+        with pytest.raises(wave.WaveInfrastructureAbort):
+            checkpoint("run-1", envelope)
+        saved = json.loads(
+            (tmp_path / "run-1.envelope.json").read_text(encoding="utf-8")
+        )
+        text = json.dumps(saved)
+        assert "raw-session" not in text
+        assert hashlib.sha256(b"raw-session").hexdigest() in text
+
+    @pytest.mark.parametrize(
+        ("attempt", "exact", "retries", "redacted"),
+        [(1, True, 2, True), (1, False, 2, False), (3, False, 2, True)],
+    )
+    def test_redacts_only_closed_retry_windows(
+        self, tmp_path: Path, attempt: int, exact: bool, retries: int, redacted: bool
+    ):
+        envelope = {
+            "configuration": {"retries": retries},
+            "tasks": [{
+                "task_id": "t1",
+                "base_previous_response_id": None,
+                "attempts": [{
+                    "attempt": attempt,
+                    "response_id": "raw-session",
+                    "error_kind": None,
+                    "score": {"exact": exact},
+                }],
+            }],
+        }
+        wave.make_wave_checkpoint(tmp_path)("run-1", envelope)
+        saved = (tmp_path / "run-1.envelope.json").read_text(encoding="utf-8")
+        assert ("raw-session" not in saved) is redacted
 
 
 # ---------------------------------------------------------------------------
@@ -307,3 +454,83 @@ class TestWaveController:
         ctrl.validate_subject_root()
         # Marker should exist
         assert (subject_root / ".wave1-subject-root").exists()
+
+
+class TestWaveCli:
+    def test_wave_prepare_writes_manifest(
+        self, tmp_path: Path, monkeypatch, capsys
+    ):
+        suite = _fake_suite(tasks_per_tier=4)
+        suite_path = tmp_path / "suite.private.json"
+        suite_path.write_text(json.dumps(suite), encoding="utf-8")
+        control = tmp_path / "control"
+        control.mkdir()
+        out = tmp_path / "wave-1"
+        monkeypatch.setattr(
+            wave, "collect_provider_metadata", lambda: {
+                "instruction_hash": canonical_hash(BASE_INSTRUCTIONS),
+                "invocation_hash": "i",
+                "tool_policy_hash": "t",
+                "codex_version": "test",
+                "claude_version": "test",
+            }
+        )
+        assert tb.main([
+            "wave", "prepare",
+            "--suite", str(suite_path),
+            "--out", str(out),
+            "--control-root", str(control),
+        ]) == 0
+        manifest = json.loads(
+            (out / "manifest.json").read_text(encoding="utf-8")
+        )
+        assert manifest["manifest_hash"] in capsys.readouterr().out
+        assert (out / "suite.private.json").exists()
+
+    def test_wave_prepare_requires_existing_control_root(self, tmp_path: Path):
+        suite = _fake_suite(tasks_per_tier=4)
+        suite_path = tmp_path / "suite.private.json"
+        suite_path.write_text(json.dumps(suite), encoding="utf-8")
+        out = tmp_path / "wave-1"
+        assert tb.main([
+            "wave", "prepare",
+            "--suite", str(suite_path),
+            "--out", str(out),
+            "--control-root", str(tmp_path / "missing"),
+        ]) == 2
+        assert not out.exists()
+
+    def test_wave_preflight_prints_only_sanitized_metadata(
+        self, tmp_path: Path, monkeypatch, capsys
+    ):
+        manifest, _, control, out = _prepared_wave(tmp_path)
+        subject = tmp_path / "subject"
+        subject.mkdir()
+
+        class FakeProvider:
+            auth_mode = "subscription"
+            expected_model = "claude-opus-5"
+            invocation_hash = manifest["lane_metadata"]["claude-opus-5"]["invocation_hash"]
+            tool_policy_hash = manifest["lane_metadata"]["claude-opus-5"]["tool_policy_hash"]
+
+            def preflight(self):
+                return {
+                    "resolved_model": "claude-opus-5",
+                    "session_id": "raw-secret-session",
+                }
+
+        monkeypatch.setattr(
+            wave.WaveController,
+            "build_provider",
+            lambda self, lane_id, persistent=False: FakeProvider(),
+        )
+        assert tb.main([
+            "wave", "preflight",
+            "--manifest", str(out / "manifest.json"),
+            "--lane", "claude-opus-5",
+            "--subject-root", str(subject),
+        ]) == 0
+        output = capsys.readouterr().out
+        assert "subscription" in output
+        assert "claude-opus-5" in output
+        assert "raw-secret-session" not in output

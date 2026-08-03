@@ -119,6 +119,16 @@ def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
     assert not archive.exists()
 
 
+def test_generic_run_rejects_subscription_providers():
+    for name in ("claude-cli", "codex-cli"):
+        args = tb.build_parser().parse_args([
+            "run", "--suite", "unused.json", "--provider", name,
+            "--model", "x",
+        ])
+        with pytest.raises(tb.BenchError, match="wave"):
+            tb.build_provider(args)
+
+
 def correct_answer(task: dict) -> str:
     scorer = task["scorer"]
     kind = scorer["type"]
@@ -286,6 +296,34 @@ def test_retry_recovery_is_paired():
     assert summary["first_attempt_failures"] == 8
     assert summary["retried_failures"] == 8
     assert all(len(task["attempts"]) == 2 for task in run["tasks"])
+
+
+def test_execute_run_invokes_checkpoint_after_each_attempt():
+    suite = load_fixture_suite(tasks_per_tier=1)
+    provider = OracleProvider(suite, wrong_first=True)
+    seen: list[tuple[str, int, int]] = []
+
+    def checkpoint(run_id: str, envelope: dict) -> None:
+        seen.append((
+            run_id,
+            len(envelope["tasks"]),
+            sum(len(task["attempts"]) for task in envelope["tasks"]),
+        ))
+
+    run = tb.execute_run(
+        suite=suite,
+        provider=provider,
+        run_meta={"provider": "oracle", "model": "oracle", "effort": "none"},
+        retries=1,
+        retry_policy="feedback",
+        retry_context="continued",
+        session_mode="isolated",
+        progress=False,
+        attempt_checkpoint=checkpoint,
+    )
+    assert len(seen) == len(suite["tasks"]) * 2
+    assert {item[0] for item in seen} == {run["run_id"]}
+    assert [item[2] for item in seen] == list(range(1, len(seen) + 1))
 
 
 def test_scoring_rejects_invalid_topological_order():
