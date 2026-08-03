@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` (recommended) or
 > `superpowers:executing-plans` to implement this plan task-by-task. Steps use
-> checkbox (`- [ ]`) syntax for tracking.
+> checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Make the six approved subscription-backed runplans executable through
 native Claude Code and Codex CLI providers plus a restartable Wave 1 controller.
@@ -33,16 +33,25 @@ fallback, or private-suite gates to make a run proceed.
 
 ## Current State
 
-- `main` is clean and tracks `origin/main`.
-- Taxonomy Bench 0.2.0 has 93 passing tests.
-- `taxonomy_bench.py` owns providers, run execution, scoring, CLI parsing, and
-  report persistence.
-- The `command` provider cannot verify subscription authentication, resolved
-  models, tool isolation, or continued CLI sessions.
-- `matrix` supports only the OpenAI API provider and runs conditions
-  sequentially.
-- No Wave 1 manifest, family lock, calibration admission gate, lane state, or
-  pair barrier exists.
+> **Status correction (2026-08-02):** an earlier session marked every task
+> complete, but only Tasks 1-4 and 6-7 (plus parts of 5 and 8) actually landed
+> in commit `f4fe7be`. Checkboxes below now reflect verified code state.
+> Remaining work is planned in
+> `docs/superpowers/plans/2026-08-02-wave-1-completion.md`, which supersedes
+> Tasks 8-12 here.
+
+- `main` tracks `origin/main` at `f4fe7be`; 155 tests pass.
+- Landed: `taxonomy_bench_protocol.py` (instructions, canonical JSON/hashes),
+  `taxonomy_bench_cli.py` (`ClaudeCliProvider`, `CodexCliProvider`, sanitized
+  env, injectable process runner, `preflight()`), `taxonomy_bench_wave.py`
+  (manifest preparation, family locks, lane state, pair barriers,
+  `WaveController` with subject-root validation and `build_provider`).
+- Not landed despite prior checkmarks: the four `wave` CLI subcommands, the
+  calibration admission gate (test class is an empty stub), the per-attempt
+  checkpoint/immediate-abort seam, session-identifier redaction, lane reports,
+  pair aggregation, packaging updates (`py-modules`, `.gitignore`, release
+  map), documentation updates, and live preflight (`VALIDATION.md` is still
+  the 2026-07-21 record).
 - The upstream Marble taxonomy is not currently checked out in this repository.
   Implementation and synthetic end-to-end tests use `sample_data`; real Wave 1
   preparation waits for an operator-provided upstream checkout.
@@ -98,7 +107,7 @@ fallback, or private-suite gates to make a run proceed.
 - Create: `src/taxonomy-bench/tests/test_subscription_cli.py`
 - Create: `docs/evidence/wave-1-cli-characterization.md`
 
-- [ ] **Step 1: Record installed CLI versions and non-interactive help**
+- [x] **Step 1: Record installed CLI versions and non-interactive help**
 
 Run from `src/taxonomy-bench`:
 
@@ -114,7 +123,7 @@ claude auth status --help
 Expected: both CLIs exit successfully; the evidence document records versions,
 supported model/session/output flags, and the date.
 
-- [ ] **Step 2: Capture one harmless machine-readable response per CLI**
+- [x] **Step 2: Capture one harmless machine-readable response per CLI**
 
 Use prompt `Return only {"ok":true}.` with tools disabled, medium effort, and
 machine-readable output. This is output-shape characterization, not a benchmark
@@ -128,7 +137,7 @@ auth cannot be proven. Do not redirect or commit unsanitized output.
 Expected: identify the exact fields carrying final text, session/thread ID,
 resolved model or model-usage identity, usage, status, and errors.
 
-- [ ] **Step 3: Sanitize the response shapes into test constants**
+- [x] **Step 3: Sanitize the response shapes into test constants**
 
 Create tests with inline JSON/JSONL strings. Replace real session IDs, account
 identifiers, request IDs, timestamps, and usage values with obvious fixtures.
@@ -155,7 +164,7 @@ Use the actual observed field names. If the installed CLI does not expose a
 resolved model, record that as a blocking discovery instead of inferring it
 from the requested selector.
 
-- [ ] **Step 4: Add fixture-shape tests**
+- [x] **Step 4: Add fixture-shape tests**
 
 Verify the sanitized Codex lines are individually valid JSON and the sanitized
 Claude document is valid JSON. Record examples of malformed output, nonzero
@@ -170,7 +179,7 @@ python -m pytest tests/test_subscription_cli.py -q
 
 Expected: PASS. Do not commit a deliberately failing test between tasks.
 
-- [ ] **Step 5: Commit the characterization**
+- [x] **Step 5: Commit the characterization**
 
 ```powershell
 git add docs/evidence/wave-1-cli-characterization.md src/taxonomy-bench/tests/test_subscription_cli.py
@@ -187,7 +196,7 @@ git commit -m "test: characterize subscription cli output"
 - Modify: `src/taxonomy-bench/taxonomy_bench.py:1229-1251`
 - Modify: `src/taxonomy-bench/tests/test_taxonomy_bench.py:143-199`
 
-- [ ] **Step 1: Add a failing compatibility test**
+- [x] **Step 1: Add a failing compatibility test**
 
 ```python
 def test_provider_types_remain_public():
@@ -206,7 +215,7 @@ python -m pytest tests/test_taxonomy_bench.py::test_provider_types_remain_public
 Expected: FAIL because the types still live in `taxonomy_bench` and lack the
 new fields.
 
-- [ ] **Step 2: Establish one-way imports and protocol ownership**
+- [x] **Step 2: Establish one-way imports and protocol ownership**
 
 Move `BASE_INSTRUCTIONS` and `BenchError` into
 `taxonomy_bench_protocol.py`. Define canonical JSON/hash helpers there as well.
@@ -220,7 +229,7 @@ Provider-specific configuration and parse failures use subclasses of
 `taxonomy_bench.py`. Re-export `BASE_INSTRUCTIONS`, `BenchError`, `Provider`,
 and `Completion` from `taxonomy_bench.py` for compatibility.
 
-- [ ] **Step 3: Move the base types into the CLI module**
+- [x] **Step 3: Move the base types into the CLI module**
 
 Implement and re-export these types from `taxonomy_bench.py`:
 
@@ -255,19 +264,19 @@ class Provider:
 Keep `OpenAIProvider`, `CommandProvider`, `OracleProvider`, and external imports
 working through `taxonomy_bench.Provider` and `taxonomy_bench.Completion`.
 
-- [ ] **Step 4: Persist structured infrastructure metadata**
+- [x] **Step 4: Persist structured infrastructure metadata**
 
 Extend `_attempt_record()` to include `error_kind` and `provider_metadata`.
 Update existing tests to assert backward-compatible empty values.
 
-- [ ] **Step 5: Prove the instruction hash has one source**
+- [x] **Step 5: Prove the instruction hash has one source**
 
 At this stage, test that `taxonomy_bench.BASE_INSTRUCTIONS` and
 `OpenAIProvider` reference the exact
 `taxonomy_bench_protocol.BASE_INSTRUCTIONS` value and hash. No existing module
 may duplicate the instruction string.
 
-- [ ] **Step 6: Run focused and full tests**
+- [x] **Step 6: Run focused and full tests**
 
 ```powershell
 python -m pytest tests/test_taxonomy_bench.py -q
@@ -276,7 +285,7 @@ python -m pytest -q
 
 Expected: all current tests plus the compatibility test PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench_protocol.py src/taxonomy-bench/taxonomy_bench_cli.py src/taxonomy-bench/taxonomy_bench.py src/taxonomy-bench/tests/test_taxonomy_bench.py
@@ -290,7 +299,7 @@ git commit -m "refactor: extract provider contract"
 - Modify: `src/taxonomy-bench/taxonomy_bench_cli.py`
 - Modify: `src/taxonomy-bench/tests/test_subscription_cli.py`
 
-- [ ] **Step 1: Add failing Claude command-construction tests**
+- [x] **Step 1: Add failing Claude command-construction tests**
 
 Assert that a new attempt uses:
 
@@ -308,13 +317,13 @@ Assert that a new attempt uses:
 Assert that a continued retry uses `--resume <task-session-id>` and never
 reuses another task's ID.
 
-- [ ] **Step 2: Add failing auth and output-parser tests**
+- [x] **Step 2: Add failing auth and output-parser tests**
 
 `claude auth status --json` must identify Claude subscription authentication.
 Reject API/Console billing, unresolved auth, fallback, model mismatch, missing
 session IDs for persisted runs, and `is_error=true`.
 
-- [ ] **Step 3: Implement an injectable process runner**
+- [x] **Step 3: Implement an injectable process runner**
 
 ```python
 @dataclasses.dataclass(frozen=True)
@@ -359,7 +368,7 @@ AZURE_CLIENT_SECRET
 Retain only OS/process variables needed to locate the executable, the user's
 subscription credential store, and the approved temporary/control roots.
 
-- [ ] **Step 4: Implement `ClaudeCliProvider`**
+- [x] **Step 4: Implement `ClaudeCliProvider`**
 
 Required public behavior: `ClaudeCliProvider` subclasses `Provider`, sets
 `supports_sessions = True` and `family = "claude"`, exposes
@@ -382,7 +391,7 @@ retry sends only its retry instruction because the task-local session already
 contains the base instructions. Test both cases and assert the provider reports
 the shared instruction hash.
 
-- [ ] **Step 5: Classify infrastructure errors**
+- [x] **Step 5: Classify infrastructure errors**
 
 Use stable categories:
 
@@ -401,7 +410,7 @@ isolation
 Do not classify malformed benchmark-answer JSON as infrastructure. That remains
 subject output and is scored normally.
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 ```powershell
 python -m pytest tests/test_subscription_cli.py -q
@@ -411,7 +420,7 @@ python -m pytest -q
 Expected: Claude construction, parsing, auth, error, and session tests PASS;
 the full suite remains green.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench_cli.py src/taxonomy-bench/tests/test_subscription_cli.py
@@ -425,7 +434,7 @@ git commit -m "feat: add claude subscription provider"
 - Modify: `src/taxonomy-bench/taxonomy_bench_cli.py`
 - Modify: `src/taxonomy-bench/tests/test_subscription_cli.py`
 
-- [ ] **Step 1: Add failing Codex command-construction tests**
+- [x] **Step 1: Add failing Codex command-construction tests**
 
 Assert that a new attempt uses:
 
@@ -442,13 +451,13 @@ Assert that a new attempt uses:
 Assert that a continued retry uses `codex exec resume <task-thread-id>` with
 machine-readable output and the same sterile directory.
 
-- [ ] **Step 2: Add failing auth and JSONL parser tests**
+- [x] **Step 2: Add failing auth and JSONL parser tests**
 
 `codex login status` must explicitly indicate ChatGPT subscription access.
 Reject API-key auth, unresolved auth, fallback, model mismatch, malformed JSONL,
 missing final agent text, and missing thread ID for persisted runs.
 
-- [ ] **Step 3: Implement `CodexCliProvider`**
+- [x] **Step 3: Implement `CodexCliProvider`**
 
 `CodexCliProvider` subclasses `Provider`, sets `supports_sessions = True` and
 `family = "codex"`, exposes `preflight() -> dict[str, Any]`, and implements the
@@ -470,12 +479,12 @@ For each fresh subject session, send the exact output of
 retries send only the retry instruction. Test both cases and assert the
 provider reports the shared instruction hash.
 
-- [ ] **Step 4: Prove prompt transport is exact**
+- [x] **Step 4: Prove prompt transport is exact**
 
 Test prompts containing newlines, quotes, Unicode, and JSON. The prompt must go
 through stdin; it must never be interpolated into a command string.
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 ```powershell
 python -m pytest tests/test_subscription_cli.py -q
@@ -484,7 +493,7 @@ python -m pytest -q
 
 Expected: Codex and Claude provider tests PASS; the full suite remains green.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench_cli.py src/taxonomy-bench/tests/test_subscription_cli.py
@@ -506,7 +515,7 @@ The existing `taxonomy-bench run` command remains limited to `openai` and
 and directs the operator to manifest-bound `taxonomy-bench wave preflight` or
 `taxonomy-bench wave run`.
 
-- [ ] **Step 2: Implement a manifest-bound provider factory**
+- [x] **Step 2: Implement a manifest-bound provider factory**
 
 Add an internal factory used only by Wave commands. It requires a validated
 manifest, lane ID, and subject root, then constructs the matching provider with:
@@ -521,7 +530,7 @@ manifest, lane ID, and subject root, then constructs the matching provider with:
 Expose `provider_version`, `auth_mode`, `invocation_hash`, and
 `tool_policy_hash` for manifest and run metadata.
 
-- [ ] **Step 3: Implement manifest-bound subject-root validation**
+- [x] **Step 3: Implement manifest-bound subject-root validation**
 
 Resolve repository and subject paths before comparing them. Require the
 operator-supplied subject root to:
@@ -537,13 +546,13 @@ On resumed runs, accept only that marker and controller-created task
 directories. Reject changed markers, unknown entries, symlinked task
 directories, repositories, instruction files, and private-suite patterns.
 
-- [ ] **Step 4: Add requested/resolved identity assertions**
+- [x] **Step 4: Add requested/resolved identity assertions**
 
 Before scoring a completion, a subscription provider must return the expected
 resolved model. If identity cannot be proven, record `model_mismatch` or
 `fallback` and treat the run as infrastructure-invalid.
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 ```powershell
 python -m pytest tests/test_taxonomy_bench.py tests/test_subscription_cli.py -q
@@ -553,7 +562,7 @@ python -m pytest -q
 Expected: generic-run rejection, Wave factory, resolved-path isolation,
 manifest marker, identity, and metadata tests PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench.py src/taxonomy-bench/tests/test_taxonomy_bench.py src/taxonomy-bench/tests/test_subscription_cli.py
@@ -567,7 +576,7 @@ git commit -m "feat: add wave provider factory"
 - Create: `src/taxonomy-bench/taxonomy_bench_wave.py`
 - Create: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Add failing protocol and manifest tests**
+- [x] **Step 1: Add failing protocol and manifest tests**
 
 Assert the built-in Wave 1 protocol contains exactly:
 
@@ -586,13 +595,13 @@ pair barrier.
 Assert the manifest's base-instruction hash is computed directly from
 `taxonomy_bench_protocol.BASE_INSTRUCTIONS`.
 
-- [ ] **Step 2: Add deterministic calibration tests**
+- [x] **Step 2: Add deterministic calibration tests**
 
 From the full suite, group tasks by tier, sort each tier's task IDs lexically,
 and choose the first two IDs for tiers 1-4. Assert exactly eight unique IDs and
 that every selected task belongs to the unchanged full suite.
 
-- [ ] **Step 3: Implement canonical hashing**
+- [x] **Step 3: Implement canonical hashing**
 
 Use UTF-8 canonical JSON with sorted keys and compact separators. The manifest
 contains:
@@ -611,7 +620,7 @@ contains:
   content hash;
 - its own content hash, calculated with that field omitted.
 
-- [ ] **Step 4: Make manifest preparation idempotent**
+- [x] **Step 4: Make manifest preparation idempotent**
 
 When no manifest exists, compute the deterministic input fingerprint first,
 then add `created_at` and the final manifest content hash. When a manifest
@@ -620,7 +629,7 @@ matches, validate the stored content hash and return the existing manifest,
 including its original timestamp, unchanged. If it differs, fail with a clear
 error. Never overwrite an existing manifest.
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 ```powershell
 python -m pytest tests/test_wave_controller.py -q
@@ -628,7 +637,7 @@ python -m pytest tests/test_wave_controller.py -q
 
 Expected: protocol, calibration, hashing, tamper, and idempotence tests PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench_wave.py src/taxonomy-bench/tests/test_wave_controller.py
@@ -642,7 +651,7 @@ git commit -m "feat: add wave one manifest"
 - Modify: `src/taxonomy-bench/taxonomy_bench_wave.py`
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Add failing family-lock tests**
+- [x] **Step 1: Add failing family-lock tests**
 
 Use the approved controller-global lock directory recorded in the manifest,
 not the wave output directory. Test that:
@@ -654,14 +663,14 @@ not the wave output directory. Test that:
 - separate processes using different wave output directories still contend on
   the same family lock.
 
-- [ ] **Step 2: Implement cross-platform advisory locking**
+- [x] **Step 2: Implement cross-platform advisory locking**
 
 Open one persistent file per family under the manifest's resolved
 controller-global control root. Use `msvcrt.locking` on Windows and
 `fcntl.flock` on POSIX. Hold the file handle for the whole lane. Do not use
 PID-only lock files and do not delete lock files during cleanup.
 
-- [ ] **Step 3: Add failing lane-state tests**
+- [x] **Step 3: Add failing lane-state tests**
 
 State must preserve:
 
@@ -676,18 +685,18 @@ State must preserve:
 Changing the manifest, CLI version, auth mode, requested/resolved model, tool
 policy, or invocation hash invalidates continuation.
 
-- [ ] **Step 4: Implement atomic state writes**
+- [x] **Step 4: Implement atomic state writes**
 
 Write a sibling temporary file, flush and fsync it, then replace `state.json`
 with `os.replace()`. This is an atomic update, not destructive cleanup.
 
-- [ ] **Step 5: Implement pair barriers**
+- [x] **Step 5: Implement pair barriers**
 
 A lane in Pair N may start only when Pair N-1 has two completed lane states and
 an aggregation-complete marker. Pair aggregation may start only when both
 current lane states are complete.
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 ```powershell
 python -m pytest tests/test_wave_controller.py -q
@@ -695,7 +704,7 @@ python -m pytest tests/test_wave_controller.py -q
 
 Expected: lock, state, fingerprint, resume, and pair-barrier tests PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench_wave.py src/taxonomy-bench/tests/test_wave_controller.py
