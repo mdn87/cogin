@@ -4,7 +4,7 @@
 
 Completed local checks:
 
-- All 179 automated tests passed, including manifest preparation, sanitized
+- All 180 automated tests passed, including manifest preparation, sanitized
   preflight, calibration admission, immediate infrastructure abort, session-ID
   redaction, abandoned-repeat restart, lane publication, and six-run pair
   aggregation. The end-to-end smoke uses test-controlled fake Claude and Codex
@@ -21,11 +21,30 @@ Completed local checks:
   modules.
 - `git diff --check` passed.
 
-Live subscription preflight was not run. It remains an operational milestone
-requiring the upstream Marble taxonomy checkout plus operator-approved exact
-sterile subject-root and controller-global control-root paths outside this
-repository. No external root was guessed or created, no live model was invoked,
-and no subscription evidence is claimed here.
+Live subscription preflight completed on 2026-08-02:
+
+- Upstream Marble taxonomy commit: `96a7933754af672e1bfdbf7ecb05c325860c6e0d`;
+  its 1,590 topics, 3,221 edges, counts, and file checksums validated.
+- The generated seed-42 private suite contains 32 tasks across tiers 1-8.
+  Suite SHA-256: `ce79e1cc1ea9e9e42e6de238a8467676e5e9a1fcf4bf7528083db05c4b1e3fc0`.
+- Immutable manifest:
+  `544fb7e37f341b3250630b62b2e6da91f54ab00c371fc151bd93e88bf3f166e2`.
+- Claude Code `2.1.195` reported subscription auth for `claude-opus-5`,
+  `claude-sonnet-5`, and `claude-fable-5`; requested and resolved lane
+  identities matched.
+- Codex CLI `0.146.0` reported ChatGPT subscription auth for `gpt-5.6-sol`,
+  `gpt-5.6-terra`, and `gpt-5.6-luna`; requested and resolved lane identities
+  matched.
+- Claude tool-policy hash:
+  `c5261e5b1c20ad95855af8711c99fdf41629b5240772f5090211eec8a82e5ef6`.
+  Codex tool-policy hash:
+  `7dc5f047daf288d5e99e0204e0332b8d0058ad9ca1c4fe10bb9f98eb99467d0c`.
+- No raw auth output, account identifiers, credential values, subject session
+  state, private suite contents, or external execution paths are recorded.
+
+Codex `login status` writes its successful ChatGPT marker to stderr in 0.146.0.
+The adapter now accepts the marker from either output stream and returns only
+sanitized auth metadata; a regression test covers this contract.
 
 ## 0.2.0 HUD progression — 2026-07-21
 

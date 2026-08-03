@@ -532,6 +532,22 @@ class TestClaudeProvider:
 
 class TestCodexProvider:
 
+    def test_codex_preflight_accepts_chatgpt_status_on_stderr(self):
+        runner = _fake_runner(
+            "",
+            returncode=0,
+            stderr="Logged in using ChatGPT\n",
+        )
+        provider = CodexCliProvider(selector="gpt-5.6-sol", runner=runner)
+        provider.cli_path = "codex"
+
+        result = provider.preflight()
+
+        assert result == {
+            "auth_method": "chatgpt",
+            "auth_mode": "subscription",
+        }
+
     def test_codex_command_construction_fresh(self):
         captured: list[ProcessResult] = []
 

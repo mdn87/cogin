@@ -34,23 +34,22 @@ fallback, or private-suite gates to make a run proceed.
 ## Current State
 
 > **Completion update (2026-08-02):** the status correction was resolved by
-> implementing and locally validating the completion plan. Checkboxes below
-> now distinguish finished code/release work from the still-blocked live
-> operational milestone.
+> implementing, locally validating, and live-preflighting the completion plan.
+> Checkboxes below reflect the verified final state.
 
 - Taxonomy Bench 0.3.0 includes all four `wave` commands, structural
   calibration admission, per-attempt immediate-abort checkpoints, Wave-only
   session redaction, restartable lane execution, atomic lane reports, and
   single-owner pair aggregation.
-- All 179 automated tests pass, including a test-controlled fake-CLI
+- All 180 automated tests pass, including a test-controlled fake-CLI
   end-to-end Pair 1 smoke. The installed wheel reports 0.3.0 and validates the
   64-topic/156-edge sample data.
 - The deterministic release map verifies 23 SHA-256 entries and produces the
   exact 24-entry archive. Packaging now includes all six runtime modules.
-- The upstream Marble taxonomy is not currently checked out in this repository.
-  Live Wave 1 preparation/preflight still waits for that checkout and the
-  operator-approved exact sterile subject and controller-global control roots
-  outside this repository.
+- An ignored LF-preserving checkout of upstream commit `96a7933` validates at
+  1,590 topics and 3,221 edges. The real 32-task suite and immutable manifest
+  are prepared, and all six subscription lanes passed sanitized preflight in
+  pair order using the approved external roots.
 
 ## File Map
 
@@ -1114,7 +1113,7 @@ Confirm `origin/main...HEAD` is `0 0`.
 Landing occurs before live model preflight. A later-pair entitlement or model
 availability issue must not strand the executable Pair 1 implementation.
 
-- [ ] **Step 9: Perform live preflight as a separate operational milestone**
+- [x] **Step 9: Perform live preflight as a separate operational milestone**
 
 Obtain explicit operator approval for the exact sterile subject root and
 controller-global control root outside Cogin. Then run preflight—not
@@ -1133,7 +1132,7 @@ Stop a lane on unavailable model, unprovable resolved model, API billing route,
 or fallback. Do not weaken the gate. A failure blocks that lane's experiment,
 not the already-landed implementation.
 
-- [ ] **Step 10: Commit sanitized preflight evidence when available**
+- [x] **Step 10: Commit sanitized preflight evidence when available**
 
 Record requested/resolved model, auth mode, CLI version, tool policy, invocation
 hash, and any blocked lane in `VALIDATION.md`. Do not commit raw CLI output,

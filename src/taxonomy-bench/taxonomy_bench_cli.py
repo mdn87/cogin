@@ -497,10 +497,19 @@ class CodexCliProvider(Provider):
             raise BenchError(
                 f"Codex auth check failed (exit {result.returncode}): {result.stderr.strip()}"
             )
-        stdout = result.stdout.strip()
-        if "Logged in using ChatGPT" not in stdout:
-            raise BenchError(f"Codex not authenticated via ChatGPT subscription: {stdout}")
-        return {"auth_method": "chatgpt", "raw": stdout}
+        status_text = "\n".join(
+            value.strip()
+            for value in (result.stdout, result.stderr)
+            if value.strip()
+        )
+        if "Logged in using ChatGPT" not in status_text:
+            raise BenchError(
+                "Codex is not authenticated via a ChatGPT subscription"
+            )
+        return {
+            "auth_method": "chatgpt",
+            "auth_mode": "subscription",
+        }
 
     def complete(
         self,

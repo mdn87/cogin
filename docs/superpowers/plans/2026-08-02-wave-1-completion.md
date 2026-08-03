@@ -753,7 +753,7 @@ availability issue must not strand the executable implementation.
 2. the exact approved sterile subject-root path outside Cogin;
 3. the exact approved controller-global control-root path outside Cogin.
 
-- [ ] **Step 1: Generate the real private suite and prepare the manifest**
+- [x] **Step 1: Generate the real private suite and prepare the manifest**
 
 ```powershell
 taxonomy-bench generate --taxonomy <upstream-checkout> --seed 42 --out suites/
@@ -767,7 +767,7 @@ Adapt `generate` flags to the actual CLI; the suite must be the full 32-task
 private suite and must remain uncommitted (`suites/*.private.json` is
 ignored).
 
-- [ ] **Step 2: Preflight all six lanes in pair order**
+- [x] **Step 2: Preflight all six lanes in pair order**
 
 ```powershell
 taxonomy-bench wave preflight `
@@ -781,7 +781,7 @@ Repeat for `codex-gpt-5.6-sol`, `claude-sonnet-5`, `codex-gpt-5.6-terra`,
 unprovable resolved model, API billing route, or fallback. Do not weaken the
 gate; a blocked lane blocks that experiment, not the landed implementation.
 
-- [ ] **Step 3: Record sanitized evidence in `VALIDATION.md` and land it**
+- [x] **Step 3: Record sanitized evidence in `VALIDATION.md` and land it**
 
 Record requested/resolved model, auth mode, CLI version, tool policy,
 invocation hash, and any blocked lane. No raw CLI output, account
