@@ -1,7 +1,7 @@
 # Documentation Index — Cogin
 
 ## Metadata
-- **Last Updated:** 2026-07-25
+- **Last Updated:** 2026-08-02
 
 ## Documents
 
@@ -9,15 +9,17 @@
 |------|---------|--------|-------------|
 | project-brief.md | Project concept and goals | Draft | 2026-07-21 |
 | architecture.md | System boundaries and decisions | Draft | 2026-07-21 |
-| NEXT-STEPS.md | Subscription CLI Wave 1 implementation plan | Ready to execute | 2026-07-25 |
+| NEXT-STEPS.md | Subscription CLI Wave 1 implementation ledger | Tasks 1-10 complete; live preflight pending | 2026-08-02 |
 | decisions/ | Architecture Decision Records | — | — |
-| runplans/README.md | Subscription CLI experiment runplan index | Ready for review | 2026-07-25 |
-| runplans/OPERATOR-PROMPT.md | Reusable top-level run operator prompt | Ready for review | 2026-07-25 |
+| runplans/README.md | Subscription CLI experiment runplan index | Executable | 2026-08-02 |
+| runplans/OPERATOR-PROMPT.md | Reusable top-level run operator prompt | Executable after live preflight | 2026-08-02 |
 | superpowers/specs/2026-07-25-subscription-cli-benchmark-design.md | Wave 1 experiment design | Ready for review | 2026-07-25 |
 
 ## Plans
 
-No implementation plan has been approved yet.
+| File | Status |
+|------|--------|
+| superpowers/plans/2026-08-02-wave-1-completion.md | Tasks 1-10 implemented; Task 11 awaits operator paths and upstream checkout |
 
 ## Experiment Runplans
 

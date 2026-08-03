@@ -53,7 +53,7 @@ def test_package_and_runtime_versions_match():
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     match = re.search(r'^version = "([^"]+)"$', text, flags=re.MULTILINE)
     assert match is not None
-    assert match.group(1) == tb.BENCHMARK_VERSION == "0.2.0"
+    assert match.group(1) == tb.BENCHMARK_VERSION == "0.3.0"
 
 
 def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
@@ -78,21 +78,26 @@ def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
         "sample_data/manifest.json",
         "sample_data/topics.json",
         "taxonomy_bench.py",
+        "taxonomy_bench_cli.py",
         "taxonomy_bench_progression.py",
+        "taxonomy_bench_protocol.py",
         "taxonomy_bench_report.py",
+        "taxonomy_bench_wave.py",
         "tests/test_progression.py",
         "tests/test_report_html.py",
+        "tests/test_subscription_cli.py",
         "tests/test_taxonomy_bench.py",
+        "tests/test_wave_controller.py",
     )
     for relative_path in fixture_paths:
         path = project / relative_path
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(f"fixture for {relative_path}\n", encoding="utf-8")
 
-    disguised_wheel = tmp_path / "taxonomy_bench-0.2.0-py3-none-any.whl"
+    disguised_wheel = tmp_path / "taxonomy_bench-0.3.0-py3-none-any.whl"
     with zipfile.ZipFile(disguised_wheel, "w") as wheel:
         wheel.writestr(
-            "taxonomy_bench-0.2.0.dist-info/METADATA",
+            "taxonomy_bench-0.3.0.dist-info/METADATA",
             "Metadata-Version: 2.1\nName: taxonomy-bench\nVersion: 0.1.0\n",
         )
 
@@ -115,7 +120,7 @@ def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
     )
 
     assert result.returncode != 0
-    assert "Wheel METADATA version must be 0.2.0" in (result.stdout + result.stderr)
+    assert "Wheel METADATA version must be 0.3.0" in (result.stdout + result.stderr)
     assert not archive.exists()
 
 

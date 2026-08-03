@@ -5,6 +5,9 @@ from __future__ import annotations
 import json
 import hashlib
 import os
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -765,3 +768,200 @@ class TestWavePairAggregation:
         assert len(matrix["runs"]) == 6
         assert wave.pair_can_start(manifest, control, 2)
         assert wave.aggregate_pair(out / "manifest.json", 1) == report
+
+    def test_fake_cli_end_to_end_runs_two_families_concurrently(
+        self, tmp_path: Path, monkeypatch
+    ):
+        suite = _fake_suite(tasks_per_tier=4)
+        suite_path = tmp_path / "suite.private.json"
+        suite_path.write_text(json.dumps(suite), encoding="utf-8")
+        control = tmp_path / "control"
+        control.mkdir()
+        out = tmp_path / "wave-1"
+        subjects = {
+            "claude": tmp_path / "subject-claude",
+            "codex": tmp_path / "subject-codex",
+        }
+        for subject in subjects.values():
+            subject.mkdir()
+
+        answers = {
+            task["prompt"]: correct_answer(task)
+            for task in suite["tasks"]
+        }
+        concurrency = {"active": 0, "maximum": 0}
+        concurrency_lock = threading.Lock()
+        sessions: dict[str, list[str]] = {"claude": [], "codex": []}
+
+        def answer_for(stdin_text: str) -> str:
+            matches = [
+                answer for prompt, answer in answers.items()
+                if prompt in stdin_text
+            ]
+            assert len(matches) == 1
+            return matches[0]
+
+        def model_call(family: str, callback):
+            with concurrency_lock:
+                concurrency["active"] += 1
+                concurrency["maximum"] = max(
+                    concurrency["maximum"], concurrency["active"]
+                )
+            try:
+                time.sleep(0.001)
+                return callback()
+            finally:
+                with concurrency_lock:
+                    concurrency["active"] -= 1
+
+        def claude_runner(args, stdin_text, cwd, timeout, env):
+            if "--version" in args:
+                return ProcessResult(
+                    tuple(args), 0, "claude-test-1", "", 1.0
+                )
+            if "auth" in args:
+                return ProcessResult(
+                    tuple(args),
+                    0,
+                    json.dumps({
+                        "loggedIn": True,
+                        "authMethod": "claude.ai",
+                        "apiProvider": "firstParty",
+                        "subscriptionType": "max",
+                    }),
+                    "",
+                    1.0,
+                )
+
+            def complete():
+                session = f"claude-session-{len(sessions['claude']) + 1}"
+                sessions["claude"].append(session)
+                return ProcessResult(
+                    tuple(args),
+                    0,
+                    json.dumps({
+                        "type": "result",
+                        "subtype": "success",
+                        "is_error": False,
+                        "result": answer_for(stdin_text),
+                        "session_id": session,
+                        "stop_reason": "completed",
+                        "usage": {},
+                        "modelUsage": {"claude-opus-5": {
+                            "inputTokens": 1, "outputTokens": 1,
+                        }},
+                    }),
+                    "",
+                    1.0,
+                )
+
+            return model_call("claude", complete)
+
+        def codex_runner(args, stdin_text, cwd, timeout, env):
+            if "--version" in args:
+                return ProcessResult(tuple(args), 0, "codex-test-1", "", 1.0)
+            if "login" in args:
+                return ProcessResult(
+                    tuple(args), 0, "Logged in using ChatGPT", "", 1.0
+                )
+
+            def complete():
+                session = f"codex-session-{len(sessions['codex']) + 1}"
+                sessions["codex"].append(session)
+                stdout = "\n".join([
+                    json.dumps({"type": "thread.started", "thread_id": session}),
+                    json.dumps({
+                        "type": "item.completed",
+                        "item": {
+                            "type": "agent_message",
+                            "text": answer_for(stdin_text),
+                        },
+                    }),
+                    json.dumps({"type": "turn.completed", "usage": {}}),
+                ])
+                return ProcessResult(tuple(args), 0, stdout, "", 1.0)
+
+            return model_call("codex", complete)
+
+        monkeypatch.setattr(
+            taxonomy_bench_cli.shutil,
+            "which",
+            lambda name: f"C:/fake/{name}.exe",
+        )
+
+        metadata = {
+            "instruction_hash": canonical_hash(BASE_INSTRUCTIONS),
+            "cli_versions": {
+                "claude": "claude-test-1",
+                "codex": "codex-test-1",
+            },
+            "lanes": {},
+        }
+        for lane_id, lane in wave.WAVE1_LANES.items():
+            provider = (
+                taxonomy_bench_cli.ClaudeCliProvider(
+                    selector=lane["selector"],
+                    expected_model=lane["expected_model"],
+                    subject_root=subjects["claude"],
+                    runner=claude_runner,
+                )
+                if lane["family"] == "claude"
+                else taxonomy_bench_cli.CodexCliProvider(
+                    selector=lane["selector"],
+                    expected_model=lane["expected_model"],
+                    subject_root=subjects["codex"],
+                    runner=codex_runner,
+                )
+            )
+            metadata["lanes"][lane_id] = {
+                "family": lane["family"],
+                "requested_model": lane["selector"],
+                "expected_model": lane["expected_model"],
+                "cli_version": metadata["cli_versions"][lane["family"]],
+                "invocation_hash": provider.invocation_hash,
+                "tool_policy_hash": provider.tool_policy_hash,
+                "auth_mode": "subscription",
+            }
+        manifest = wave.prepare_manifest(
+            suite, suite_path, control, metadata, out
+        )
+
+        def run_lane(lane_id: str) -> int:
+            family = manifest["lanes"][lane_id]["family"]
+
+            def factory(requested_lane: str, persistent: bool):
+                lane = manifest["lanes"][requested_lane]
+                provider_class = (
+                    taxonomy_bench_cli.ClaudeCliProvider
+                    if family == "claude"
+                    else taxonomy_bench_cli.CodexCliProvider
+                )
+                return provider_class(
+                    selector=lane["selector"],
+                    expected_model=lane["expected_model"],
+                    subject_root=subjects[family],
+                    persistent=persistent,
+                    runner=claude_runner if family == "claude" else codex_runner,
+                )
+
+            return wave.WaveController(
+                manifest_path=out / "manifest.json",
+                control_root=control,
+                subject_root=subjects[family],
+                wave_dir=out,
+                provider_factory=factory,
+            ).run_lane(lane_id)
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(run_lane, manifest["pairs"][0]))
+        assert results == [0, 0]
+        assert concurrency["maximum"] == 2
+        assert len(sessions["claude"]) == 104
+        assert len(sessions["codex"]) == 104
+        assert len(set(sessions["claude"])) == 104
+        assert len(set(sessions["codex"])) == 104
+        report = wave.aggregate_pair(out / "manifest.json", 1)
+        matrix = json.loads(
+            (report / "matrix.json").read_text(encoding="utf-8")
+        )
+        assert len(matrix["accepted_run_ids"]) == 6

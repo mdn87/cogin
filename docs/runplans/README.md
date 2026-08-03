@@ -50,12 +50,20 @@ workspace.
 
 ## Required Readiness
 
-Do not begin a lane until native `claude-cli` and `codex-cli` providers satisfy
-the readiness gate in the
-[design specification](../superpowers/specs/2026-07-25-subscription-cli-benchmark-design.md).
-The current generic command provider is not an acceptable substitute.
-The native adapters and the controller capabilities described below are both
-still implementation work.
+Native `claude-cli` and `codex-cli` adapters and the manifest-bound controller
+ship in Taxonomy Bench 0.3.0. The generic `run` command is not an acceptable
+substitute. Before a lane, verify the exact locked inputs:
+
+```powershell
+taxonomy-bench --version
+taxonomy-bench wave preflight `
+  --manifest wave-runs/wave-1/manifest.json `
+  --lane <lane-id> `
+  --subject-root <operator-approved-sterile-root>
+```
+
+The preflight must report subscription auth and the intended requested and
+resolved model without exposing account or session identifiers.
 
 Before the first lane, the controller creates an immutable Wave 1 manifest
 containing the full-suite hash, fixed calibration task IDs, task counts, retry
@@ -63,7 +71,7 @@ condition, CLI versions, protocol version, and hashes of the base instructions,
 tool policy, invocation configuration, and diagnostic-feedback policy. Every
 lane verifies that manifest rather than regenerating its own suite.
 
-The controller also owns a cross-process subscription-family lock, per-repeat
+The controller owns a cross-process subscription-family lock, per-attempt
 phase checkpoints, whole-repeat restart after infrastructure interruption, and
 lane-completion records. Lane operators render lane reports only. After both
 lanes in a pair complete, one Wave 1 coordinator renders the pair report.

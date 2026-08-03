@@ -63,6 +63,7 @@ The OpenAI SDK provider sets transport retries to zero unless explicitly changed
 - Python 3.10 or newer
 - A local checkout of `withmarbleapp/os-taxonomy`
 - The `openai` Python package only when using the OpenAI provider
+- Claude Code and/or Codex CLI with subscription authentication for Wave runs
 
 From the directory containing the unpacked `taxonomy-bench/` folder, clone the taxonomy beside it and install the CLI:
 
@@ -114,6 +115,49 @@ This creates:
 - a response-template JSONL file for testing a model through a separate UI
 
 Do not expose the private suite to an agent that can inspect its filesystem. It contains the hidden answers and validation constraints.
+
+## Run the subscription CLI Wave
+
+Wave mode measures complete Claude Code or Codex CLI session configurations,
+not foundation models in isolation. It enforces subscription authentication,
+model identity, tool-free isolated subjects, one task-local session per task,
+family locks, role-matched pair barriers, and whole-repeat restart after
+infrastructure failure.
+
+Before preparation, create and explicitly approve two directories outside this
+repository: a controller-global control root and a sterile subject root. The
+CLI requires both to exist; it never chooses or creates an external path.
+
+```powershell
+taxonomy-bench wave prepare `
+  --suite suites/taxonomy-v1-seed42.private.json `
+  --out wave-runs/wave-1 `
+  --control-root C:/operator-approved/cogin-control
+
+taxonomy-bench wave preflight `
+  --manifest wave-runs/wave-1/manifest.json `
+  --lane claude-opus-5 `
+  --subject-root C:/operator-approved/sterile-subjects
+
+taxonomy-bench wave run `
+  --manifest wave-runs/wave-1/manifest.json `
+  --lane claude-opus-5 `
+  --subject-root C:/operator-approved/sterile-subjects
+
+taxonomy-bench wave aggregate `
+  --manifest wave-runs/wave-1/manifest.json `
+  --pair 1
+```
+
+Run one Claude and one Codex lane concurrently within a pair. Pair 2 remains
+closed until Pair 1 has two complete lane reports and its pair aggregation
+marker; the same rule applies to Pair 3. Authentication, entitlement, rate
+limit, timeout, fallback, model mismatch, and process failures abandon the
+affected repeat and are never scored as wrong answers. Raw private suites,
+run envelopes, and subject state under `wave-runs/` remain uncommitted.
+
+The generic `run` command intentionally rejects `claude-cli` and `codex-cli`;
+subscription subjects must use the immutable manifest and Wave gates.
 
 ## Run one model and effort level
 

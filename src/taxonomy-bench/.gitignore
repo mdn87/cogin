@@ -7,3 +7,5 @@ runs/
 matrix-runs/
 scored-runs/
 suites/*.private.json
+wave-runs/
+.subject-workspaces/

@@ -20,22 +20,29 @@ another model, or automatic fallback.
 
 First inspect the checkout, current branch, working tree, installed CLI
 versions, tests, and native subscription-provider readiness. Preserve unrelated
-user changes. Run the benchmark test suite before any experiment.
+user changes. Run `python -m pytest -q` from `src/taxonomy-bench`, require
+`taxonomy-bench --version` to report 0.3.0, and run the manifest-bound command:
 
-If the native provider or isolation contract is missing, report the exact
-readiness failure and follow the approved implementation plan if the target
-runplan names one. Do not invent a different protocol. If readiness passes:
+taxonomy-bench wave preflight --manifest wave-runs/wave-1/manifest.json
+--lane <the lane ID in TARGET_RUNPLAN> --subject-root <the exact
+operator-approved sterile root supplied for this experiment>
+
+Do not create or guess the external root. If the provider, model identity,
+subscription auth, manifest, or isolation check fails, report the exact
+readiness failure and stop the lane. Do not invent a different protocol. If
+readiness passes:
 
 1. Verify the immutable Wave 1 manifest and private-suite hash.
 2. Verify subscription authentication without printing credentials.
 3. Run model-resolution preflight and require the intended resolved model.
-4. Run the target lane's calibration.
+4. Run `taxonomy-bench wave run` with the same manifest, lane, and subject
+   root; it owns calibration, repeats, restart, and lane publication.
 5. Validate coverage, JSON parsing, provenance, isolation, and infrastructure
    status.
 6. If calibration passes, run the three primary repeats sequentially.
 7. Within each repeat, complete all 32 first attempts before that repeat's
    recovery attempts; finish recovery before starting the next repeat.
-8. Render and inspect the run and lane reports. Do not render the pair report;
+8. Inspect the generated run and lane reports. Do not render the pair report;
    the Wave 1 coordinator owns post-pair aggregation after both lanes finish.
 9. Return the exact artifact paths, requested and resolved model identifiers,
    CLI version, suite hash, calibration run ID, three successful primary run

@@ -9,7 +9,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$expectedWheelName = 'taxonomy_bench-0.2.0-py3-none-any.whl'
+$expectedWheelName = 'taxonomy_bench-0.3.0-py3-none-any.whl'
 $wheelFullPath = (Resolve-Path $WheelPath).Path
 
 if ([System.IO.Path]::GetFileName($wheelFullPath) -cne $expectedWheelName) {
@@ -21,9 +21,9 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $wheelArchive = [System.IO.Compression.ZipFile]::OpenRead($wheelFullPath)
 try {
-  $metadataEntry = $wheelArchive.GetEntry('taxonomy_bench-0.2.0.dist-info/METADATA')
+  $metadataEntry = $wheelArchive.GetEntry('taxonomy_bench-0.3.0.dist-info/METADATA')
   if ($null -eq $metadataEntry) {
-    throw 'Wheel must contain taxonomy_bench-0.2.0.dist-info/METADATA.'
+    throw 'Wheel must contain taxonomy_bench-0.3.0.dist-info/METADATA.'
   }
   $metadataReader = [System.IO.StreamReader]::new($metadataEntry.Open())
   try {
@@ -38,8 +38,8 @@ try {
 if ($wheelMetadata -notmatch '(?m)^Name:\s*taxonomy-bench\s*$') {
   throw 'Wheel METADATA name must be taxonomy-bench.'
 }
-if ($wheelMetadata -notmatch '(?m)^Version:\s*0\.2\.0\s*$') {
-  throw 'Wheel METADATA version must be 0.2.0.'
+if ($wheelMetadata -notmatch '(?m)^Version:\s*0\.3\.0\s*$') {
+  throw 'Wheel METADATA version must be 0.3.0.'
 }
 
 if (-not $ArchivePath) {
@@ -53,18 +53,23 @@ $releaseEntries = [ordered]@{
   'NOTICE.md' = Join-Path $projectRoot 'NOTICE.md'
   'README.md' = Join-Path $projectRoot 'README.md'
   'VALIDATION.md' = Join-Path $projectRoot 'VALIDATION.md'
-  'dist/taxonomy_bench-0.2.0-py3-none-any.whl' = $wheelFullPath
+  'dist/taxonomy_bench-0.3.0-py3-none-any.whl' = $wheelFullPath
   'pyproject.toml' = Join-Path $projectRoot 'pyproject.toml'
   'sample_data/dependencies.json' = Join-Path $projectRoot 'sample_data/dependencies.json'
   'sample_data/manifest.json' = Join-Path $projectRoot 'sample_data/manifest.json'
   'sample_data/topics.json' = Join-Path $projectRoot 'sample_data/topics.json'
   'scripts/package-release.ps1' = Join-Path $projectRoot 'scripts/package-release.ps1'
   'taxonomy_bench.py' = Join-Path $projectRoot 'taxonomy_bench.py'
+  'taxonomy_bench_cli.py' = Join-Path $projectRoot 'taxonomy_bench_cli.py'
   'taxonomy_bench_progression.py' = Join-Path $projectRoot 'taxonomy_bench_progression.py'
+  'taxonomy_bench_protocol.py' = Join-Path $projectRoot 'taxonomy_bench_protocol.py'
   'taxonomy_bench_report.py' = Join-Path $projectRoot 'taxonomy_bench_report.py'
+  'taxonomy_bench_wave.py' = Join-Path $projectRoot 'taxonomy_bench_wave.py'
   'tests/test_progression.py' = Join-Path $projectRoot 'tests/test_progression.py'
   'tests/test_report_html.py' = Join-Path $projectRoot 'tests/test_report_html.py'
+  'tests/test_subscription_cli.py' = Join-Path $projectRoot 'tests/test_subscription_cli.py'
   'tests/test_taxonomy_bench.py' = Join-Path $projectRoot 'tests/test_taxonomy_bench.py'
+  'tests/test_wave_controller.py' = Join-Path $projectRoot 'tests/test_wave_controller.py'
 }
 
 foreach ($sourcePath in $releaseEntries.Values) {

@@ -33,28 +33,24 @@ fallback, or private-suite gates to make a run proceed.
 
 ## Current State
 
-> **Status correction (2026-08-02):** an earlier session marked every task
-> complete, but only Tasks 1-4 and 6-7 (plus parts of 5 and 8) actually landed
-> in commit `f4fe7be`. Checkboxes below now reflect verified code state.
-> Remaining work is planned in
-> `docs/superpowers/plans/2026-08-02-wave-1-completion.md`, which supersedes
-> Tasks 8-12 here.
+> **Completion update (2026-08-02):** the status correction was resolved by
+> implementing and locally validating the completion plan. Checkboxes below
+> now distinguish finished code/release work from the still-blocked live
+> operational milestone.
 
-- `main` tracks `origin/main` at `f4fe7be`; 155 tests pass.
-- Landed: `taxonomy_bench_protocol.py` (instructions, canonical JSON/hashes),
-  `taxonomy_bench_cli.py` (`ClaudeCliProvider`, `CodexCliProvider`, sanitized
-  env, injectable process runner, `preflight()`), `taxonomy_bench_wave.py`
-  (manifest preparation, family locks, lane state, pair barriers,
-  `WaveController` with subject-root validation and `build_provider`).
-- Not landed despite prior checkmarks: the four `wave` CLI subcommands, the
-  calibration admission gate (test class is an empty stub), the per-attempt
-  checkpoint/immediate-abort seam, session-identifier redaction, lane reports,
-  pair aggregation, packaging updates (`py-modules`, `.gitignore`, release
-  map), documentation updates, and live preflight (`VALIDATION.md` is still
-  the 2026-07-21 record).
+- Taxonomy Bench 0.3.0 includes all four `wave` commands, structural
+  calibration admission, per-attempt immediate-abort checkpoints, Wave-only
+  session redaction, restartable lane execution, atomic lane reports, and
+  single-owner pair aggregation.
+- All 179 automated tests pass, including a test-controlled fake-CLI
+  end-to-end Pair 1 smoke. The installed wheel reports 0.3.0 and validates the
+  64-topic/156-edge sample data.
+- The deterministic release map verifies 23 SHA-256 entries and produces the
+  exact 24-entry archive. Packaging now includes all six runtime modules.
 - The upstream Marble taxonomy is not currently checked out in this repository.
-  Implementation and synthetic end-to-end tests use `sample_data`; real Wave 1
-  preparation waits for an operator-provided upstream checkout.
+  Live Wave 1 preparation/preflight still waits for that checkout and the
+  operator-approved exact sterile subject and controller-global control roots
+  outside this repository.
 
 ## File Map
 
@@ -508,7 +504,7 @@ git commit -m "feat: add codex subscription provider"
 - Modify: `src/taxonomy-bench/tests/test_taxonomy_bench.py`
 - Modify: `src/taxonomy-bench/tests/test_subscription_cli.py`
 
-- [ ] **Step 1: Keep subscription providers out of generic `run`**
+- [x] **Step 1: Keep subscription providers out of generic `run`**
 
 The existing `taxonomy-bench run` command remains limited to `openai` and
 `command`. Add a test that generic `run` rejects subscription-provider names
@@ -719,7 +715,7 @@ git commit -m "feat: add restartable wave lane state"
 - Modify: `src/taxonomy-bench/taxonomy_bench_wave.py`
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Add failing `wave prepare` CLI tests**
+- [x] **Step 1: Add failing `wave prepare` CLI tests**
 
 Command:
 
@@ -735,7 +731,7 @@ versions and policy hashes, write one immutable manifest, and print its path and
 hash. The command requires an existing, explicitly approved control root
 outside Cogin and never creates an outside-project root implicitly.
 
-- [ ] **Step 2: Add failing calibration-admission tests**
+- [x] **Step 2: Add failing calibration-admission tests**
 
 Calibration passes only when:
 
@@ -752,14 +748,14 @@ Calibration passes only when:
 Malformed subject-answer JSON remains a scored failure and does not reject
 calibration.
 
-- [ ] **Step 3: Implement preparation and admission as pure controller operations**
+- [x] **Step 3: Implement preparation and admission as pure controller operations**
 
 Manifest preparation does not invoke a model. Calibration admission accepts a
 completed calibration run plus the locked manifest and returns a structured
 pass/fail result with exact reasons. It does not use score thresholds or
 operator judgment.
 
-- [ ] **Step 4: Add manifest-bound `wave preflight`**
+- [x] **Step 4: Add manifest-bound `wave preflight`**
 
 Command:
 
@@ -775,7 +771,7 @@ lane through the Wave provider factory, performs subscription/auth/model/tool
 preflight, prints only sanitized metadata, and exits without calibration. It is
 the only live preflight path for subscription providers.
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 ```powershell
 python -m pytest tests/test_wave_controller.py -q
@@ -785,7 +781,7 @@ python -m pytest -q
 Expected: manifest CLI, manifest-bound preflight, and calibration-admission
 tests PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench.py src/taxonomy-bench/taxonomy_bench_wave.py src/taxonomy-bench/tests/test_wave_controller.py
@@ -802,7 +798,7 @@ git commit -m "feat: prepare wave one runs"
 - Modify: `src/taxonomy-bench/tests/test_taxonomy_bench.py`
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Add a per-attempt checkpoint seam**
+- [x] **Step 1: Add a per-attempt checkpoint seam**
 
 Add an optional callback to `execute_run()` while preserving default behavior:
 
@@ -821,14 +817,14 @@ after persistence. `execute_run()` does not catch callback exceptions, so no
 later task or retry call occurs. Existing callers pass no callback and retain
 their current behavior.
 
-- [ ] **Step 2: Prove immediate abort**
+- [x] **Step 2: Prove immediate abort**
 
 Add tests where authentication fails on first attempt, rate limiting occurs
 mid-first-pass, and timeout occurs during recovery. In each case, assert the
 fake provider receives no call after the failing attempt and the partial run
 record remains durable.
 
-- [ ] **Step 3: Add Wave-only session-identifier redaction**
+- [x] **Step 3: Add Wave-only session-identifier redaction**
 
 Add an optional Wave execution setting that keeps response/session identifiers
 only while a task can still be retried. After exact first-attempt success or
@@ -846,7 +842,7 @@ Test exact-first success, exhausted retries, early retry success, calibration,
 and infrastructure abandonment. Assert finalized Wave artifacts contain no raw
 session/thread ID fixture.
 
-- [ ] **Step 4: Add failing `wave run` fake-provider tests**
+- [x] **Step 4: Add failing `wave run` fake-provider tests**
 
 Command shape:
 
@@ -869,7 +865,7 @@ The fake provider must prove:
 - calibration is not repeated after a matching successful calibration;
 - provider-fingerprint drift invalidates the lane.
 
-- [ ] **Step 5: Implement lane execution**
+- [x] **Step 5: Implement lane execution**
 
 Acquire the family lock for the whole command. Preflight before calibration and
 before a resumed primary sequence. Build a derived calibration view whose tasks
@@ -879,13 +875,13 @@ provenance.
 Save private suite copies only in the controller-owned wave directory. Never
 copy the private suite or manifest into the subject root.
 
-- [ ] **Step 6: Implement infrastructure restart behavior**
+- [x] **Step 6: Implement infrastructure restart behavior**
 
 Save an interrupted run under its unique run ID, append it to
 `abandoned_run_ids`, and leave completed repeats untouched. Return nonzero.
 The next identical command starts that repeat again with a new run ID.
 
-- [ ] **Step 7: Run focused and full tests**
+- [x] **Step 7: Run focused and full tests**
 
 ```powershell
 python -m pytest tests/test_wave_controller.py tests/test_taxonomy_bench.py -q
@@ -894,7 +890,7 @@ python -m pytest -q
 
 Expected: all Wave 1 orchestration tests and the full suite PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench.py src/taxonomy-bench/taxonomy_bench_wave.py src/taxonomy-bench/tests/test_taxonomy_bench.py src/taxonomy-bench/tests/test_wave_controller.py
@@ -909,19 +905,19 @@ git commit -m "feat: execute restartable wave lanes"
 - Modify: `src/taxonomy-bench/taxonomy_bench_wave.py`
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Add failing lane-report tests**
+- [x] **Step 1: Add failing lane-report tests**
 
 Reject lane completion unless calibration passed and exactly three accepted
 primary repeat run IDs exist. Exclude calibration and abandoned runs.
 
-- [ ] **Step 2: Implement lane aggregation**
+- [x] **Step 2: Implement lane aggregation**
 
 Load the three accepted primary runs, call `aggregate_matrix()`, and render a
 lane-level `lane.json` and `lane.html`. Include the manifest hash, requested and
 resolved model identities, CLI version, calibration run ID, accepted run IDs,
 and abandoned run IDs.
 
-- [ ] **Step 3: Make lane publication atomic and idempotent**
+- [x] **Step 3: Make lane publication atomic and idempotent**
 
 Group staging attempts under a deterministic transaction key derived from the
 manifest and input-run hashes. Each attempt uses a unique child directory.
@@ -931,12 +927,12 @@ attempt; if an invalid partial attempt exists, preserve it and create a new
 attempt. Never overwrite a conflicting report and never delete abandoned
 staging evidence.
 
-- [ ] **Step 4: Mark lane complete only after publication**
+- [x] **Step 4: Mark lane complete only after publication**
 
 The lane state transitions to complete only after the final report directory
 and hashes validate.
 
-- [ ] **Step 5: Run tests and commit**
+- [x] **Step 5: Run tests and commit**
 
 ```powershell
 python -m pytest tests/test_wave_controller.py -q
@@ -953,7 +949,7 @@ git commit -m "feat: publish wave lane reports"
 - Modify: `src/taxonomy-bench/taxonomy_bench_wave.py`
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Add failing aggregation-barrier tests**
+- [x] **Step 1: Add failing aggregation-barrier tests**
 
 Command:
 
@@ -964,14 +960,14 @@ taxonomy-bench wave aggregate --manifest wave-runs/wave-1/manifest.json --pair 1
 Reject aggregation unless both lane states are complete with three accepted
 primary run IDs each. Exclude calibration and abandoned runs.
 
-- [ ] **Step 2: Add a controller-global aggregation lock**
+- [x] **Step 2: Add a controller-global aggregation lock**
 
 Acquire `pair-N.lock` under the same approved controller-global control root as
 the family locks. Test two separate coordinator processes against different
 wave working directories; exactly one may own aggregation for the same
 manifest and pair.
 
-- [ ] **Step 3: Implement crash-recoverable atomic aggregation**
+- [x] **Step 3: Implement crash-recoverable atomic aggregation**
 
 Load exactly six primary run records and call `aggregate_matrix()`. Derive a
 deterministic transaction key from the manifest hash and ordered input run IDs.
@@ -985,12 +981,12 @@ preserve it and create a new unique attempt. If the final directory exists,
 validate and return it. Never overwrite a conflicting directory and never
 delete crash evidence.
 
-- [ ] **Step 4: Prove Pair N+1 barrier**
+- [x] **Step 4: Prove Pair N+1 barrier**
 
 After successful aggregation of Pair 1, Pair 2 lanes may start. Before it,
 both Pair 2 lane commands must fail without invoking a provider.
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 ```powershell
 python -m pytest tests/test_wave_controller.py -q
@@ -1000,7 +996,7 @@ python -m pytest -q
 Expected: aggregation ownership, crash recovery, idempotence, run selection,
 and pair-order tests PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench.py src/taxonomy-bench/taxonomy_bench_wave.py src/taxonomy-bench/tests/test_wave_controller.py
@@ -1024,13 +1020,13 @@ git commit -m "feat: aggregate completed wave pairs"
 - Modify: `docs/runplans/OPERATOR-PROMPT.md`
 - Modify: `docs/INDEX.md`
 
-- [ ] **Step 1: Add new modules to package and release maps**
+- [x] **Step 1: Add new modules to package and release maps**
 
 Add `taxonomy_bench_protocol`, `taxonomy_bench_cli`, and
 `taxonomy_bench_wave` to `py-modules`. Include the new modules and test files in
 the deterministic release map and packager fixture.
 
-- [ ] **Step 2: Ignore private execution data**
+- [x] **Step 2: Ignore private execution data**
 
 Add:
 
@@ -1042,7 +1038,7 @@ suites/*.private.json
 
 Do not ignore public reports or documentation intended for review.
 
-- [ ] **Step 3: Update user documentation**
+- [x] **Step 3: Update user documentation**
 
 Document the four Wave commands (`prepare`, `preflight`, `run`, and
 `aggregate`), explicit subject-root requirement,
@@ -1052,7 +1048,7 @@ fact that results measure CLI session configurations.
 Replace the operator prompt's readiness warning with the exact verified
 commands. Keep `TARGET_RUNPLAN` as the only routinely edited prompt value.
 
-- [ ] **Step 4: Run the complete local verification**
+- [x] **Step 4: Run the complete local verification**
 
 ```powershell
 python -m pytest -q
@@ -1065,7 +1061,7 @@ taxonomy-bench validate --taxonomy sample_data
 Expected: all tests PASS, wheel builds and installs, version is 0.2.0, and the
 sample taxonomy is valid.
 
-- [ ] **Step 5: Run a fake-CLI Wave 1 smoke test**
+- [x] **Step 5: Run a fake-CLI Wave 1 smoke test**
 
 Use test-controlled fake `claude` and `codex` executables with the synthetic
 suite. Run prepare, one Claude lane and one Codex lane concurrently, then pair
@@ -1080,7 +1076,7 @@ Expected: family concurrency is two, lane states complete, each task-local
 session remains isolated, and the pair matrix contains six accepted primary
 runs.
 
-- [ ] **Step 6: Regenerate release artifacts**
+- [x] **Step 6: Regenerate release artifacts**
 
 ```powershell
 python -m build
@@ -1092,7 +1088,7 @@ pwsh -NoProfile -File scripts/package-release.ps1 `
 Expected: every mapped SHA-256 verifies and the archive contains the exact
 declared entry set.
 
-- [ ] **Step 7: Final local verification**
+- [x] **Step 7: Final local verification**
 
 Use `@superpowers:verification-before-completion`.
 
@@ -1105,7 +1101,7 @@ git status --short
 Expected: tests pass, no whitespace errors, and only the intended implementation
 and regenerated release artifacts are modified.
 
-- [ ] **Step 8: Commit and land the locally verified implementation**
+- [x] **Step 8: Commit and land the locally verified implementation**
 
 ```powershell
 git add src/taxonomy-bench src/taxonomy-bench.zip docs

@@ -23,6 +23,32 @@ A run is defined by:
 
 Changing any of these produces a different experimental condition.
 
+## Subscription CLI Wave protocol
+
+Wave 1 fixes seed 42, medium effort, prompt JSON, isolated tool-free sessions,
+zero transport retries, an eight-task calibration subset, three 32-task
+primary repeats, and up to two diagnostic continued-context retries. Every
+repeat completes all first attempts before recovery.
+
+An immutable manifest binds the private-suite SHA-256, ordered calibration
+IDs, requested and expected models, CLI versions, instruction hash, tool
+policy, invocation configuration, diagnostic policy, role-matched pairs, and
+the controller-global lock root. Calibration admission is structural: all
+eight first attempts must be durable, scored, nonnegative-latency records with
+matching provenance and no infrastructure error. Malformed subject JSON is a
+scored outcome and does not itself reject calibration.
+
+Claude-family lanes serialize behind one cross-process lock, as do Codex-family
+lanes. One lane from each family may run concurrently. Pair N+1 remains closed
+until both Pair N lane reports and its coordinator-owned aggregate are
+complete. An infrastructure failure is checkpointed, session identifiers are
+redacted, and the entire affected repeat restarts under a new run ID.
+
+Live subjects require an operator-approved sterile root outside the checkout.
+Private suites, resumable session identifiers, raw runs, and staging evidence
+are not publication artifacts. Lane and pair reports describe CLI session
+configurations rather than raw-model capability.
+
 ## Suite construction
 
 A suite contains equal numbers of tasks at tiers 1 through 8. Generation is deterministic for a fixed taxonomy version, seed, maximum tier, and tasks-per-tier value.

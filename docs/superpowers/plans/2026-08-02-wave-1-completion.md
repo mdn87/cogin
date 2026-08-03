@@ -65,7 +65,7 @@ CLI, PowerShell release packaging.
   `run` command path, near `_build_provider`/`cmd_run`)
 - Modify: `src/taxonomy-bench/tests/test_taxonomy_bench.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 def test_generic_run_rejects_subscription_providers():
@@ -80,12 +80,12 @@ Adapt the call target to the actual provider-construction function in
 `BenchError` whose message directs the operator to
 `taxonomy-bench wave preflight` / `taxonomy-bench wave run`.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_taxonomy_bench.py::test_generic_run_rejects_subscription_providers -q`
 Expected: FAIL (no rejection exists today).
 
-- [ ] **Step 3: Implement the rejection**
+- [x] **Step 3: Implement the rejection**
 
 In the generic provider-construction branch, before any other dispatch:
 
@@ -97,11 +97,11 @@ if provider in ("claude-cli", "codex-cli"):
     )
 ```
 
-- [ ] **Step 4: Run the full suite**
+- [x] **Step 4: Run the full suite**
 
 Run: `python -m pytest -q` — Expected: 156 PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench.py src/taxonomy-bench/tests/test_taxonomy_bench.py
@@ -116,7 +116,7 @@ git commit -m "feat: reject subscription providers in generic run"
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py` (replace the
   `TestCalibrationAdmission` stub)
 
-- [ ] **Step 1: Write failing admission tests**
+- [x] **Step 1: Write failing admission tests**
 
 Build a passing fixture run record, then break one property per test:
 
@@ -159,12 +159,12 @@ The last test sets an attempt's scored answer to malformed JSON while keeping
 `scored=True, error_kind=None` — admission must still pass, because malformed
 subject output is a scored model outcome, not an infrastructure failure.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `python -m pytest tests/test_wave_controller.py::TestCalibrationAdmission -q`
 Expected: FAIL with `AttributeError: ... has no attribute 'admit_calibration'`.
 
-- [ ] **Step 3: Implement `admit_calibration`**
+- [x] **Step 3: Implement `admit_calibration`**
 
 ```python
 @dataclasses.dataclass(frozen=True)
@@ -211,11 +211,11 @@ Adjust field names to the actual manifest keys produced by
 `prepare_manifest()` — read that function first; do not invent parallel names.
 No score thresholds, no operator judgment: structural checks only.
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `python -m pytest tests/test_wave_controller.py -q` — Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench_wave.py src/taxonomy-bench/tests/test_wave_controller.py
@@ -230,7 +230,7 @@ git commit -m "feat: add calibration admission gate"
   functions)
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Write failing CLI tests**
+- [x] **Step 1: Write failing CLI tests**
 
 ```python
 def test_wave_prepare_writes_manifest(tmp_path, capsys):
@@ -267,12 +267,12 @@ def test_wave_preflight_uses_provider_preflight(tmp_path, monkeypatch, capsys):
 Use `tb.main(argv)` (or the actual entry function) so tests never spawn a real
 process. If `main()` currently calls `sys.exit`, capture `SystemExit.code`.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `python -m pytest tests/test_wave_controller.py -q -k "wave_prepare or wave_preflight"`
 Expected: FAIL — argparse rejects the unknown `wave` command.
 
-- [ ] **Step 3: Wire the `wave` subparser group**
+- [x] **Step 3: Wire the `wave` subparser group**
 
 ```python
 wave_parser = subparsers.add_parser("wave", help="Wave 1 subscription benchmark controller")
@@ -303,12 +303,12 @@ print only sanitized metadata (auth mode, requested/resolved model, CLI
 version, tool policy); exit nonzero on any preflight failure. This is the only
 live preflight path for subscription providers.
 
-- [ ] **Step 4: Run focused and full tests**
+- [x] **Step 4: Run focused and full tests**
 
 Run: `python -m pytest tests/test_wave_controller.py -q` then `python -m pytest -q`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench.py src/taxonomy-bench/tests/test_wave_controller.py
@@ -324,7 +324,7 @@ git commit -m "feat: add wave prepare and preflight commands"
 - Modify: `src/taxonomy-bench/tests/test_taxonomy_bench.py`
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Write failing checkpoint tests**
+- [x] **Step 1: Write failing checkpoint tests**
 
 ```python
 def test_execute_run_invokes_checkpoint_after_each_attempt():
@@ -346,12 +346,12 @@ def test_wave_checkpoint_aborts_on_infrastructure_error():
 Cover three failure points: authentication on the first attempt, rate limit
 mid-first-pass, timeout during recovery.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `python -m pytest tests/test_taxonomy_bench.py -q -k checkpoint`
 Expected: FAIL — `execute_run()` has no `attempt_checkpoint` parameter.
 
-- [ ] **Step 3: Implement the seam**
+- [x] **Step 3: Implement the seam**
 
 ```python
 AttemptCheckpoint = Callable[[str, Mapping[str, Any]], None]
@@ -388,12 +388,12 @@ Reuse the existing atomic-write helper from `LaneState.save()` (tmp file →
 flush → fsync → `os.replace`); extract it to a module-level
 `_atomic_write_json()` if it is currently inline.
 
-- [ ] **Step 4: Run focused and full tests**
+- [x] **Step 4: Run focused and full tests**
 
 Run: `python -m pytest tests/test_taxonomy_bench.py tests/test_wave_controller.py -q` then `python -m pytest -q`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench.py src/taxonomy-bench/taxonomy_bench_wave.py src/taxonomy-bench/tests/test_taxonomy_bench.py src/taxonomy-bench/tests/test_wave_controller.py
@@ -407,7 +407,7 @@ git commit -m "feat: add per-attempt checkpoint with immediate abort"
 - Modify: `src/taxonomy-bench/taxonomy_bench_wave.py`
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Write failing redaction tests**
+- [x] **Step 1: Write failing redaction tests**
 
 Cover five cases: exact first-attempt success, exhausted retries, early retry
 success, calibration (always ephemeral), and infrastructure abandonment. In
@@ -416,12 +416,12 @@ each, assert the finalized envelope contains no raw `response_id` or
 `session_trace_hash` (SHA-256 of the raw ID) is present where an ID existed.
 While a task can still be retried, its identifiers must survive.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `python -m pytest tests/test_wave_controller.py -q -k redact`
 Expected: FAIL — function does not exist.
 
-- [ ] **Step 3: Implement redaction**
+- [x] **Step 3: Implement redaction**
 
 ```python
 def redact_task_sessions(task_record: MutableMapping[str, Any], *, final: bool) -> None:
@@ -440,7 +440,7 @@ final retry, and over every task before persisting an abandoned envelope
 (abandoned repeats restart from scratch, so nothing resumable may remain).
 Generic OpenAI/API runs keep their existing response-ID behavior untouched.
 
-- [ ] **Step 4: Run tests and commit**
+- [x] **Step 4: Run tests and commit**
 
 ```powershell
 python -m pytest tests/test_wave_controller.py -q
@@ -458,7 +458,7 @@ git commit -m "feat: redact wave session identifiers"
 - Modify: `src/taxonomy-bench/taxonomy_bench_wave.py` (`WaveController.run_lane`)
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Write failing fake-provider lane tests**
+- [x] **Step 1: Write failing fake-provider lane tests**
 
 Command shape under test (via `tb.main`, fake provider injected through a
 `WaveController` seam — add a `provider_factory` constructor argument that
@@ -487,12 +487,12 @@ The fake provider must prove, one test each:
 - the family lock is held for the whole command (a second controller in the
   same family fails immediately while the first runs).
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `python -m pytest tests/test_wave_controller.py -q -k wave_run`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement `WaveController.run_lane`**
+- [x] **Step 3: Implement `WaveController.run_lane`**
 
 Order of operations:
 
@@ -517,12 +517,12 @@ Order of operations:
 `cmd_wave_run` is a thin wrapper: parse args, construct the controller, return
 `controller.run_lane(lane_id)`.
 
-- [ ] **Step 4: Run focused and full tests**
+- [x] **Step 4: Run focused and full tests**
 
 Run: `python -m pytest tests/test_wave_controller.py tests/test_taxonomy_bench.py -q` then `python -m pytest -q`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add src/taxonomy-bench/taxonomy_bench.py src/taxonomy-bench/taxonomy_bench_wave.py src/taxonomy-bench/tests/test_wave_controller.py
@@ -536,7 +536,7 @@ git commit -m "feat: execute restartable wave lanes"
 - Modify: `src/taxonomy-bench/taxonomy_bench_wave.py`
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Write failing lane-report tests**
+- [x] **Step 1: Write failing lane-report tests**
 
 - publication refuses unless calibration passed and exactly three accepted
   primary run IDs exist (calibration and abandoned runs excluded);
@@ -549,12 +549,12 @@ git commit -m "feat: execute restartable wave lanes"
 - lane state transitions to `complete` only after the final directory and
   hashes validate.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `python -m pytest tests/test_wave_controller.py -q -k lane_report`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement atomic staged publication**
+- [x] **Step 3: Implement atomic staged publication**
 
 ```python
 def publish_lane_report(state: LaneState, manifest, wave_dir: Path) -> Path:
@@ -580,7 +580,7 @@ Reuse the existing HTML rendering path in `taxonomy_bench.py` /
 `taxonomy_bench_report.py` for `lane.html`; do not write a second renderer.
 Never delete abandoned staging attempts.
 
-- [ ] **Step 4: Run tests and commit**
+- [x] **Step 4: Run tests and commit**
 
 ```powershell
 python -m pytest tests/test_wave_controller.py -q
@@ -598,7 +598,7 @@ git commit -m "feat: publish wave lane reports"
 - Modify: `src/taxonomy-bench/taxonomy_bench_wave.py`
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Write failing aggregation tests**
+- [x] **Step 1: Write failing aggregation tests**
 
 Command: `taxonomy-bench wave aggregate --manifest <path> --pair 1`
 
@@ -616,12 +616,12 @@ Command: `taxonomy-bench wave aggregate --manifest <path> --pair 1`
 - after Pair 1 aggregation, `pair_can_start` admits Pair 2 lanes; before it,
   both Pair 2 lane commands fail without invoking a provider.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `python -m pytest tests/test_wave_controller.py -q -k aggregate`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement aggregation**
+- [x] **Step 3: Implement aggregation**
 
 Mirror Task 7's staging/promote pattern with a `PairLock` (same
 `msvcrt`/`fcntl` advisory mechanism as `FamilyLock`, file
@@ -630,7 +630,7 @@ Mirror Task 7's staging/promote pattern with a `PairLock` (same
 Pair N+1 barrier opens. Use `aggregate_matrix()` from `taxonomy_bench.py` on
 the six accepted runs; exclude calibration and abandoned runs.
 
-- [ ] **Step 4: Run tests and commit**
+- [x] **Step 4: Run tests and commit**
 
 ```powershell
 python -m pytest tests/test_wave_controller.py -q
@@ -645,7 +645,7 @@ git commit -m "feat: aggregate completed wave pairs"
 
 - Modify: `src/taxonomy-bench/tests/test_wave_controller.py`
 
-- [ ] **Step 1: Write the end-to-end test**
+- [x] **Step 1: Write the end-to-end test**
 
 Using pytest `tmp_path` for control, subject, and wave roots, a synthetic
 suite, and injected fake process runners for both families (never real CLIs or
@@ -658,12 +658,12 @@ credential stores):
 3. each task-local session stays isolated (fake runner records session IDs);
 4. `wave aggregate --pair 1` → pair matrix contains six accepted primary runs.
 
-- [ ] **Step 2: Run the test and the full suite**
+- [x] **Step 2: Run the test and the full suite**
 
 Run: `python -m pytest tests/test_wave_controller.py -q` then `python -m pytest -q`
 Expected: PASS. Fix integration seams here rather than weakening assertions.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```powershell
 git add src/taxonomy-bench/tests/test_wave_controller.py
@@ -686,7 +686,7 @@ git commit -m "test: add fake-cli wave end-to-end smoke"
 - Modify: `docs/runplans/OPERATOR-PROMPT.md`
 - Modify: `docs/INDEX.md`
 
-- [ ] **Step 1: Bump version and extend the package map**
+- [x] **Step 1: Bump version and extend the package map**
 
 In `pyproject.toml`: version `0.2.0` → `0.3.0`;
 `py-modules = ["taxonomy_bench", "taxonomy_bench_progression", "taxonomy_bench_report", "taxonomy_bench_protocol", "taxonomy_bench_cli", "taxonomy_bench_wave"]`.
@@ -694,7 +694,7 @@ Add the three modules plus `tests/test_subscription_cli.py` and
 `tests/test_wave_controller.py` to the deterministic release map in
 `package-release.ps1` and its packager fixture test.
 
-- [ ] **Step 2: Ignore private execution data**
+- [x] **Step 2: Ignore private execution data**
 
 Append to `src/taxonomy-bench/.gitignore` (keep the existing
 `suites/*.private.json` line):
@@ -704,7 +704,7 @@ wave-runs/
 .subject-workspaces/
 ```
 
-- [ ] **Step 3: Update documentation**
+- [x] **Step 3: Update documentation**
 
 `README.md` + `BENCHMARK_SPEC.md`: document the four `wave` commands
 (`prepare`, `preflight`, `run`, `aggregate`), the explicit subject-root and
@@ -714,7 +714,7 @@ infrastructure semantics, and that results measure CLI session configurations
 warning with the exact verified commands; keep `TARGET_RUNPLAN` as the only
 routinely edited value. Add the new plan to `docs/INDEX.md`.
 
-- [ ] **Step 4: Full local verification and release regeneration**
+- [x] **Step 4: Full local verification and release regeneration**
 
 ```powershell
 python -m pytest -q
@@ -730,7 +730,7 @@ pwsh -NoProfile -File scripts/package-release.ps1 `
 Expected: all tests pass, version reports 0.3.0, sample taxonomy valid, every
 mapped SHA-256 verifies, archive contains the exact declared entry set.
 
-- [ ] **Step 5: Verify, commit, and land**
+- [x] **Step 5: Verify, commit, and land**
 
 Use `superpowers:verification-before-completion`, then:
 
