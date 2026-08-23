@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "kind": "cogin.strategy-manifest",
+  "contract_version": "1.0.0",
+  "implementation_version": "1.0.0",
+  "implementation_sha256": "c9412a5cf5db505d5b97dddd89dd8a35e59198655b5f598cb1f5f8df95171bf9",
+  "strategies": [
+    {
+      "id": "cogin.strategy.bounded-divergence",
+      "revision": 1,
+      "kind": "instruction",
+      "placement": "after-role-before-task",
+      "purpose": "Explore alternatives without allowing unnecessary design expansion.",
+      "content": "Explore no more than three plausible approaches before choosing one. Compare each approach against the stated requirements, existing constraints, and implementation cost. Select the simplest approach that fully satisfies the task. Do not expand scope merely because another design is more general.",
+      "content_sha256": "2cb616c2a94e09465bc4b0933d2ad8ac46681136f44cd86e432ed2d00fc2584b"
+    },
+    {
+      "id": "cogin.strategy.concrete-restatement",
+      "revision": 1,
+      "kind": "instruction",
+      "placement": "after-role-before-task",
+      "purpose": "Tie abstractions and specialized terms to observable behavior.",
+      "content": "State consequential reasoning in concrete plain language. When you introduce an abstraction or specialized term, name the specific behavior or problem it represents. After an abstract explanation, restate the decision as an observable action or result.",
+      "content_sha256": "f81ac9486876efeb577337fea9ae521ea4812196f2fb5dc57c74fe81594c36b3"
+    }
+  ]
+}

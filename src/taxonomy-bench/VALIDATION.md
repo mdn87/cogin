@@ -1,5 +1,20 @@
 # Validation record
 
+## Stable strategy contract 1.0.0 — 2026-08-23
+
+- All 189 automated tests passed. The nine strategy-contract tests cover exact
+  stable IDs, canonical hash reproducibility, content materialization, caller
+  isolation, content and implementation tamper rejection, unknown IDs, and
+  strict schema fields.
+- The `taxonomy_bench-0.4.0-py3-none-any.whl` wheel built successfully and
+  contains the strategy API, manifest, and JSON schema as package data.
+- An isolated import from the wheel resolved both stable IDs and verified
+  implementation digest
+  `c9412a5cf5db505d5b97dddd89dd8a35e59198655b5f598cb1f5f8df95171bf9`.
+- Release packaging verified 28 mapped SHA-256 checksums and the exact 29-entry
+  archive.
+- No provider, authentication, or live model path was invoked.
+
 ## 0.3.0 Wave 1 controller — 2026-08-02
 
 Completed local checks:

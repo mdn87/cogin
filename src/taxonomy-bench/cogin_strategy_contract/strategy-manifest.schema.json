@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cogin.local/schemas/strategy-manifest.schema.json",
+  "title": "Cogin stable strategy manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "contract_version",
+    "implementation_version",
+    "implementation_sha256",
+    "strategies"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "cogin.strategy-manifest"
+    },
+    "contract_version": {
+      "const": "1.0.0"
+    },
+    "implementation_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "implementation_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "strategies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "revision",
+          "kind",
+          "placement",
+          "purpose",
+          "content",
+          "content_sha256"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^cogin\\.strategy\\.[a-z0-9][a-z0-9.-]*$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "kind": {
+            "const": "instruction"
+          },
+          "placement": {
+            "const": "after-role-before-task"
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1
+          },
+          "content_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

@@ -53,7 +53,7 @@ def test_package_and_runtime_versions_match():
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     match = re.search(r'^version = "([^"]+)"$', text, flags=re.MULTILINE)
     assert match is not None
-    assert match.group(1) == tb.BENCHMARK_VERSION == "0.3.0"
+    assert match.group(1) == tb.BENCHMARK_VERSION == "0.4.0"
 
 
 def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
@@ -72,7 +72,11 @@ def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
         "LICENSE",
         "NOTICE.md",
         "README.md",
+        "STRATEGY_CONTRACT.md",
         "VALIDATION.md",
+        "cogin_strategy_contract/__init__.py",
+        "cogin_strategy_contract/manifest.json",
+        "cogin_strategy_contract/strategy-manifest.schema.json",
         "pyproject.toml",
         "sample_data/dependencies.json",
         "sample_data/manifest.json",
@@ -85,6 +89,7 @@ def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
         "taxonomy_bench_wave.py",
         "tests/test_progression.py",
         "tests/test_report_html.py",
+        "tests/test_cogin_strategy_contract.py",
         "tests/test_subscription_cli.py",
         "tests/test_taxonomy_bench.py",
         "tests/test_wave_controller.py",
@@ -94,10 +99,10 @@ def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(f"fixture for {relative_path}\n", encoding="utf-8")
 
-    disguised_wheel = tmp_path / "taxonomy_bench-0.3.0-py3-none-any.whl"
+    disguised_wheel = tmp_path / "taxonomy_bench-0.4.0-py3-none-any.whl"
     with zipfile.ZipFile(disguised_wheel, "w") as wheel:
         wheel.writestr(
-            "taxonomy_bench-0.3.0.dist-info/METADATA",
+            "taxonomy_bench-0.4.0.dist-info/METADATA",
             "Metadata-Version: 2.1\nName: taxonomy-bench\nVersion: 0.1.0\n",
         )
 
@@ -120,7 +125,7 @@ def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
     )
 
     assert result.returncode != 0
-    assert "Wheel METADATA version must be 0.3.0" in (result.stdout + result.stderr)
+    assert "Wheel METADATA version must be 0.4.0" in (result.stdout + result.stderr)
     assert not archive.exists()
 
 

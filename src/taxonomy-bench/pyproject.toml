@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "taxonomy-bench"
-version = "0.3.0"
+version = "0.4.0"
 description = "A progressive AI session-strength benchmark generated from the Marble Skill Taxonomy"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -20,7 +20,11 @@ test = ["pytest>=8,<10", "build>=1.2,<2"]
 taxonomy-bench = "taxonomy_bench:main"
 
 [tool.setuptools]
+packages = ["cogin_strategy_contract"]
 py-modules = ["taxonomy_bench", "taxonomy_bench_progression", "taxonomy_bench_report", "taxonomy_bench_protocol", "taxonomy_bench_cli", "taxonomy_bench_wave"]
+
+[tool.setuptools.package-data]
+cogin_strategy_contract = ["manifest.json", "strategy-manifest.schema.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

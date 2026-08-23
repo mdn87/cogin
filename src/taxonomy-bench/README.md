@@ -1,5 +1,9 @@
 # Taxonomy Bench
 
+Cogin's provider-independent, stable cognitive-strategy export is documented
+in [STRATEGY_CONTRACT.md](STRATEGY_CONTRACT.md). It is a separate data-only
+contract and does not invoke benchmark providers.
+
 Taxonomy Bench converts the [Marble Skill Taxonomy](https://github.com/withmarbleapp/os-taxonomy) into a deterministic, progressively difficult AI benchmark. It tests how far a model gets, how quickly it gets there, and how much it improves when allowed to retry.
 
 The benchmark is designed for two distinct questions:
