@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "projectId": "cogin",
+  "projectLabel": "Cogin",
+  "assessmentState": "scored",
+  "assessmentScope": "current-milestone",
+  "percentComplete": 90,
+  "milestonePhase": "operational-proof",
+  "portfolioGroup": "agent-platform",
+  "displayPriority": 500,
+  "assessedAt": "2026-09-05T02:18:32.000Z",
+  "confidence": "reported",
+  "currentMilestone": "Provider-independent benchmark controller with stable exported behavior-strategy contract.",
+  "remainingSummary": "Accumulate broader live model and thinking-level evidence for Orca behavior selection.",
+  "nextChipId": "cogin:expand-live-model-matrix",
+  "source": {
+    "label": "Seed report 2026-08-27; reassessed 2026-09-05 with no repo commits since 2026-08-24, seed values retained.",
+    "updatedAt": "2026-09-05"
+  }
+}

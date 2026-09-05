@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "projectId": "cogin",
+  "projectLabel": "Cogin",
+  "chips": [
+    {
+      "schemaVersion": 1,
+      "chipId": "cogin:taxonomy-bench",
+      "projectId": "cogin",
+      "title": "Taxonomy Bench eight-tier benchmark",
+      "summary": "Eight difficulty tiers from the Marble skill taxonomy, base versus recovery strength, HUD progression, and hardened evidence packaging.",
+      "stage": "done",
+      "sequence": 10,
+      "prereqs": [],
+      "linkedRunIds": [],
+      "confidence": "reported",
+      "aheadOfPrereqs": null,
+      "timestamps": {
+        "createdAt": "2026-07-22T12:00:00.000Z",
+        "updatedAt": "2026-09-05T03:40:00.000Z"
+      },
+      "evidence": [
+        {
+          "entryId": "cogin:taxonomy-bench:authored-2026-09-05",
+          "at": "2026-09-05T03:40:00.000Z",
+          "kind": "created",
+          "message": "Benchmark, HUD progression and evidence packaging landed by 2026-07-22."
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "chipId": "cogin:subscription-providers",
+      "projectId": "cogin",
+      "title": "Claude and Codex subscription providers",
+      "summary": "Provider contract extracted; claude and codex subscription CLI providers with characterized output and live preflight.",
+      "stage": "done",
+      "sequence": 20,
+      "prereqs": [
+        "cogin:taxonomy-bench"
+      ],
+      "linkedRunIds": [],
+      "confidence": "reported",
+      "aheadOfPrereqs": null,
+      "timestamps": {
+        "createdAt": "2026-08-01T12:00:00.000Z",
+        "updatedAt": "2026-09-05T03:40:00.000Z"
+      },
+      "evidence": [
+        {
+          "entryId": "cogin:subscription-providers:authored-2026-09-05",
+          "at": "2026-09-05T03:40:00.000Z",
+          "kind": "created",
+          "message": "Providers and contract 2026-08-01 (PR #2); live subscription preflight completed 2026-08-02."
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "chipId": "cogin:wave-one-controller",
+      "projectId": "cogin",
+      "title": "Wave one controller and release",
+      "summary": "Wave manifest, locks, lane state, admission and checkpoint commands, restartable lane execution and aggregation, controller CLI released.",
+      "stage": "done",
+      "sequence": 30,
+      "prereqs": [
+        "cogin:subscription-providers"
+      ],
+      "linkedRunIds": [],
+      "confidence": "reported",
+      "aheadOfPrereqs": null,
+      "timestamps": {
+        "createdAt": "2026-08-02T12:00:00.000Z",
+        "updatedAt": "2026-09-05T03:40:00.000Z"
+      },
+      "evidence": [
+        {
+          "entryId": "cogin:wave-one-controller:authored-2026-09-05",
+          "at": "2026-09-05T03:40:00.000Z",
+          "kind": "created",
+          "message": "Wave one controller CLI and release completed 2026-08-02."
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "chipId": "cogin:strategy-contract",
+      "projectId": "cogin",
+      "title": "Stable exported strategy contract",
+      "summary": "Data-only cognitive-strategy export contract published and the benchmark promoted to the root README.",
+      "stage": "done",
+      "sequence": 40,
+      "prereqs": [
+        "cogin:wave-one-controller"
+      ],
+      "linkedRunIds": [],
+      "confidence": "reported",
+      "aheadOfPrereqs": null,
+      "timestamps": {
+        "createdAt": "2026-08-23T12:00:00.000Z",
+        "updatedAt": "2026-09-05T03:40:00.000Z"
+      },
+      "evidence": [
+        {
+          "entryId": "cogin:strategy-contract:authored-2026-09-05",
+          "at": "2026-09-05T03:40:00.000Z",
+          "kind": "created",
+          "message": "Contract exported 2026-08-23; README promotion 2026-08-24 (PR #3)."
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "chipId": "cogin:expand-live-model-matrix",
+      "projectId": "cogin",
+      "title": "Expand the live model matrix",
+      "summary": "Run wave lanes across more live models and thinking levels so the strategy profiles rest on broader evidence than the first wave.",
+      "stage": "ready",
+      "sequence": 50,
+      "prereqs": [
+        "cogin:strategy-contract"
+      ],
+      "linkedRunIds": [],
+      "confidence": "reported",
+      "aheadOfPrereqs": null,
+      "timestamps": {
+        "createdAt": "2026-09-05T12:00:00.000Z",
+        "updatedAt": "2026-09-05T03:40:00.000Z"
+      },
+      "evidence": [
+        {
+          "entryId": "cogin:expand-live-model-matrix:authored-2026-09-05",
+          "at": "2026-09-05T03:40:00.000Z",
+          "kind": "created",
+          "message": "Named as the next step by the 2026-09-05 status reassessment; no commits since 2026-08-24."
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "chipId": "cogin:orca-strategy-handoff",
+      "projectId": "cogin",
+      "title": "Feed strategy profiles into Orca",
+      "summary": "Hand the exported strategy profiles to Orca behavior selection and check that they change at least one real choice.",
+      "stage": "vague",
+      "sequence": 60,
+      "prereqs": [
+        "cogin:expand-live-model-matrix"
+      ],
+      "linkedRunIds": [],
+      "confidence": "unknown",
+      "aheadOfPrereqs": null,
+      "timestamps": {
+        "createdAt": "2026-09-05T12:00:00.000Z",
+        "updatedAt": "2026-09-05T03:40:00.000Z"
+      },
+      "evidence": [
+        {
+          "entryId": "cogin:orca-strategy-handoff:authored-2026-09-05",
+          "at": "2026-09-05T03:40:00.000Z",
+          "kind": "created",
+          "message": "Depends on the broader evidence base; integration shape not designed yet."
+        }
+      ]
+    }
+  ]
+}
