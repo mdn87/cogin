@@ -71,7 +71,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-08-02T12:00:00.000Z",
-        "updatedAt": "2026-09-05T03:40:00.000Z"
+        "updatedAt": "2026-09-27T20:43:02.274Z"
       },
       "evidence": [
         {
@@ -79,6 +79,12 @@
           "at": "2026-09-05T03:40:00.000Z",
           "kind": "created",
           "message": "Wave one controller CLI and release completed 2026-08-02."
+        },
+        {
+          "entryId": "cogin:wave-one-controller:tests-2026-09-27",
+          "at": "2026-09-27T20:43:02.274Z",
+          "kind": "note",
+          "message": "Full automated suite re-run on 2026-09-27 passed; no code commits since 2026-08-24."
         }
       ]
     },
@@ -111,21 +117,48 @@
     },
     {
       "schemaVersion": 1,
-      "chipId": "cogin:expand-live-model-matrix",
+      "chipId": "cogin:wave-one-live-runs",
       "projectId": "cogin",
-      "title": "Expand the live model matrix",
-      "summary": "Run wave lanes across more live models and thinking levels so the strategy profiles rest on broader evidence than the first wave.",
+      "title": "Run Wave 1 live across three subscription pairs",
+      "summary": "Execute the six preflighted Claude and Codex lanes in pair order against the locked 32-task manifest and publish the three pair reports.",
       "stage": "ready",
       "sequence": 50,
       "prereqs": [
-        "cogin:strategy-contract"
+        "cogin:wave-one-controller"
+      ],
+      "linkedRunIds": [],
+      "confidence": "reported",
+      "aheadOfPrereqs": null,
+      "timestamps": {
+        "createdAt": "2026-09-27T20:43:02.274Z",
+        "updatedAt": "2026-09-27T20:43:02.274Z"
+      },
+      "evidence": [
+        {
+          "entryId": "cogin:wave-one-live-runs:authored-2026-09-27",
+          "at": "2026-09-27T20:43:02.274Z",
+          "kind": "created",
+          "message": "Controller and live preflight landed 2026-08-02; the wave directory holds only the manifest and private suite, so no lane has run as of 2026-09-27."
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "chipId": "cogin:expand-live-model-matrix",
+      "projectId": "cogin",
+      "title": "Expand the live model matrix",
+      "summary": "After the Wave 1 pair reports exist, add more live models and thinking levels so strategy profiles rest on broader evidence than one wave.",
+      "stage": "planned",
+      "sequence": 60,
+      "prereqs": [
+        "cogin:wave-one-live-runs"
       ],
       "linkedRunIds": [],
       "confidence": "reported",
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-05T12:00:00.000Z",
-        "updatedAt": "2026-09-05T03:40:00.000Z"
+        "updatedAt": "2026-09-27T20:43:02.274Z"
       },
       "evidence": [
         {
@@ -133,6 +166,37 @@
           "at": "2026-09-05T03:40:00.000Z",
           "kind": "created",
           "message": "Named as the next step by the 2026-09-05 status reassessment; no commits since 2026-08-24."
+        },
+        {
+          "entryId": "cogin:expand-live-model-matrix:replanned-2026-09-27",
+          "at": "2026-09-27T20:43:02.274Z",
+          "kind": "stage-change",
+          "message": "Moved from ready to planned on 2026-09-27: it presumes a completed first wave, and no live lane has run yet."
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "chipId": "cogin:agent-cli-comparison-harness",
+      "projectId": "cogin",
+      "title": "Agent CLI comparison harness",
+      "summary": "Separate experiment scoring agentic repo work with tools required across Claude, Codex and Gemini lanes; spec written, nothing implemented.",
+      "stage": "vague",
+      "sequence": 70,
+      "prereqs": [],
+      "linkedRunIds": [],
+      "confidence": "unknown",
+      "aheadOfPrereqs": null,
+      "timestamps": {
+        "createdAt": "2026-09-27T20:43:02.274Z",
+        "updatedAt": "2026-09-27T20:43:02.274Z"
+      },
+      "evidence": [
+        {
+          "entryId": "cogin:agent-cli-comparison-harness:authored-2026-09-27",
+          "at": "2026-09-27T20:43:02.274Z",
+          "kind": "created",
+          "message": "Spec committed 2026-08-01 and marked not implemented; it needs its own harness and lane registry, not the wave controller."
         }
       ]
     },
@@ -143,16 +207,17 @@
       "title": "Feed strategy profiles into Orca",
       "summary": "Hand the exported strategy profiles to Orca behavior selection and check that they change at least one real choice.",
       "stage": "vague",
-      "sequence": 60,
+      "sequence": 80,
       "prereqs": [
-        "cogin:expand-live-model-matrix"
+        "cogin:expand-live-model-matrix",
+        "cogin:strategy-contract"
       ],
       "linkedRunIds": [],
       "confidence": "unknown",
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-05T12:00:00.000Z",
-        "updatedAt": "2026-09-05T03:40:00.000Z"
+        "updatedAt": "2026-09-27T20:43:02.274Z"
       },
       "evidence": [
         {
