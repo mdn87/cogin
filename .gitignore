@@ -30,6 +30,13 @@ __pycache__/
 .codex/handoff.md
 .codex/handoff-history/
 
+# Claude Code session handoffs
+.claude/handoff.md
+.claude/handoff-history/
+
+# Lugos Audit receipts
+.lugos-audit/
+
 # Git Lanes — host-local state; never commit
 .venv
 .venv-*
