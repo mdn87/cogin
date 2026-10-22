@@ -26,15 +26,14 @@ A tool earns a migration only by winning materially on at least one axis.
 |---|---|---|
 | `claude` | `claude -p --output-format stream-json --permission-mode <mode> --add-dir <wt>` | yes |
 | `codex` | `codex exec --json -C <wt> -m <model> -s workspace-write` | yes |
-| `gemini` | `gemini -p --output-format stream-json --approval-mode <mode>` | yes |
-| `antigravity` | IDE, no headless entry point | **no — hand-run** |
+| `agy` | `agy --print= --input-format stream-json --output-format stream-json --model <model> --mode <mode>` (prompt on stdin, cwd `<wt>`) | yes |
 
-Verified installed: `claude` 2.1.195, `codex` 0.145.0, `gemini` 0.40.0.
-`antigravity` is not installed and is an editor, not a CLI.
-
-The Antigravity lane is measured by stopwatch and tally, and every report must
-label it as manually observed. Do not present its numbers as peers of the
-instrumented lanes.
+Updated 2026-10-22: the Antigravity CLI (`agy` 1.4.5) replaces both the retiring
+Gemini CLI lane and the hand-run Antigravity IDE lane. It runs headless with
+machine-readable output, so every lane is now instrumented. Verified installed
+then: `claude` 2.1.296, `codex` 0.163.0, `agy` 1.4.5. See
+`docs/evidence/agy-cli-characterization.md` for its stdin event format,
+output events, permission profile, and conversation resume behavior.
 
 ## Approval modes
 
@@ -42,15 +41,22 @@ Interruption count is meaningless under auto-approve — it is zero by
 construction. Run each lane twice:
 
 - **Supervised** — `claude --permission-mode default`, `codex` default
-  approvals, `gemini --approval-mode default`. Scores *interruptions* and
-  *review burden*.
+  approvals, and `agy` with a `request-review` permission profile. Scores
+  *interruptions* and *review burden*.
 - **Unattended** — `claude --permission-mode acceptEdits`, `codex -s
-  workspace-write`, `gemini --approval-mode auto_edit`. Scores *wall-clock*
-  and *diff quality*.
+  workspace-write`, `agy --mode accept-edits`. Scores *wall-clock* and *diff
+  quality*.
+
+Without a permission profile, agy print mode reports `always-proceed` and
+auto-approves every tool call. Every agy lane must therefore load an explicit
+profile and record the `permission_mode` from its `init` event. agy 1.4.4
+warned that `--mode plan` has no effect together with
+`--disable-slash-commands`. Check whether the chosen mode takes effect with that
+flag before relying on it; other modes were not tested.
 
 Do not use `bypassPermissions`, `--dangerously-bypass-approvals-and-sandbox`,
-or `--yolo`. They change the sandbox, not just the prompting, and break
-comparability.
+`--yolo`, or agy's `--dangerously-skip-permissions`. They change the sandbox,
+not just the prompting, and break comparability.
 
 ## Seed repo
 
@@ -83,12 +89,11 @@ run the app, verify behavior in the browser, produce a clean diff.
 
 ## Known asymmetries — record, do not paper over
 
-1. **Browser verification.** Claude Code has browser tooling; Codex and Gemini
-   CLI do not natively. Score *how* each lane verified (real browser, curl,
+1. **Browser verification.** Claude Code and agy have browser tooling; Codex
+   does not natively. Score *how* each lane verified (real browser, curl,
    test-only, not at all) rather than pass/fail. A lane that skipped
    verification and a lane that could not are different results.
-2. **Antigravity is not instrumented.** See above.
-3. **Model vs harness.** A lane's result confounds the model with its CLI's
+2. **Model vs harness.** A lane's result confounds the model with its CLI's
    agent loop. This measures CLI session configurations, not models — same
    caveat Wave 1 carries.
 
@@ -101,10 +106,8 @@ run the app, verify behavior in the browser, produce a clean diff.
 5. Stream parsers for turn and approval counts (three formats).
 6. Diff and fresh-checkout test scorer.
 7. Report renderer; blind review pass for the cleanup metric.
-8. Hand-run the Antigravity lane last, if it is installed by then.
 
-Steps 1-7 are roughly a day. Step 8 is gated on installing the IDE, which is
-an operator decision.
+Steps 1-7 are roughly a day.
 
 ## Gate
 

@@ -8,13 +8,13 @@
   "milestonePhase": "operational-proof",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-09-27T20:43:02.274Z",
+  "assessedAt": "2026-10-22T05:50:00.000Z",
   "confidence": "reported",
-  "currentMilestone": "Wave 1 subscription study: the provider-independent controller and the stable strategy contract are shipped; the six live lanes and three pair reports have not been run.",
-  "remainingSummary": "Run the three Wave 1 pairs live in order and aggregate each pair report, then widen the live model and thinking-level matrix.",
+  "currentMilestone": "Wave 1 subscription study: the controller, the strategy contract, and the agy Google lane set are shipped; both Pair 1 calibrations are admitted, and no primary repeat or pair report exists yet.",
+  "remainingSummary": "Run Pair 1's primary repeats and aggregate it, then Pairs 2 and 3; run the Google lane set; then widen the live model and thinking-level matrix.",
   "nextChipId": "cogin:wave-one-live-runs",
   "source": {
-    "label": "Repo review 2026-09-27: tests pass, last code commit 2026-08-24, wave directory holds no lane output.",
-    "updatedAt": "2026-09-27"
+    "label": "Repo review 2026-10-22: 225 tests pass; Pair 1 calibrated under re-prepared manifest dbd05d3d; Google lane set prepared and preflighted.",
+    "updatedAt": "2026-10-22"
   }
 }

@@ -67,7 +67,7 @@ The OpenAI SDK provider sets transport retries to zero unless explicitly changed
 - Python 3.10 or newer
 - A local checkout of `withmarbleapp/os-taxonomy`
 - The `openai` Python package only when using the OpenAI provider
-- Claude Code and/or Codex CLI with subscription authentication for Wave runs
+- Claude Code, Codex CLI, and/or Antigravity CLI (`agy`) with subscription authentication for Wave runs
 
 From the directory containing the unpacked `taxonomy-bench/` folder, clone the taxonomy beside it and install the CLI:
 
@@ -122,8 +122,8 @@ Do not expose the private suite to an agent that can inspect its filesystem. It 
 
 ## Run the subscription CLI Wave
 
-Wave mode measures complete Claude Code or Codex CLI session configurations,
-not foundation models in isolation. It enforces subscription authentication,
+Wave mode measures complete Claude Code, Codex, or Antigravity CLI session
+configurations, not foundation models in isolation. It enforces subscription authentication,
 model identity, tool-free isolated subjects, one task-local session per task,
 family locks, role-matched pair barriers, and whole-repeat restart after
 infrastructure failure.
@@ -160,8 +160,42 @@ limit, timeout, fallback, model mismatch, and process failures abandon the
 affected repeat and are never scored as wrong answers. Raw private suites,
 run envelopes, and subject state under `wave-runs/` remain uncommitted.
 
-The generic `run` command intentionally rejects `claude-cli` and `codex-cli`;
-subscription subjects must use the immutable manifest and Wave gates.
+`wave run --calibration-only` stops once the lane's calibration is admitted. A
+later `wave run` for that lane resumes at primary repeat 1 without running
+calibration again.
+
+The Google lane set runs Gemini 4 Argon and Gemini 3.8 Flash, both at medium
+effort, through the Antigravity CLI. It uses the Wave 1 protocol and is
+prepared from the same private suite, so its runs share Wave 1's suite hash,
+calibration IDs, and instruction hash. Both lanes share the `antigravity` family
+lock and run one after the other. The manifest records the control root, so
+the Google wave shares it with Wave 1 for family locks; pair markers are scoped
+to each manifest. One approved subject root can serve both waves, because each
+manifest writes its own marker.
+
+```powershell
+taxonomy-bench wave prepare `
+  --suite suites/taxonomy-v1-seed42.private.json `
+  --out wave-runs/google-1 `
+  --control-root C:/operator-approved/cogin-control `
+  --lanes google-1
+
+taxonomy-bench wave run `
+  --manifest wave-runs/google-1/manifest.json `
+  --lane gemini-4-argon-medium `
+  --subject-root C:/operator-approved/sterile-subjects
+```
+
+Each agy lane runs under a controller-owned profile directory,
+`<wave dir>/agy-home/<lane>/{calibration,primary}`. Your hooks, plugins, and
+`GEMINI.md` rules never reach a subject; agy still authenticates from the OS
+keyring. The profile denies every file, URL, command, and MCP tool. agy still
+advertises its tools to the model and refuses them only when called, unlike
+Claude Code's `--tools ""`, which removes them from the session.
+
+The generic `run` command intentionally rejects `claude-cli`, `codex-cli`, and
+`antigravity-cli`; subscription subjects must use the immutable manifest and
+Wave gates.
 
 ## Run one model and effort level
 

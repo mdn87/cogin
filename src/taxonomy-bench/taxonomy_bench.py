@@ -37,7 +37,7 @@ from taxonomy_bench_report import (
 )
 
 FORMAT_VERSION = 1
-BENCHMARK_VERSION = "0.4.0"
+BENCHMARK_VERSION = "0.5.0"
 ATTRIBUTION = (
     "Marble Skill Taxonomy (v1) · © Generative Spark, Inc. (Marble) · "
     "https://withmarble.com · licensed under ODbL 1.0 (database) and "
@@ -1931,7 +1931,7 @@ def render_matrix_html(matrix: Mapping[str, Any]) -> str:
 def build_provider(args: argparse.Namespace, model: str | None = None, effort: str | None = None) -> Provider:
     selected_model = model if model is not None else getattr(args, "model", None)
     selected_effort = effort if effort is not None else (getattr(args, "effort", None) or "default")
-    if args.provider in ("claude-cli", "codex-cli"):
+    if args.provider in ("claude-cli", "codex-cli", "antigravity-cli"):
         raise BenchError(
             f"Provider '{args.provider}' is manifest-bound. Use "
             "'taxonomy-bench wave preflight' or 'taxonomy-bench wave run'."
@@ -1984,7 +1984,7 @@ def add_suite_source_args(parser: argparse.ArgumentParser) -> None:
 def add_provider_args(parser: argparse.ArgumentParser, matrix: bool = False) -> None:
     parser.add_argument(
         "--provider",
-        choices=["openai", "command", "claude-cli", "codex-cli"],
+        choices=["openai", "command", "claude-cli", "codex-cli", "antigravity-cli"],
         default="openai",
     )
     if not matrix:
@@ -2147,9 +2147,9 @@ def command_wave_prepare(args: argparse.Namespace) -> int:
             f"Control root {control_root} must already exist and be a directory"
         )
     suite = load_suite(suite_path)
-    metadata = wave.collect_provider_metadata()
+    metadata = wave.collect_provider_metadata(args.lanes)
     manifest = wave.prepare_manifest(
-        suite, suite_path, control_root, metadata, out_dir
+        suite, suite_path, control_root, metadata, out_dir, lane_set=args.lanes
     )
     print(_json({
         "manifest": str(out_dir / "manifest.json"),
@@ -2178,7 +2178,9 @@ def command_wave_preflight(args: argparse.Namespace) -> int:
 
 
 def command_wave_run(args: argparse.Namespace) -> int:
-    return int(_wave_controller(args).run_lane(args.lane))
+    return int(_wave_controller(args).run_lane(
+        args.lane, calibration_only=args.calibration_only
+    ))
 
 
 def command_wave_aggregate(args: argparse.Namespace) -> int:
@@ -2239,8 +2241,9 @@ def build_parser() -> argparse.ArgumentParser:
     score_parser.add_argument("--out", default="scored-runs")
     score_parser.set_defaults(func=command_score)
 
+    wave_module = __import__("taxonomy_bench_wave")
     wave_parser = subparsers.add_parser(
-        "wave", help="Wave 1 subscription benchmark controller"
+        "wave", help="Wave subscription benchmark controller"
     )
     wave_subparsers = wave_parser.add_subparsers(
         dest="wave_command", required=True
@@ -2252,15 +2255,19 @@ def build_parser() -> argparse.ArgumentParser:
     wave_prepare.add_argument("--suite", required=True)
     wave_prepare.add_argument("--out", required=True)
     wave_prepare.add_argument("--control-root", required=True)
+    wave_prepare.add_argument(
+        "--lanes",
+        choices=sorted(wave_module.LANE_SETS),
+        default="wave-1",
+        help="Lane set: wave-1 (Claude/Codex pairs) or google-1 (agy Gemini lanes)",
+    )
     wave_prepare.set_defaults(func=command_wave_prepare)
 
     wave_preflight = wave_subparsers.add_parser(
         "preflight", help="Verify one manifest-bound subscription lane"
     )
     wave_preflight.add_argument("--manifest", required=True)
-    wave_preflight.add_argument("--lane", required=True, choices=sorted(
-        __import__("taxonomy_bench_wave").WAVE1_LANES
-    ))
+    wave_preflight.add_argument("--lane", required=True, choices=wave_module.ALL_LANES)
     wave_preflight.add_argument("--subject-root", required=True)
     wave_preflight.set_defaults(func=command_wave_preflight)
 
@@ -2268,10 +2275,13 @@ def build_parser() -> argparse.ArgumentParser:
         "run", help="Execute or resume one Wave lane"
     )
     wave_run.add_argument("--manifest", required=True)
-    wave_run.add_argument("--lane", required=True, choices=sorted(
-        __import__("taxonomy_bench_wave").WAVE1_LANES
-    ))
+    wave_run.add_argument("--lane", required=True, choices=wave_module.ALL_LANES)
     wave_run.add_argument("--subject-root", required=True)
+    wave_run.add_argument(
+        "--calibration-only",
+        action="store_true",
+        help="Stop once calibration is admitted; a later run resumes at repeat 1",
+    )
     wave_run.set_defaults(func=command_wave_run)
 
     wave_aggregate = wave_subparsers.add_parser(

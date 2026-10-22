@@ -21,7 +21,7 @@ another model, or automatic fallback.
 First inspect the checkout, current branch, working tree, installed CLI
 versions, tests, and native subscription-provider readiness. Preserve unrelated
 user changes. Run `python -m pytest -q` from `src/taxonomy-bench`, require
-`taxonomy-bench --version` to report 0.3.0, and run the manifest-bound command:
+`taxonomy-bench --version` to report 0.5.0, and run the manifest-bound command:
 
 taxonomy-bench wave preflight --manifest wave-runs/wave-1/manifest.json
 --lane <the lane ID in TARGET_RUNPLAN> --subject-root <the exact
@@ -36,7 +36,9 @@ readiness passes:
 2. Verify subscription authentication without printing credentials.
 3. Run model-resolution preflight and require the intended resolved model.
 4. Run `taxonomy-bench wave run` with the same manifest, lane, and subject
-   root; it owns calibration, repeats, restart, and lane publication.
+   root; it owns calibration, repeats, restart, and lane publication. A lane
+   whose calibration was already admitted (status `calibrated`) resumes at
+   primary repeat 1.
 5. Validate coverage, JSON parsing, provenance, isolation, and infrastructure
    status.
 6. If calibration passes, run the three primary repeats sequentially.

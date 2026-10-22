@@ -1,5 +1,65 @@
 # Validation record
 
+## 0.5.0 Antigravity lanes and Pair 1 calibration — 2026-10-22
+
+Completed local checks:
+
+- All 225 automated tests passed. The 36 new tests cover the following:
+  - the Antigravity provider's command shape, stdin event transport, isolated
+    profile, deny-all permission profile, permission-mode and model checks,
+    silent-new-conversation detection, error and timeout classification, and
+    quota-free preflight;
+  - the Google lane set, manifest-scoped pair markers and locks, one
+    subject-root marker per manifest, `wave run --calibration-only`, the agy
+    self-update guard, and a fake-agy end-to-end Google pair;
+  - UTF-8 subprocess decoding.
+- The `taxonomy_bench-0.5.0-py3-none-any.whl` wheel built and was installed
+  without dependencies into a scratch virtual environment. That install reported
+  `taxonomy-bench 0.5.0`, exposed `wave prepare --lanes` and
+  `wave run --calibration-only`, and validated `sample_data` with 64 topics,
+  156 edges, and no errors.
+- Release packaging verified 28 mapped SHA-256 checksums and the exact
+  29-entry archive.
+
+Live checks, run with operator approval for about 16 calibration runs:
+
+- The 2026-08-02 Wave 1 manifest `544fb7e3…` pinned Claude Code `2.1.195` and
+  Codex `0.146.0`. The installed versions had moved to `2.1.296` and `0.163.0`,
+  which the controller rejects as drift. No lane had run against it, so it was
+  kept as evidence in `wave-runs/wave-1-superseded-20260802`.
+- A fresh Wave 1 manifest, `dbd05d3d331efeea798b981561b39dc25feb8207e60dafc42046619881cbea26`,
+  uses the same suite (`ce79e1cc…`), the same calibration IDs, and the same Claude
+  and Codex tool-policy hashes as the 2026-08-02 record. Both Pair 1 lanes passed
+  preflight with subscription auth and matching requested and resolved models.
+- Before calibration, one trivial prompt was sent through the exact Claude and
+  Codex subject invocations. Claude reported zero tools and zero MCP servers, and
+  `modelUsage` resolved to `claude-opus-5`. Codex answered on `gpt-5.6-sol`.
+  Neither left files in the working directory.
+- Both Pair 1 calibrations were admitted (`wave run --calibration-only`):
+  - `claude-opus-5`: 8 of 8 exact on the first attempt, all strict JSON,
+    5.0–7.5 s per task, no infrastructure errors.
+  - `gpt-5.6-sol`: 8 of 8 exact on the first attempt, all strict JSON, no
+    infrastructure errors. Six tasks took 3.3–5.0 s; `t02-01` took 268.5 s and
+    `t03-02` took 293.4 s.
+
+  Both lanes now show status `calibrated`, so the next `wave run` for each
+  starts at primary repeat 1.
+- The Google lane set manifest,
+  `738bc787c2216856989facac94f21b9ee1671e555d1e126e749ee8568f77e2c5`, shares
+  Wave 1's protocol hash, suite, calibration IDs, instruction hash, and control
+  root. It pins agy `1.4.5`. Both `gemini-4-argon-medium` and
+  `gemini-3.8-flash-medium` passed preflight without a model turn: listed by
+  `agy models`, selected by `/model`, and subscription quota groups reported by
+  `/quota`.
+- During the first Google preparation, an unguarded `agy --version` updated
+  agy from 1.4.4 to 1.4.5. That 1.4.4 manifest (`0f6b8324…`) was superseded
+  before any run and kept in `wave-runs/google-1-superseded-agy144`. The version
+  probe now sets `AGY_CLI_DISABLE_AUTO_UPDATE=1`, and a regression test covers
+  it. The agy binary's timestamp did not change across the second preparation
+  and preflight.
+- No raw auth output, account identifiers, credential values, conversation or
+  session IDs, private-suite contents, or subject transcripts are recorded here.
+
 ## Stable strategy contract 1.0.0 — 2026-08-23
 
 - All 189 automated tests passed. The nine strategy-contract tests cover exact

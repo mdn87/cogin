@@ -9,7 +9,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$expectedWheelName = 'taxonomy_bench-0.4.0-py3-none-any.whl'
+$expectedWheelName = 'taxonomy_bench-0.5.0-py3-none-any.whl'
 $wheelFullPath = (Resolve-Path $WheelPath).Path
 
 if ([System.IO.Path]::GetFileName($wheelFullPath) -cne $expectedWheelName) {
@@ -21,9 +21,9 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $wheelArchive = [System.IO.Compression.ZipFile]::OpenRead($wheelFullPath)
 try {
-  $metadataEntry = $wheelArchive.GetEntry('taxonomy_bench-0.4.0.dist-info/METADATA')
+  $metadataEntry = $wheelArchive.GetEntry('taxonomy_bench-0.5.0.dist-info/METADATA')
   if ($null -eq $metadataEntry) {
-    throw 'Wheel must contain taxonomy_bench-0.4.0.dist-info/METADATA.'
+    throw 'Wheel must contain taxonomy_bench-0.5.0.dist-info/METADATA.'
   }
   $metadataReader = [System.IO.StreamReader]::new($metadataEntry.Open())
   try {
@@ -38,8 +38,8 @@ try {
 if ($wheelMetadata -notmatch '(?m)^Name:\s*taxonomy-bench\s*$') {
   throw 'Wheel METADATA name must be taxonomy-bench.'
 }
-if ($wheelMetadata -notmatch '(?m)^Version:\s*0\.4\.0\s*$') {
-  throw 'Wheel METADATA version must be 0.4.0.'
+if ($wheelMetadata -notmatch '(?m)^Version:\s*0\.5\.0\s*$') {
+  throw 'Wheel METADATA version must be 0.5.0.'
 }
 
 if (-not $ArchivePath) {
@@ -57,7 +57,7 @@ $releaseEntries = [ordered]@{
   'cogin_strategy_contract/__init__.py' = Join-Path $projectRoot 'cogin_strategy_contract/__init__.py'
   'cogin_strategy_contract/manifest.json' = Join-Path $projectRoot 'cogin_strategy_contract/manifest.json'
   'cogin_strategy_contract/strategy-manifest.schema.json' = Join-Path $projectRoot 'cogin_strategy_contract/strategy-manifest.schema.json'
-  'dist/taxonomy_bench-0.4.0-py3-none-any.whl' = $wheelFullPath
+  'dist/taxonomy_bench-0.5.0-py3-none-any.whl' = $wheelFullPath
   'pyproject.toml' = Join-Path $projectRoot 'pyproject.toml'
   'sample_data/dependencies.json' = Join-Path $projectRoot 'sample_data/dependencies.json'
   'sample_data/manifest.json' = Join-Path $projectRoot 'sample_data/manifest.json'

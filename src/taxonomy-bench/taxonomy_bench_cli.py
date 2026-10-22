@@ -1,8 +1,9 @@
 """Subscription CLI provider infrastructure.
 
 This module defines the base provider contract for subscription-backed
-CLI invocation (Claude Code, Codex). It imports from taxonomy_bench_protocol
-but never from taxonomy_bench (the main module imports from here).
+CLI invocation (Claude Code, Codex, Antigravity). It imports from
+taxonomy_bench_protocol but never from taxonomy_bench (the main module
+imports from here).
 """
 
 from __future__ import annotations
@@ -18,7 +19,13 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from taxonomy_bench_protocol import BASE_INSTRUCTIONS, BenchError, canonical_hash, compose_subject_prompt
+from taxonomy_bench_protocol import (
+    BASE_INSTRUCTIONS,
+    BenchError,
+    canonical_hash,
+    canonical_json,
+    compose_subject_prompt,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +114,7 @@ def _production_runner(
         list(args),
         input=stdin_text,
         text=True,
+        encoding="utf-8",
         capture_output=True,
         cwd=str(cwd),
         timeout=timeout,
@@ -140,6 +148,11 @@ _FORBIDDEN_ENV_PREFIXES = (
     "AWS_SECRET_ACCESS_KEY",
     "GOOGLE_APPLICATION_CREDENTIALS",
     "AZURE_CLIENT_SECRET",
+    "GEMINI_API_KEY",
+    "GOOGLE_API_KEY",
+    "GOOGLE_GENAI_USE_VERTEXAI",
+    "GOOGLE_CLOUD_PROJECT",
+    "AGY_ADC_AUTH",
 )
 
 
@@ -643,6 +656,396 @@ class CodexCliProvider(Provider):
             resolved_model=resolved_model,
             response_id=thread_id,
             usage=usage,
+            status="completed",
+            provider_metadata={
+                "provider_version": self._cli_version(),
+                "instruction_hash": self._instruction_hash,
+                "invocation_hash": self.invocation_hash,
+                "tool_policy_hash": self.tool_policy_hash,
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# Antigravity CLI (agy) subscription provider
+# ---------------------------------------------------------------------------
+
+# agy 1.4.4 rejects the older "unsandboxed(*)" rule, so it is not listed.
+AGY_DENIED_PERMISSIONS = (
+    "read_file(*)",
+    "write_file(*)",
+    "read_url(*)",
+    "execute_url(*)",
+    "command(*)",
+    "mcp(*)",
+)
+# The mode agy reports once the deny-all profile is loaded; without it,
+# print mode reports "always-proceed" and auto-approves every tool call.
+AGY_PERMISSION_MODE = "request-review"
+
+
+def agy_policy_hashes(selector: str, effort: str = "medium") -> tuple[str, str]:
+    """Return the (invocation, tool-policy) hashes for one agy lane."""
+    tool_policy = {
+        "permissions": {"allow": [], "deny": list(AGY_DENIED_PERMISSIONS)},
+        "sandbox": True,
+        "isolated_home": True,
+    }
+    invocation = {
+        "selector": selector,
+        "effort": effort,
+        "input_format": "stream-json",
+        "output_format": "stream-json",
+        "sandbox": True,
+        "disable_slash_commands": True,
+        "isolated_home": True,
+    }
+    return canonical_hash(invocation), canonical_hash(tool_policy)
+
+
+class AgyCliProvider(Provider):
+    """Provider that invokes the Antigravity CLI with subscription auth.
+
+    Each provider runs agy under an isolated profile directory so the
+    operator's hooks, plugins, and GEMINI.md rules never reach a subject
+    session. agy authenticates from the OS keyring, which the isolated
+    profile does not affect.
+    """
+
+    supports_sessions = True
+    family = "antigravity"
+
+    def __init__(
+        self,
+        selector: str,
+        expected_model: str | None = None,
+        effort: str = "medium",
+        timeout: float = 600.0,
+        subject_root: Path | None = None,
+        persistent: bool = False,
+        home: Path | None = None,
+        runner: ProcessRunner = _production_runner,
+    ) -> None:
+        if home is None:
+            raise BenchError("Antigravity provider requires an isolated home directory")
+        self.selector = selector
+        self.expected_model = expected_model or selector
+        self.effort = effort
+        self.timeout = timeout
+        self.subject_root = subject_root or Path.cwd()
+        self.persistent = persistent
+        self.home = Path(home).resolve()
+        self._runner = runner
+
+        self.cli_path = shutil.which("agy")
+        if self.cli_path is None:
+            candidate = os.path.expandvars(r"%LOCALAPPDATA%\agy\bin\agy.exe")
+            if os.path.isfile(candidate):
+                self.cli_path = candidate
+        if self.cli_path is None:
+            raise BenchError("Antigravity CLI (agy) not found")
+
+        self._cached_version: str | None = None
+        self.invocation_hash, self.tool_policy_hash = agy_policy_hashes(
+            self.selector, self.effort
+        )
+        self.auth_mode = "subscription"
+        self._instruction_hash = canonical_hash(BASE_INSTRUCTIONS)
+
+    def _env(self) -> dict[str, str]:
+        env = _sanitized_env()
+        env["USERPROFILE"] = str(self.home)
+        env["HOME"] = str(self.home)
+        env["AGY_CLI_DISABLE_AUTO_UPDATE"] = "1"
+        return env
+
+    def _invoke(
+        self, args: list[str], stdin_text: str = "", timeout: float | None = None
+    ) -> ProcessResult:
+        return self._runner(
+            args,
+            stdin_text,
+            self.subject_root,
+            self.timeout if timeout is None else timeout,
+            self._env(),
+        )
+
+    def _cli_version(self) -> str:
+        if self._cached_version is not None:
+            return self._cached_version
+        try:
+            result = self._invoke([self.cli_path, "--version"], timeout=30.0)
+            self._cached_version = result.stdout.strip()
+        except Exception:
+            self._cached_version = "unknown"
+        return self._cached_version
+
+    def _ensure_permission_profile(self) -> None:
+        """Write the deny-all profile, or verify the copy agy normalized."""
+        path = self.home / ".gemini" / "antigravity-cli" / "settings.json"
+        if not path.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                canonical_json({
+                    "permissions": {"allow": [], "deny": list(AGY_DENIED_PERMISSIONS)}
+                }) + "\n",
+                encoding="utf-8",
+            )
+            return
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise BenchError("Antigravity permission profile is unreadable") from exc
+        permissions = payload.get("permissions") if isinstance(payload, dict) else None
+        if (
+            not isinstance(permissions, dict)
+            or set(permissions) - {"allow", "deny"}
+            or permissions.get("allow", []) != []
+            or permissions.get("deny") != list(AGY_DENIED_PERMISSIONS)
+        ):
+            raise BenchError("Antigravity permission profile was widened or replaced")
+
+    def _slash_command(self, command: str) -> dict[str, Any]:
+        """Run a quota-free print-mode slash command and require no model turn."""
+        result = self._invoke(
+            [
+                self.cli_path,
+                f"--print={command}",
+                "--output-format",
+                "json",
+                "--model",
+                self.selector,
+            ],
+            timeout=120.0,
+        )
+        try:
+            doc = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise BenchError(f"agy {command} output is not valid JSON") from exc
+        if result.returncode != 0 or doc.get("status") != "SUCCESS":
+            raise BenchError(
+                f"agy {command} failed (exit {result.returncode}): "
+                f"{str(doc.get('error') or result.stderr).strip()[:300]}"
+            )
+        if doc.get("num_turns") or "command" not in doc:
+            raise BenchError(f"agy {command} reached the model instead of the CLI")
+        return doc
+
+    def preflight(self) -> dict[str, Any]:
+        """Prove subscription quota and selector availability without a turn."""
+        self._ensure_permission_profile()
+        listed = self._invoke([self.cli_path, "models"], timeout=120.0)
+        if listed.returncode != 0:
+            raise BenchError(
+                f"agy models failed (exit {listed.returncode}): {listed.stderr.strip()[:300]}"
+            )
+        available = {
+            line.split("\t", 1)[0].strip()
+            for line in listed.stdout.splitlines()
+            if "\t" in line
+        }
+        if self.selector not in available:
+            raise BenchError(f"Antigravity model {self.selector} is not listed by agy models")
+        quota = self._slash_command("/quota")
+        groups = quota.get("command", {}).get("data", {}).get("groups") or []
+        group_names = [
+            group["name"]
+            for group in groups
+            if isinstance(group, dict) and group.get("name")
+        ]
+        if not group_names:
+            raise BenchError(
+                "Antigravity reported no subscription quota; refusing to run "
+                "without subscription auth"
+            )
+        selected = self._slash_command("/model").get("command", {}).get("data", {})
+        if selected.get("id") != self.selector:
+            raise BenchError(
+                f"Antigravity selected {selected.get('id')} instead of {self.selector}"
+            )
+        return {
+            "auth_mode": "subscription",
+            "resolved_model": selected["id"],
+            "model_label": selected.get("label", ""),
+            "quota_groups": group_names,
+        }
+
+    @staticmethod
+    def _classify(text: str) -> str:
+        lowered = text.lower()
+        if any(marker in lowered for marker in (
+            "rate limit", "resource_exhausted", "quota", "too many requests", "429",
+        )):
+            return "rate_limit"
+        if any(marker in lowered for marker in ("eligibility", "entitlement", "not entitled")):
+            return "entitlement"
+        if any(marker in lowered for marker in (
+            "authenticat", "sign in", "login", "oauth", "credential", "401",
+        )):
+            return "authentication"
+        return "process"
+
+    def complete(
+        self,
+        prompt: str,
+        output_schema: Mapping[str, Any],
+        previous_response_id: str | None = None,
+    ) -> Completion:
+        try:
+            self._ensure_permission_profile()
+        except BenchError as exc:
+            return Completion(text="", latency_ms=0, error=str(exc), error_kind="isolation")
+
+        cli_args = [
+            self.cli_path,
+            "--print=",
+            "--input-format", "stream-json",
+            "--output-format", "stream-json",
+            "--model", self.selector,
+            "--effort", self.effort,
+            "--sandbox",
+            "--disable-slash-commands",
+            "--print-timeout", f"{int(self.timeout)}s",
+        ]
+        if previous_response_id is not None:
+            # Continued retry: resume the task-local conversation
+            cli_args.extend(["--conversation", previous_response_id])
+            content = prompt
+        else:
+            content = compose_subject_prompt(prompt)
+        stdin_content = json.dumps({"event": "user", "message": {"content": content}}) + "\n"
+
+        try:
+            # agy's own --print-timeout ends the turn; the margin lets it exit cleanly.
+            result = self._invoke(cli_args, stdin_content, timeout=self.timeout + 60)
+        except subprocess.TimeoutExpired:
+            return Completion(
+                text="",
+                latency_ms=self.timeout * 1000,
+                error="Antigravity CLI timed out",
+                error_kind="timeout",
+            )
+        except Exception as exc:
+            return Completion(
+                text="",
+                latency_ms=0,
+                error=f"Antigravity CLI process error: {type(exc).__name__}: {exc}",
+                error_kind="process",
+            )
+        return self._parse(result, previous_response_id)
+
+    def _parse(
+        self, result: ProcessResult, previous_response_id: str | None
+    ) -> Completion:
+        init: dict[str, Any] | None = None
+        final: dict[str, Any] | None = None
+        for line in result.stdout.splitlines():
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                event = None
+            if not isinstance(event, dict):
+                return Completion(
+                    text=result.stdout,
+                    latency_ms=result.latency_ms,
+                    error="Antigravity CLI output contains invalid JSONL",
+                    error_kind="malformed_provider_output",
+                )
+            if event.get("event") == "init":
+                init = event.get("init") or {}
+            elif event.get("event") == "result":
+                final = event.get("result") or {}
+
+        stderr = result.stderr or ""
+        if final is None:
+            return Completion(
+                text="",
+                latency_ms=result.latency_ms,
+                error=(
+                    f"Antigravity CLI produced no result event "
+                    f"(exit {result.returncode}): {stderr.strip()[:500]}"
+                ),
+                error_kind=(
+                    self._classify(stderr)
+                    if result.returncode != 0
+                    else "malformed_provider_output"
+                ),
+            )
+
+        resolved = (init or {}).get("model")
+        conversation_id = final.get("conversation_id") or None
+        fields = {
+            "text": str(final.get("response") or ""),
+            "latency_ms": result.latency_ms,
+            "resolved_model": resolved,
+            "response_id": conversation_id,
+        }
+        error_text = str(final.get("error") or "")
+        if result.returncode != 0 or final.get("status") != "SUCCESS":
+            return Completion(
+                **fields,
+                error=(
+                    f"Antigravity CLI failed (exit {result.returncode}): "
+                    f"{(error_text or stderr).strip()[:500]}"
+                ),
+                error_kind=self._classify(f"{error_text}\n{stderr}"),
+            )
+        lowered_stderr = stderr.lower()
+        if "timeout" in lowered_stderr or "timed out" in lowered_stderr:
+            # agy returns partial output with exit 0 when --print-timeout expires.
+            return Completion(
+                **fields,
+                error=f"Antigravity print timeout: {stderr.strip()[:300]}",
+                error_kind="timeout",
+            )
+        if previous_response_id is not None and (
+            conversation_id != previous_response_id or "not found" in lowered_stderr
+        ):
+            # agy starts a fresh conversation, exit 0, when the ID is unknown.
+            return Completion(
+                **fields,
+                error="Antigravity did not resume the task-local conversation",
+                error_kind="isolation",
+            )
+        permission_mode = (init or {}).get("permission_mode")
+        if permission_mode != AGY_PERMISSION_MODE:
+            return Completion(
+                **fields,
+                error=(
+                    f"Antigravity permission mode {permission_mode!r} is not "
+                    f"{AGY_PERMISSION_MODE!r}"
+                ),
+                error_kind="isolation",
+            )
+        if resolved != self.expected_model:
+            return Completion(
+                **fields,
+                error=f"Model mismatch: expected {self.expected_model}, got {resolved}",
+                error_kind="model_mismatch",
+            )
+        if self.persistent and conversation_id is None:
+            return Completion(
+                **fields,
+                error="Antigravity CLI produced no conversation_id for a persisted session",
+                error_kind="malformed_provider_output",
+            )
+
+        # agy echoes the requested selector in init.model; like Codex, it
+        # reports no server-side model identity (see agy-cli-characterization.md).
+        raw_usage = final.get("usage") or {}
+        return Completion(
+            **fields,
+            usage={
+                key: int(raw_usage.get(key) or 0)
+                for key in (
+                    "input_tokens",
+                    "output_tokens",
+                    "thinking_tokens",
+                    "cache_read_tokens",
+                )
+            },
             status="completed",
             provider_metadata={
                 "provider_version": self._cli_version(),

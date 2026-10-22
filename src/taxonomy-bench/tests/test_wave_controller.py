@@ -521,7 +521,9 @@ class TestWaveController:
         )
         ctrl.validate_subject_root()
         # Marker should exist
-        assert (subject_root / ".wave1-subject-root").exists()
+        assert wave.subject_root_marker(
+            subject_root, ctrl.manifest["manifest_hash"]
+        ).exists()
 
 
 class TestWaveCli:
@@ -535,7 +537,7 @@ class TestWaveCli:
         control.mkdir()
         out = tmp_path / "wave-1"
         monkeypatch.setattr(
-            wave, "collect_provider_metadata", lambda: {
+            wave, "collect_provider_metadata", lambda lane_set="wave-1": {
                 "instruction_hash": canonical_hash(BASE_INSTRUCTIONS),
                 "invocation_hash": "i",
                 "tool_policy_hash": "t",
@@ -965,3 +967,388 @@ class TestWavePairAggregation:
             (report / "matrix.json").read_text(encoding="utf-8")
         )
         assert len(matrix["accepted_run_ids"]) == 6
+
+
+# ---------------------------------------------------------------------------
+# Calibration-only lane mode
+# ---------------------------------------------------------------------------
+
+
+def _oracle_controller(
+    manifest: dict, control: Path, out: Path, subject: Path, suite: dict
+) -> tuple[wave.WaveController, list[WaveOracleProvider]]:
+    providers: list[WaveOracleProvider] = []
+
+    def factory(lane_id: str, persistent: bool):
+        provider = WaveOracleProvider(suite, manifest, lane_id, persistent=persistent)
+        providers.append(provider)
+        return provider
+
+    controller = wave.WaveController(
+        manifest_path=out / "manifest.json",
+        control_root=control,
+        subject_root=subject,
+        wave_dir=out,
+        provider_factory=factory,
+    )
+    return controller, providers
+
+
+class TestCalibrationOnly:
+    def test_calibration_only_stops_before_primary_repeats(self, tmp_path: Path):
+        manifest, suite_path, control, out = _prepared_wave(tmp_path)
+        suite = tb.load_suite(suite_path)
+        subject = tmp_path / "subject"
+        subject.mkdir()
+        controller, providers = _oracle_controller(manifest, control, out, subject, suite)
+
+        assert controller.run_lane("claude-opus-5", calibration_only=True) == 0
+        state = wave.LaneState.load(out / "lanes" / "claude-opus-5")
+        assert state.status == "calibrated"
+        assert state.calibration_run_id
+        assert state.accepted_run_ids == []
+        assert [provider.persistent for provider in providers] == [False]
+        assert len(providers[0].calls) == 8
+
+        assert controller.run_lane("claude-opus-5", calibration_only=True) == 0
+        assert sum(len(provider.calls) for provider in providers) == 8
+
+        assert controller.run_lane("claude-opus-5") == 0
+        final = wave.LaneState.load(out / "lanes" / "claude-opus-5")
+        assert final.status == "complete"
+        assert final.calibration_run_id == state.calibration_run_id
+        assert sum(
+            len(provider.calls) for provider in providers if not provider.persistent
+        ) == 8
+
+    def test_wave_run_cli_passes_calibration_only_and_google_lanes(
+        self, tmp_path: Path, monkeypatch
+    ):
+        _, _, control, out = _prepared_wave(tmp_path)
+        _, google_out = _prepared_google_wave(tmp_path, control)
+        subject = tmp_path / "subject"
+        subject.mkdir()
+        seen: list[tuple[str, bool]] = []
+
+        def fake_run_lane(self, lane_id, calibration_only=False):
+            seen.append((lane_id, calibration_only))
+            return 0
+
+        monkeypatch.setattr(wave.WaveController, "run_lane", fake_run_lane)
+        for manifest_dir, lane_id, extra in (
+            (out, "claude-opus-5", ["--calibration-only"]),
+            (google_out, "gemini-4-argon-medium", []),
+        ):
+            assert tb.main([
+                "wave", "run",
+                "--manifest", str(manifest_dir / "manifest.json"),
+                "--lane", lane_id,
+                "--subject-root", str(subject),
+                *extra,
+            ]) == 0
+        assert seen == [("claude-opus-5", True), ("gemini-4-argon-medium", False)]
+
+
+# ---------------------------------------------------------------------------
+# Google lane set (agy) sharing the controller roots with Wave 1
+# ---------------------------------------------------------------------------
+
+GOOGLE_LANES = ("gemini-4-argon-medium", "gemini-3.8-flash-medium")
+
+
+def _prepared_google_wave(tmp_path: Path, control_root: Path) -> tuple[dict, Path]:
+    suite_path = tmp_path / "suite.private.json"
+    if not suite_path.exists():
+        suite_path.write_text(
+            json.dumps(_fake_suite(tasks_per_tier=4)), encoding="utf-8"
+        )
+    out_dir = tmp_path / "google-1"
+    metadata = {
+        "instruction_hash": canonical_hash(BASE_INSTRUCTIONS),
+        "cli_versions": {"antigravity": "1.4.4"},
+        "lanes": {},
+    }
+    for lane_id in GOOGLE_LANES:
+        invocation, tool_policy = taxonomy_bench_cli.agy_policy_hashes(lane_id)
+        metadata["lanes"][lane_id] = {
+            "family": "antigravity",
+            "requested_model": lane_id,
+            "expected_model": lane_id,
+            "cli_version": "1.4.4",
+            "invocation_hash": invocation,
+            "tool_policy_hash": tool_policy,
+            "auth_mode": "subscription",
+        }
+    manifest = wave.prepare_manifest(
+        tb.load_suite(suite_path),
+        suite_path,
+        control_root,
+        metadata,
+        out_dir,
+        lane_set="google-1",
+    )
+    return manifest, out_dir
+
+
+def _fake_agy_runner(suite: dict, conversations: dict[str, str]):
+    answers = {task["prompt"]: correct_answer(task) for task in suite["tasks"]}
+    first_prompt = suite["tasks"][0]["prompt"]
+
+    def ok(args, stdout: str) -> ProcessResult:
+        return ProcessResult(tuple(args), 0, stdout, "", 1.0)
+
+    def runner(args, stdin_text, cwd, timeout, env):
+        if "--version" in args:
+            return ok(args, "1.4.4\n")
+        if "models" in args:
+            return ok(args, "".join(f"{lane}\t{lane}\n" for lane in GOOGLE_LANES))
+        selector = args[args.index("--model") + 1]
+        if "--print=/quota" in args:
+            return ok(args, json.dumps({
+                "status": "SUCCESS", "num_turns": 0,
+                "command": {"name": "usage", "data": {"groups": [{"name": "Gemini Models"}]}},
+            }))
+        if "--print=/model" in args:
+            return ok(args, json.dumps({
+                "status": "SUCCESS", "num_turns": 0,
+                "command": {"name": "model", "data": {"id": selector, "label": selector}},
+            }))
+        assert Path(env["USERPROFILE"]).name in {"calibration", "primary"}
+        content = json.loads(stdin_text)["message"]["content"]
+        if "--conversation" in args:
+            conversation = args[args.index("--conversation") + 1]
+            response = answers[conversations[conversation]]
+        else:
+            matches = [prompt for prompt in answers if prompt in content]
+            assert len(matches) == 1
+            conversation = f"agy-conversation-{len(conversations) + 1}"
+            conversations[conversation] = matches[0]
+            # Miss the first task on its first attempt so retries resume it.
+            response = '{"ids":[]}' if matches[0] == first_prompt else answers[matches[0]]
+        return ok(args, "\n".join([
+            json.dumps({"event": "init", "conversation_id": conversation, "init": {
+                "model": selector, "tools": ["view_file"], "permission_mode": "request-review",
+            }}),
+            json.dumps({"event": "result", "result": {
+                "conversation_id": conversation, "status": "SUCCESS",
+                "response": response, "num_turns": 1, "usage": {},
+            }}),
+        ]) + "\n")
+
+    return runner
+
+
+class TestGoogleLaneSet:
+    def test_google_lane_set_is_one_antigravity_pair(self):
+        assert wave.GOOGLE1_PAIRS == (GOOGLE_LANES,)
+        lanes = wave.LANE_SETS["google-1"]["lanes"]
+        assert set(lanes) == set(GOOGLE_LANES)
+        for lane_id, lane in lanes.items():
+            assert lane == {
+                "family": "antigravity",
+                "selector": lane_id,
+                "expected_model": lane_id,
+            }
+        assert wave.LANE_SETS["wave-1"]["lanes"] == wave.WAVE1_LANES
+
+    def test_google_manifest_shares_protocol_and_suite_with_wave_one(
+        self, tmp_path: Path
+    ):
+        wave1, _, control, _ = _prepared_wave(tmp_path)
+        google, _ = _prepared_google_wave(tmp_path, control)
+        assert google["pairs"] == [list(GOOGLE_LANES)]
+        assert set(google["lanes"]) == set(GOOGLE_LANES)
+        for key in (
+            "protocol_version",
+            "protocol_hash",
+            "suite_sha256",
+            "calibration_ids",
+            "base_instruction_hash",
+            "control_root",
+        ):
+            assert google[key] == wave1[key]
+        assert google["manifest_hash"] != wave1["manifest_hash"]
+
+    def test_collect_provider_metadata_is_scoped_to_lane_set_families(
+        self, monkeypatch
+    ):
+        monkeypatch.setattr(wave, "_cli_version", lambda executable: f"{executable}-test")
+        google = wave.collect_provider_metadata("google-1")
+        assert google["cli_versions"] == {"antigravity": "agy-test"}
+        for lane_id in GOOGLE_LANES:
+            invocation, tool_policy = taxonomy_bench_cli.agy_policy_hashes(lane_id)
+            assert google["lanes"][lane_id]["invocation_hash"] == invocation
+            assert google["lanes"][lane_id]["tool_policy_hash"] == tool_policy
+            assert google["lanes"][lane_id]["cli_version"] == "agy-test"
+        assert set(wave.collect_provider_metadata("wave-1")["cli_versions"]) == {
+            "claude",
+            "codex",
+        }
+
+    def test_cli_version_probe_disables_agy_self_update(self, monkeypatch):
+        import subprocess
+
+        seen: dict = {}
+
+        def fake_run(args, **kwargs):
+            seen["env"] = kwargs.get("env")
+            return subprocess.CompletedProcess(args, 0, "1.4.5\n", "")
+
+        monkeypatch.setattr(wave.shutil, "which", lambda name: f"C:/fake/{name}.exe")
+        monkeypatch.setattr(wave.subprocess, "run", fake_run)
+        assert wave._cli_version("agy") == "1.4.5"
+        assert seen["env"]["AGY_CLI_DISABLE_AUTO_UPDATE"] == "1"
+
+    def test_wave_prepare_cli_selects_google_lane_set(
+        self, tmp_path: Path, monkeypatch
+    ):
+        suite_path = tmp_path / "suite.private.json"
+        suite_path.write_text(json.dumps(_fake_suite(tasks_per_tier=4)), encoding="utf-8")
+        control = tmp_path / "control"
+        control.mkdir()
+        out = tmp_path / "google-1"
+        monkeypatch.setattr(wave, "_cli_version", lambda executable: f"{executable}-test")
+        assert tb.main([
+            "wave", "prepare",
+            "--suite", str(suite_path),
+            "--out", str(out),
+            "--control-root", str(control),
+            "--lanes", "google-1",
+        ]) == 0
+        manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+        assert manifest["pairs"] == [list(GOOGLE_LANES)]
+        assert manifest["cli_versions"] == {"antigravity": "agy-test"}
+
+    def test_build_provider_isolates_agy_home_per_lane_and_phase(
+        self, tmp_path: Path, monkeypatch
+    ):
+        _, _, control, _ = _prepared_wave(tmp_path)
+        _, out = _prepared_google_wave(tmp_path, control)
+        subject = tmp_path / "subject"
+        subject.mkdir()
+        monkeypatch.setattr(
+            taxonomy_bench_cli.shutil, "which", lambda name: f"C:/fake/{name}.exe"
+        )
+        controller = wave.WaveController(
+            manifest_path=out / "manifest.json",
+            control_root=control,
+            subject_root=subject,
+            wave_dir=out,
+        )
+        calibration = controller.build_provider("gemini-4-argon-medium", persistent=False)
+        primary = controller.build_provider("gemini-4-argon-medium", persistent=True)
+        assert isinstance(calibration, taxonomy_bench_cli.AgyCliProvider)
+        lane_home = out / "agy-home" / "gemini-4-argon-medium"
+        assert calibration.home == (lane_home / "calibration").resolve()
+        assert primary.home == (lane_home / "primary").resolve()
+        assert calibration.subject_root == subject
+        assert primary.persistent and not calibration.persistent
+
+    def test_google_pair_runs_with_fake_agy_and_leaves_wave_one_barrier_alone(
+        self, tmp_path: Path, monkeypatch
+    ):
+        wave1, _, control, _ = _prepared_wave(tmp_path)
+        google, out = _prepared_google_wave(tmp_path, control)
+        suite = tb.load_suite(out / "suite.private.json")
+        subject = tmp_path / "subject"
+        subject.mkdir()
+        monkeypatch.setattr(
+            taxonomy_bench_cli.shutil, "which", lambda name: f"C:/fake/{name}.exe"
+        )
+        conversations: dict[str, str] = {}
+        runner = _fake_agy_runner(suite, conversations)
+
+        def factory(lane_id: str, persistent: bool):
+            return taxonomy_bench_cli.AgyCliProvider(
+                selector=lane_id,
+                subject_root=subject,
+                persistent=persistent,
+                home=out / "agy-home" / lane_id / ("primary" if persistent else "calibration"),
+                runner=runner,
+            )
+
+        for lane_id in GOOGLE_LANES:
+            controller = wave.WaveController(
+                manifest_path=out / "manifest.json",
+                control_root=control,
+                subject_root=subject,
+                wave_dir=out,
+                provider_factory=factory,
+            )
+            assert controller.run_lane(lane_id) == 0
+            state = wave.LaneState.load(out / "lanes" / lane_id)
+            assert state.status == "complete"
+            assert len(state.accepted_run_ids) == 3
+            for run_id in (state.calibration_run_id, *state.accepted_run_ids):
+                text = (out / "runs" / run_id / "run.json").read_text(encoding="utf-8")
+                assert "agy-conversation-" not in text
+
+        report = wave.aggregate_pair(out / "manifest.json", 1)
+        matrix = json.loads((report / "matrix.json").read_text(encoding="utf-8"))
+        assert len(matrix["accepted_run_ids"]) == 6
+        assert wave.pair_can_start(google, control, 2)
+        assert not wave.pair_can_start(wave1, control, 2)
+        assert (out / "agy-home" / GOOGLE_LANES[0] / "primary" / ".gemini"
+                / "antigravity-cli" / "settings.json").exists()
+
+
+class TestSharedControllerRoots:
+    def test_aggregation_markers_are_scoped_to_their_manifest(self, tmp_path: Path):
+        wave.record_aggregation(tmp_path, "manifest-a", 1)
+        wave.record_aggregation(tmp_path, "manifest-b", 1)
+        assert wave.pair_can_start({"manifest_hash": "manifest-a"}, tmp_path, 2)
+        assert wave.pair_can_start({"manifest_hash": "manifest-b"}, tmp_path, 2)
+        assert not wave.pair_can_start({"manifest_hash": "manifest-c"}, tmp_path, 2)
+
+    def test_pair_locks_are_scoped_to_their_manifest(self, tmp_path: Path):
+        lock_a = wave.PairLock(tmp_path, 1, "manifest-a")
+        lock_b = wave.PairLock(tmp_path, 1, "manifest-b")
+        try:
+            with pytest.raises(BenchError):
+                wave.PairLock(tmp_path, 1, "manifest-a")
+        finally:
+            lock_a.release()
+            lock_b.release()
+
+    def test_subject_root_keeps_one_marker_per_manifest(self, tmp_path: Path):
+        wave1, _, control, wave1_out = _prepared_wave(tmp_path)
+        google, google_out = _prepared_google_wave(tmp_path, control)
+        subject = tmp_path / "subject"
+        subject.mkdir()
+
+        def controller(out: Path) -> wave.WaveController:
+            return wave.WaveController(
+                manifest_path=out / "manifest.json",
+                control_root=control,
+                subject_root=subject,
+                wave_dir=out,
+            )
+
+        for out in (wave1_out, google_out, wave1_out):
+            controller(out).validate_subject_root()
+        for manifest in (wave1, google):
+            marker = wave.subject_root_marker(subject, manifest["manifest_hash"])
+            assert json.loads(marker.read_text(encoding="utf-8"))[
+                "manifest_hash"
+            ] == manifest["manifest_hash"]
+
+        wave.subject_root_marker(subject, google["manifest_hash"]).write_text(
+            json.dumps({"manifest_hash": "tampered"}), encoding="utf-8"
+        )
+        with pytest.raises(BenchError, match="marker"):
+            controller(google_out).validate_subject_root()
+
+    @pytest.mark.parametrize("name", ["GEMINI.md", ".gemini", "AGENTS.md"])
+    def test_subject_root_rejects_agent_instruction_files(self, tmp_path: Path, name: str):
+        _, _, control, out = _prepared_wave(tmp_path)
+        subject = tmp_path / "subject"
+        subject.mkdir()
+        (subject / name).write_text("rules", encoding="utf-8")
+        controller = wave.WaveController(
+            manifest_path=out / "manifest.json",
+            control_root=control,
+            subject_root=subject,
+            wave_dir=out,
+        )
+        with pytest.raises(BenchError, match="forbidden entry"):
+            controller.validate_subject_root()

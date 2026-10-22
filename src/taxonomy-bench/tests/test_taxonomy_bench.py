@@ -53,7 +53,7 @@ def test_package_and_runtime_versions_match():
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     match = re.search(r'^version = "([^"]+)"$', text, flags=re.MULTILINE)
     assert match is not None
-    assert match.group(1) == tb.BENCHMARK_VERSION == "0.4.0"
+    assert match.group(1) == tb.BENCHMARK_VERSION == "0.5.0"
 
 
 def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
@@ -99,10 +99,10 @@ def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(f"fixture for {relative_path}\n", encoding="utf-8")
 
-    disguised_wheel = tmp_path / "taxonomy_bench-0.4.0-py3-none-any.whl"
+    disguised_wheel = tmp_path / "taxonomy_bench-0.5.0-py3-none-any.whl"
     with zipfile.ZipFile(disguised_wheel, "w") as wheel:
         wheel.writestr(
-            "taxonomy_bench-0.4.0.dist-info/METADATA",
+            "taxonomy_bench-0.5.0.dist-info/METADATA",
             "Metadata-Version: 2.1\nName: taxonomy-bench\nVersion: 0.1.0\n",
         )
 
@@ -125,12 +125,12 @@ def test_release_packager_rejects_renamed_wrong_version_wheel(tmp_path: Path):
     )
 
     assert result.returncode != 0
-    assert "Wheel METADATA version must be 0.4.0" in (result.stdout + result.stderr)
+    assert "Wheel METADATA version must be 0.5.0" in (result.stdout + result.stderr)
     assert not archive.exists()
 
 
 def test_generic_run_rejects_subscription_providers():
-    for name in ("claude-cli", "codex-cli"):
+    for name in ("claude-cli", "codex-cli", "antigravity-cli"):
         args = tb.build_parser().parse_args([
             "run", "--suite", "unused.json", "--provider", name,
             "--model", "x",

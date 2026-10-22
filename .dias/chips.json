@@ -121,7 +121,7 @@
       "projectId": "cogin",
       "title": "Run Wave 1 live across three subscription pairs",
       "summary": "Execute the six preflighted Claude and Codex lanes in pair order against the locked 32-task manifest and publish the three pair reports.",
-      "stage": "ready",
+      "stage": "active",
       "sequence": 50,
       "prereqs": [
         "cogin:wave-one-controller"
@@ -131,7 +131,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-27T20:43:02.274Z",
-        "updatedAt": "2026-09-27T20:43:02.274Z"
+        "updatedAt": "2026-10-22T05:50:00.000Z"
       },
       "evidence": [
         {
@@ -139,6 +139,39 @@
           "at": "2026-09-27T20:43:02.274Z",
           "kind": "created",
           "message": "Controller and live preflight landed 2026-08-02; the wave directory holds only the manifest and private suite, so no lane has run as of 2026-09-27."
+        },
+        {
+          "entryId": "cogin:wave-one-live-runs:calibrated-2026-10-22",
+          "at": "2026-10-22T05:50:00.000Z",
+          "kind": "stage-change",
+          "message": "Moved to active on 2026-10-22: the Wave 1 manifest was re-prepared for Claude Code 2.1.296 and Codex 0.163.0 (dbd05d3d), and both Pair 1 calibrations were admitted with 8 of 8 exact first attempts. No primary repeat has started."
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "chipId": "cogin:google-lane-set",
+      "projectId": "cogin",
+      "title": "Google lanes through the Antigravity CLI",
+      "summary": "AgyCliProvider and the google-1 lane set run Gemini 4 Argon and Gemini 3.8 Flash under the Wave 1 protocol and suite; manifest prepared and both lanes preflighted, no lane run yet.",
+      "stage": "ready",
+      "sequence": 55,
+      "prereqs": [
+        "cogin:wave-one-controller"
+      ],
+      "linkedRunIds": [],
+      "confidence": "reported",
+      "aheadOfPrereqs": null,
+      "timestamps": {
+        "createdAt": "2026-10-22T05:50:00.000Z",
+        "updatedAt": "2026-10-22T05:50:00.000Z"
+      },
+      "evidence": [
+        {
+          "entryId": "cogin:google-lane-set:authored-2026-10-22",
+          "at": "2026-10-22T05:50:00.000Z",
+          "kind": "created",
+          "message": "Provider, lane set, and agy 1.4.5 manifest (738bc787) landed 2026-10-22; quota-free preflight passed for both lanes."
         }
       ]
     },
@@ -180,7 +213,7 @@
       "chipId": "cogin:agent-cli-comparison-harness",
       "projectId": "cogin",
       "title": "Agent CLI comparison harness",
-      "summary": "Separate experiment scoring agentic repo work with tools required across Claude, Codex and Gemini lanes; spec written, nothing implemented.",
+      "summary": "Separate experiment scoring agentic repo work with tools required across Claude, Codex and agy lanes; spec written, nothing implemented.",
       "stage": "vague",
       "sequence": 70,
       "prereqs": [],
@@ -189,7 +222,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-27T20:43:02.274Z",
-        "updatedAt": "2026-09-27T20:43:02.274Z"
+        "updatedAt": "2026-10-22T05:50:00.000Z"
       },
       "evidence": [
         {
@@ -197,6 +230,12 @@
           "at": "2026-09-27T20:43:02.274Z",
           "kind": "created",
           "message": "Spec committed 2026-08-01 and marked not implemented; it needs its own harness and lane registry, not the wave controller."
+        },
+        {
+          "entryId": "cogin:agent-cli-comparison-harness:agy-2026-10-22",
+          "at": "2026-10-22T05:50:00.000Z",
+          "kind": "note",
+          "message": "On 2026-10-22 one instrumented agy lane replaced both the retiring Gemini CLI lane and the hand-run Antigravity IDE lane in the spec."
         }
       ]
     },
@@ -217,7 +256,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-05T12:00:00.000Z",
-        "updatedAt": "2026-09-27T20:43:02.274Z"
+        "updatedAt": "2026-10-22T05:50:00.000Z"
       },
       "evidence": [
         {
@@ -225,6 +264,12 @@
           "at": "2026-09-05T03:40:00.000Z",
           "kind": "created",
           "message": "Depends on the broader evidence base; integration shape not designed yet."
+        },
+        {
+          "entryId": "cogin:orca-strategy-handoff:checked-2026-10-22",
+          "at": "2026-10-22T05:50:00.000Z",
+          "kind": "note",
+          "message": "2026-10-22 check: Orca still pins the strategy contract (1.0.0, digest c9412a5c) and nothing supersedes Cogin, but no Orca rule selects its techniques and no route supports skills, so the contract changes no behavior yet."
         }
       ]
     }

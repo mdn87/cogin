@@ -1,9 +1,10 @@
 """Sanitized subscription CLI characterization tests.
 
 These fixtures are based on live CLI output captured on 2026-08-01 with
-Codex CLI 0.146.0 and Claude Code 2.1.195. Real identifiers, account
-details, timestamps, and usage values have been replaced with obvious
-fixture values. No raw CLI output is committed.
+Codex CLI 0.146.0 and Claude Code 2.1.195, and on 2026-10-22 with
+Antigravity CLI (agy) 1.4.4. Real identifiers, account details,
+timestamps, and usage values have been replaced with obvious fixture
+values. No raw CLI output is committed.
 """
 
 from __future__ import annotations
@@ -12,12 +13,16 @@ import json
 import os as _os_module
 from pathlib import Path as _Path
 
+import pytest
+
 from taxonomy_bench_cli import (
+    AGY_DENIED_PERMISSIONS,
+    AgyCliProvider,
     ClaudeCliProvider,
     CodexCliProvider,
     ProcessResult,
 )
-from taxonomy_bench_protocol import BASE_INSTRUCTIONS
+from taxonomy_bench_protocol import BASE_INSTRUCTIONS, BenchError, compose_subject_prompt
 
 
 # ---------------------------------------------------------------------------
@@ -679,3 +684,335 @@ class TestCodexProvider:
         finally:
             del _os_module.environ["OPENAI_API_KEY"]
             del _os_module.environ["CODEX_API_KEY"]
+
+
+def test_production_runner_decodes_utf8_output():
+    import sys
+
+    from taxonomy_bench_cli import _production_runner
+
+    result = _production_runner(
+        [sys.executable, "-c", "import sys; sys.stdout.buffer.write('\\u00e9\\u2192'.encode('utf-8'))"],
+        "",
+        _Path.cwd(),
+        30.0,
+        dict(_os_module.environ),
+    )
+    assert result.stdout == "\u00e9\u2192"
+
+
+# ---------------------------------------------------------------------------
+# Sanitized Antigravity CLI (agy 1.4.4) fixtures, observed 2026-10-22
+# ---------------------------------------------------------------------------
+
+AGY_SELECTOR = "gemini-4-argon-medium"
+
+
+def _agy_init(model: str = AGY_SELECTOR, permission_mode: str = "request-review") -> str:
+    return json.dumps({
+        "event": "init",
+        "conversation_id": "conversation_fixture",
+        "init": {
+            "model": model,
+            "cwd": "C:\\subjects",
+            "tools": ["view_file", "run_command", "write_to_file"],
+            "permission_mode": permission_mode,
+        },
+    })
+
+
+def _agy_result(
+    *,
+    status: str = "SUCCESS",
+    response: str = '{"ok":true}\n',
+    conversation_id: str = "conversation_fixture",
+    error: str | None = None,
+) -> str:
+    result = {
+        "conversation_id": conversation_id,
+        "status": status,
+        "response": response,
+        "duration_seconds": 1.5,
+        "num_turns": 1,
+        "usage": {
+            "input_tokens": 10,
+            "output_tokens": 4,
+            "thinking_tokens": 2,
+            "cache_read_tokens": 1,
+            "total_tokens": 16,
+        },
+    }
+    if error is not None:
+        result["error"] = error
+    return json.dumps({"event": "result", "result": result})
+
+
+def _agy_stream(**result_kwargs) -> str:
+    init_kwargs = {
+        key: result_kwargs.pop(key)
+        for key in ("model", "permission_mode")
+        if key in result_kwargs
+    }
+    step = json.dumps({
+        "event": "step_update",
+        "step_update": {
+            "conversation_id": "conversation_fixture",
+            "step_index": 1,
+            "state": "DONE",
+            "step_type": "agent_response",
+            "text_delta": "\n",
+        },
+    })
+    return "\n".join([_agy_init(**init_kwargs), step, _agy_result(**result_kwargs)]) + "\n"
+
+
+AGY_QUOTA_JSON = json.dumps({
+    "conversation_id": "",
+    "status": "SUCCESS",
+    "response": "Gemini Models\tWeekly Limit Remaining\t50%\t2026-01-01T00:00:00Z\n",
+    "duration_seconds": 0,
+    "num_turns": 0,
+    "usage": {"input_tokens": 0, "output_tokens": 0, "thinking_tokens": 0,
+              "cache_read_tokens": 0, "total_tokens": 0},
+    "command": {"name": "usage", "data": {"groups": [{
+        "name": "Gemini Models",
+        "buckets": [{"id": "gemini-weekly", "window": "weekly",
+                     "remaining_fraction": 0.5,
+                     "reset_time": "2026-01-01T00:00:00Z"}],
+    }]}},
+})
+
+AGY_MODEL_JSON = json.dumps({
+    "conversation_id": "",
+    "status": "SUCCESS",
+    "response": "gemini-4-argon-medium\tGemini 4 Argon (Medium)\n",
+    "duration_seconds": 0,
+    "num_turns": 0,
+    "usage": {"input_tokens": 0, "output_tokens": 0, "thinking_tokens": 0,
+              "cache_read_tokens": 0, "total_tokens": 0},
+    "command": {"name": "model", "data": {
+        "id": "gemini-4-argon-medium",
+        "label": "Gemini 4 Argon (Medium)",
+        "effort": "medium",
+        "is_default": False,
+    }},
+})
+
+AGY_MODELS_LIST = (
+    "gemini-4-argon-medium\tGemini 4 Argon (Medium)\n"
+    "gemini-3.8-flash-medium\tGemini 3.8 Flash (Medium)\n"
+)
+
+
+def _agy_runner(captured: list, *, stream: str | None = None, returncode: int = 0,
+                stderr: str = "", models: str = AGY_MODELS_LIST,
+                quota: str = AGY_QUOTA_JSON, model: str = AGY_MODEL_JSON):
+    def runner(args, stdin_text, cwd, timeout, env):
+        captured.append({"args": list(args), "stdin": stdin_text, "cwd": cwd, "env": dict(env)})
+        if "--version" in args:
+            return ProcessResult(tuple(args), 0, "1.4.4\n", "", 1.0)
+        if "models" in args:
+            return ProcessResult(tuple(args), 0, models, "Fetching available models...\n", 1.0)
+        if "--print=/quota" in args:
+            return ProcessResult(tuple(args), 0, quota, "", 1.0)
+        if "--print=/model" in args:
+            return ProcessResult(tuple(args), 0, model, "", 1.0)
+        return ProcessResult(
+            tuple(args), returncode, _agy_stream() if stream is None else stream, stderr, 100.0
+        )
+    return runner
+
+
+def _agy_provider(tmp_path: _Path, captured: list, *, persistent: bool = True, **runner_kwargs):
+    provider = AgyCliProvider(
+        selector=AGY_SELECTOR,
+        subject_root=tmp_path / "subject",
+        home=tmp_path / "agy-home",
+        persistent=persistent,
+        runner=_agy_runner(captured, **runner_kwargs),
+    )
+    provider.cli_path = "agy"
+    return provider
+
+
+def _model_calls(captured: list) -> list[dict]:
+    return [call for call in captured if "--input-format" in call["args"]]
+
+
+class TestAgyProvider:
+
+    def test_agy_fresh_command_is_headless_sandboxed_and_stdin_only(self, tmp_path):
+        captured: list = []
+        provider = _agy_provider(tmp_path, captured)
+        result = provider.complete("Task prompt", {})
+        assert not result.error
+        args = _model_calls(captured)[0]["args"]
+        assert args[0] == "agy"
+        assert "--print=" in args
+        assert args[args.index("--input-format") + 1] == "stream-json"
+        assert args[args.index("--output-format") + 1] == "stream-json"
+        assert args[args.index("--model") + 1] == AGY_SELECTOR
+        assert args[args.index("--effort") + 1] == "medium"
+        assert "--sandbox" in args
+        assert "--disable-slash-commands" in args
+        assert "--print-timeout" in args
+        for forbidden in ("--conversation", "--mode", "--dangerously-skip-permissions",
+                          "--continue", "--print", "Task prompt"):
+            assert forbidden not in args
+
+    def test_agy_fresh_stdin_is_one_user_event_with_exact_prompt(self, tmp_path):
+        captured: list = []
+        provider = _agy_provider(tmp_path, captured)
+        prompt = 'Line one.\nReturn {"q": "\u00e9\\"x\\""} exactly.'
+        provider.complete(prompt, {})
+        stdin = _model_calls(captured)[0]["stdin"]
+        lines = stdin.splitlines()
+        assert len(lines) == 1
+        assert lines[0].isascii()
+        event = json.loads(lines[0])
+        assert event == {"event": "user", "message": {"content": compose_subject_prompt(prompt)}}
+
+    def test_agy_continuation_resumes_task_conversation_with_retry_only(self, tmp_path):
+        captured: list = []
+        provider = _agy_provider(tmp_path, captured)
+        result = provider.complete("Retry 1. Fix it.", {}, previous_response_id="conversation_fixture")
+        assert not result.error
+        call = _model_calls(captured)[0]
+        assert call["args"][call["args"].index("--conversation") + 1] == "conversation_fixture"
+        content = json.loads(call["stdin"])["message"]["content"]
+        assert content == "Retry 1. Fix it."
+        assert BASE_INSTRUCTIONS not in content
+
+    def test_agy_env_is_isolated_and_has_no_api_keys(self, tmp_path, monkeypatch):
+        captured: list = []
+        names = ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENAI_USE_VERTEXAI",
+                 "GOOGLE_CLOUD_PROJECT", "AGY_ADC_AUTH", "OPENAI_API_KEY")
+        for name in names:
+            monkeypatch.setenv(name, "test-value")
+        _agy_provider(tmp_path, captured).complete("test", {})
+        call = _model_calls(captured)[0]
+        env_names = {key.upper() for key in call["env"]}
+        for name in names:
+            assert name not in env_names
+        home = str((tmp_path / "agy-home").resolve())
+        assert call["env"]["USERPROFILE"] == home
+        assert call["env"]["HOME"] == home
+        assert call["env"]["AGY_CLI_DISABLE_AUTO_UPDATE"] == "1"
+        assert call["cwd"] == tmp_path / "subject"
+
+    def test_agy_writes_deny_all_permission_profile(self, tmp_path):
+        captured: list = []
+        _agy_provider(tmp_path, captured).complete("test", {})
+        settings = tmp_path / "agy-home" / ".gemini" / "antigravity-cli" / "settings.json"
+        payload = json.loads(settings.read_text(encoding="utf-8"))
+        assert payload == {"permissions": {"allow": [], "deny": list(AGY_DENIED_PERMISSIONS)}}
+        assert "unsandboxed(*)" not in AGY_DENIED_PERMISSIONS
+        for rule in ("read_file(*)", "write_file(*)", "read_url(*)",
+                     "execute_url(*)", "command(*)", "mcp(*)"):
+            assert rule in AGY_DENIED_PERMISSIONS
+
+    def test_agy_accepts_profile_that_agy_normalized(self, tmp_path):
+        settings = tmp_path / "agy-home" / ".gemini" / "antigravity-cli" / "settings.json"
+        settings.parent.mkdir(parents=True)
+        settings.write_text(json.dumps(
+            {"permissions": {"deny": list(AGY_DENIED_PERMISSIONS)}}, indent=2
+        ), encoding="utf-8")
+        result = _agy_provider(tmp_path, []).complete("test", {})
+        assert not result.error
+
+    def test_agy_rejects_widened_permission_profile(self, tmp_path):
+        settings = tmp_path / "agy-home" / ".gemini" / "antigravity-cli" / "settings.json"
+        settings.parent.mkdir(parents=True)
+        settings.write_text(json.dumps(
+            {"permissions": {"allow": ["read_file(*)"], "deny": list(AGY_DENIED_PERMISSIONS)}}
+        ), encoding="utf-8")
+        captured: list = []
+        result = _agy_provider(tmp_path, captured).complete("test", {})
+        assert result.error_kind == "isolation"
+        assert _model_calls(captured) == []
+
+    def test_agy_success_parses_stream(self, tmp_path):
+        result = _agy_provider(tmp_path, []).complete("test", {})
+        assert result.text == '{"ok":true}\n'
+        assert result.response_id == "conversation_fixture"
+        assert result.resolved_model == AGY_SELECTOR
+        assert result.usage == {
+            "input_tokens": 10,
+            "output_tokens": 4,
+            "thinking_tokens": 2,
+            "cache_read_tokens": 1,
+        }
+        assert result.error_kind is None
+        assert result.provider_metadata["provider_version"] == "1.4.4"
+        assert result.provider_metadata["invocation_hash"] == _agy_provider(tmp_path, []).invocation_hash
+
+    def test_agy_model_echo_mismatch(self, tmp_path):
+        result = _agy_provider(
+            tmp_path, [], stream=_agy_stream(model="gemini-3.8-flash-medium")
+        ).complete("test", {})
+        assert result.error_kind == "model_mismatch"
+        assert result.resolved_model == "gemini-3.8-flash-medium"
+
+    def test_agy_auto_approve_session_is_isolation_failure(self, tmp_path):
+        result = _agy_provider(
+            tmp_path, [], stream=_agy_stream(permission_mode="always-proceed")
+        ).complete("test", {})
+        assert result.error_kind == "isolation"
+
+    def test_agy_silent_new_conversation_is_isolation_failure(self, tmp_path):
+        result = _agy_provider(
+            tmp_path,
+            [],
+            stream=_agy_stream(conversation_id="conversation_other"),
+            stderr='warning: conversation "conversation_fixture" not found\n',
+        ).complete("Retry", {}, previous_response_id="conversation_fixture")
+        assert result.error_kind == "isolation"
+
+    @pytest.mark.parametrize(("message", "kind"), [
+        ("RESOURCE_EXHAUSTED: quota exceeded for this window", "rate_limit"),
+        ("not authenticated; run agy to sign in", "authentication"),
+        ("Eligibility check failed", "entitlement"),
+        ("agent execution terminated due to error", "process"),
+    ])
+    def test_agy_error_results_are_classified(self, tmp_path, message, kind):
+        result = _agy_provider(
+            tmp_path,
+            [],
+            stream=_agy_stream(status="ERROR", response="", error=message),
+            returncode=3,
+        ).complete("test", {})
+        assert result.error_kind == kind
+
+    def test_agy_timeout_warning_with_success_exit_is_timeout(self, tmp_path):
+        result = _agy_provider(
+            tmp_path, [], stderr="warning: print timeout of 600s reached; returning partial output\n"
+        ).complete("test", {})
+        assert result.error_kind == "timeout"
+
+    def test_agy_malformed_or_missing_result(self, tmp_path):
+        malformed = _agy_provider(tmp_path, [], stream="not json\n").complete("test", {})
+        assert malformed.error_kind == "malformed_provider_output"
+        missing = _agy_provider(tmp_path, [], stream=_agy_init() + "\n").complete("test", {})
+        assert missing.error_kind == "malformed_provider_output"
+
+    def test_agy_preflight_proves_subscription_and_selector_without_a_turn(self, tmp_path):
+        captured: list = []
+        result = _agy_provider(tmp_path, captured).preflight()
+        assert result["auth_mode"] == "subscription"
+        assert result["resolved_model"] == AGY_SELECTOR
+        assert result["quota_groups"] == ["Gemini Models"]
+        assert _model_calls(captured) == []
+
+    def test_agy_preflight_rejects_unlisted_selector(self, tmp_path):
+        provider = _agy_provider(tmp_path, [], models="gemini-3.8-flash-medium\tGemini 3.8 Flash (Medium)\n")
+        with pytest.raises(BenchError, match="not listed"):
+            provider.preflight()
+
+    def test_agy_preflight_rejects_missing_subscription_quota(self, tmp_path):
+        no_quota = json.dumps({
+            "conversation_id": "", "status": "SUCCESS", "response": "",
+            "command": {"name": "usage", "data": {"groups": []}},
+        })
+        provider = _agy_provider(tmp_path, [], quota=no_quota)
+        with pytest.raises(BenchError, match="subscription"):
+            provider.preflight()

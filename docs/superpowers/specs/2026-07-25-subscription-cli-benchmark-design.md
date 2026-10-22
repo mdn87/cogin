@@ -34,6 +34,19 @@ reads a model-specific runplan and drives Cogin. Cogin launches fresh,
 isolated subject sessions for benchmark attempts. The operator must never
 answer a benchmark task or make the private suite visible to a subject.
 
+### Addendum (2026-10-22): Google lane set
+
+A separate lane set, `google-1`, applies this protocol unchanged to Gemini 4
+Argon and Gemini 3.8 Flash, both at medium effort. Their sessions run through
+the Antigravity CLI (`agy`) on a Google subscription, replacing the retiring
+Gemini CLI. The lane set has its own manifest, prepared from the same private
+suite, and shares Wave 1's control root, so its family lock and suite hash
+line up with Wave 1. Both lanes are in one family, so they run sequentially.
+The Wave 1 manifest and its pairs are unchanged. The provider controls and
+the two cross-family asymmetries (tools advertised but denied, and no
+server-side model identity) are recorded in `src/taxonomy-bench/BENCHMARK_SPEC.md`
+and `docs/evidence/agy-cli-characterization.md`.
+
 ## Protocol
 
 Every lane uses the same locked manifest and suite hash.

@@ -1,8 +1,9 @@
-"""Wave 1 benchmark orchestration.
+"""Wave benchmark orchestration.
 
 Immutable manifests, deterministic calibration selection, family locks,
 restartable lane state, admission barriers, and pair aggregation for
-subscription-backed CLI benchmarks.
+subscription-backed CLI benchmarks. Every lane set (Wave 1's Claude/Codex
+pairs and the Google lanes run through agy) uses the same Wave 1 protocol.
 """
 
 from __future__ import annotations
@@ -21,7 +22,14 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Callable, MutableMapping
 
-from taxonomy_bench_cli import ClaudeCliProvider, CodexCliProvider, Completion, Provider
+from taxonomy_bench_cli import (
+    AgyCliProvider,
+    ClaudeCliProvider,
+    CodexCliProvider,
+    Completion,
+    Provider,
+    agy_policy_hashes,
+)
 from taxonomy_bench_protocol import BenchError, canonical_hash, canonical_json
 
 
@@ -53,6 +61,32 @@ WAVE1_LANES: dict[str, dict[str, str]] = {}
 for pair in WAVE1_PAIRS:
     WAVE1_LANES[pair[0]] = {"family": "claude", "selector": pair[0], "expected_model": pair[0]}
     WAVE1_LANES[pair[1]] = {"family": "codex", "selector": pair[1], "expected_model": pair[1]}
+
+# Google lanes run through the Antigravity CLI. Both share one family lock,
+# so the pair runs its lanes one after the other.
+GOOGLE1_PAIRS = (
+    ("gemini-4-argon-medium", "gemini-3.8-flash-medium"),
+)
+GOOGLE1_LANES: dict[str, dict[str, str]] = {
+    selector: {"family": "antigravity", "selector": selector, "expected_model": selector}
+    for pair in GOOGLE1_PAIRS
+    for selector in pair
+}
+
+LANE_SETS: dict[str, dict[str, Any]] = {
+    "wave-1": {"pairs": WAVE1_PAIRS, "lanes": WAVE1_LANES},
+    "google-1": {"pairs": GOOGLE1_PAIRS, "lanes": GOOGLE1_LANES},
+}
+ALL_LANES = sorted(
+    lane_id for lane_set in LANE_SETS.values() for lane_id in lane_set["lanes"]
+)
+FAMILY_EXECUTABLES = {"claude": "claude", "codex": "codex", "antigravity": "agy"}
+
+
+def _lane_set(name: str) -> dict[str, Any]:
+    if name not in LANE_SETS:
+        raise BenchError(f"Unknown lane set {name!r}; choose from {sorted(LANE_SETS)}")
+    return LANE_SETS[name]
 
 
 def _sha256_bytes(value: bytes) -> str:
@@ -91,6 +125,9 @@ def _cli_version(executable: str) -> str:
             text=True,
             timeout=10,
             check=False,
+            # agy replaces its own binary on launch unless told not to, which
+            # would drift the version a manifest just recorded.
+            env={**os.environ, "AGY_CLI_DISABLE_AUTO_UPDATE": "1"},
         )
     except (OSError, subprocess.SubprocessError):
         return "unknown"
@@ -98,17 +135,24 @@ def _cli_version(executable: str) -> str:
     return text or "unknown"
 
 
-def collect_provider_metadata() -> dict[str, Any]:
+def collect_provider_metadata(lane_set: str = "wave-1") -> dict[str, Any]:
     """Collect deterministic invocation policy and installed CLI versions.
 
-    This preparation step never checks authentication or invokes a model.
+    Only the families in the lane set are versioned. This preparation step
+    never checks authentication or invokes a model.
     """
-    versions = {"claude": _cli_version("claude"), "codex": _cli_version("codex")}
+    registry = _lane_set(lane_set)["lanes"]
+    versions = {
+        family: _cli_version(FAMILY_EXECUTABLES[family])
+        for family in sorted({lane["family"] for lane in registry.values()})
+    }
     lanes: dict[str, dict[str, str]] = {}
-    for lane_id, lane in WAVE1_LANES.items():
+    for lane_id, lane in registry.items():
         family = lane["family"]
         selector = lane["selector"]
-        if family == "claude":
+        if family == "antigravity":
+            invocation, tool_policy = agy_policy_hashes(selector)
+        elif family == "claude":
             invocation = canonical_hash({
                 "selector": selector,
                 "effort": "medium",
@@ -187,12 +231,14 @@ def prepare_manifest(
     control_root: Path,
     provider_metadata: Mapping[str, Any],
     out_dir: Path,
+    lane_set: str = "wave-1",
 ) -> dict[str, Any]:
-    """Create an immutable Wave 1 manifest.
+    """Create an immutable Wave manifest for one lane set.
 
     Idempotent: returns existing manifest if the deterministic input
     fingerprint matches. Never overwrites an existing manifest.
     """
+    registry = _lane_set(lane_set)
     if not control_root.exists() or not control_root.is_dir():
         raise BenchError(
             f"Control root {control_root} must already exist and be a directory"
@@ -214,7 +260,7 @@ def prepare_manifest(
             "claude": provider_metadata.get("claude_version", "unknown"),
         }
     if not lane_metadata:
-        for lane_id, lane in WAVE1_LANES.items():
+        for lane_id, lane in registry["lanes"].items():
             lane_metadata[lane_id] = {
                 "family": lane["family"],
                 "requested_model": lane["selector"],
@@ -241,8 +287,8 @@ def prepare_manifest(
         "lane_metadata": lane_metadata,
         "control_root": str(control_root.absolute()),
         "suite_filename": "suite.private.json",
-        "lanes": WAVE1_LANES,
-        "pairs": [list(p) for p in WAVE1_PAIRS],
+        "lanes": registry["lanes"],
+        "pairs": [list(p) for p in registry["pairs"]],
         "cli_versions": cli_versions,
     }
     input_fingerprint = canonical_hash(input_fingerprint_data)
@@ -334,8 +380,8 @@ class FamilyLock:
 
 
 class PairLock(FamilyLock):
-    def __init__(self, control_root: Path, pair_index: int) -> None:
-        super().__init__(control_root, f"pair-{pair_index}")
+    def __init__(self, control_root: Path, pair_index: int, manifest_hash: str) -> None:
+        super().__init__(control_root, f"pair-{pair_index}-{manifest_hash[:16]}")
 
 
 # ---------------------------------------------------------------------------
@@ -425,8 +471,11 @@ class LaneState:
 # ---------------------------------------------------------------------------
 
 
-def _aggregation_complete_marker(control_root: Path, pair_index: int) -> Path:
-    return control_root / f"pair-{pair_index}.aggregated"
+def _aggregation_complete_marker(
+    control_root: Path, pair_index: int, manifest_hash: str
+) -> Path:
+    # Scoped to the manifest: waves share one control root for family locks.
+    return control_root / f"pair-{pair_index}-{manifest_hash[:16]}.aggregated"
 
 
 def pair_can_start(
@@ -437,7 +486,9 @@ def pair_can_start(
     """Pair N can start only when Pair N-1 has an aggregation marker."""
     if pair_index <= 1:
         return True
-    prev_marker = _aggregation_complete_marker(control_root, pair_index - 1)
+    prev_marker = _aggregation_complete_marker(
+        control_root, pair_index - 1, str(manifest.get("manifest_hash", ""))
+    )
     if not prev_marker.exists():
         return False
     # Verify the marker's manifest hash
@@ -467,7 +518,7 @@ def pair_can_aggregate(
 
 
 def record_aggregation(control_root: Path, manifest_hash: str, pair_index: int) -> None:
-    marker = _aggregation_complete_marker(control_root, pair_index)
+    marker = _aggregation_complete_marker(control_root, pair_index, manifest_hash)
     _atomic_write_json(
         marker, {"manifest_hash": manifest_hash, "pair": pair_index}
     )
@@ -652,6 +703,11 @@ def make_wave_checkpoint(state_dir: Path) -> Callable[[str, Mapping[str, Any]], 
 # ---------------------------------------------------------------------------
 
 
+def subject_root_marker(subject_root: Path, manifest_hash: str) -> Path:
+    """One marker per manifest, so waves can share an approved subject root."""
+    return subject_root / f".wave-subject-root-{manifest_hash[:16]}"
+
+
 class WaveController:
     """Orchestrates Wave 1 preparation, calibration, and lane execution."""
 
@@ -700,8 +756,8 @@ class WaveController:
             raise BenchError(
                 f"Subject root {subject} must be outside the Cogin checkout"
             )
-        # Check for disallowed contents
-        disallowed = {".git", "AGENTS.md", "CLAUDE.md", "manifest.json"}
+        # Check for disallowed contents (agy also loads GEMINI.md and .gemini)
+        disallowed = {".git", "AGENTS.md", "CLAUDE.md", "GEMINI.md", ".gemini", "manifest.json"}
         entries = set()
         for entry in subject.iterdir():
             entries.add(entry.name)
@@ -711,7 +767,7 @@ class WaveController:
                 raise BenchError(f"Subject root contains symlink: {entry.name}")
 
         # Check marker
-        marker = subject / ".wave1-subject-root"
+        marker = subject_root_marker(subject, self.manifest["manifest_hash"])
         if marker.exists():
             data = json.loads(marker.read_text(encoding="utf-8"))
             if data.get("manifest_hash") != self.manifest.get("manifest_hash"):
@@ -749,6 +805,19 @@ class WaveController:
                 expected_model=expected_model,
                 subject_root=self.subject_root,
                 persistent=persistent,
+            )
+        elif family == "antigravity":
+            # agy cannot disable conversation persistence, so calibration gets
+            # its own profile whose conversations are never resumed.
+            return AgyCliProvider(
+                selector=selector,
+                expected_model=expected_model,
+                subject_root=self.subject_root,
+                persistent=persistent,
+                home=(
+                    self.wave_dir / "agy-home" / lane_id
+                    / ("primary" if persistent else "calibration")
+                ),
             )
         raise BenchError(f"Unknown family: {family}")
 
@@ -939,8 +1008,12 @@ class WaveController:
         state.current_phase = "abandoned"
         state.save(self._state_dir(state.lane))
 
-    def run_lane(self, lane_id: str) -> int:
-        """Run calibration and three restartable primary repeats for one lane."""
+    def run_lane(self, lane_id: str, *, calibration_only: bool = False) -> int:
+        """Run calibration and three restartable primary repeats for one lane.
+
+        With calibration_only, stop once calibration is admitted; a later run
+        resumes at the primary repeats without recalibrating.
+        """
         if lane_id not in self.manifest["lanes"]:
             raise BenchError(f"Unknown lane: {lane_id}")
         lane = self.manifest["lanes"][lane_id]
@@ -1025,9 +1098,12 @@ class WaveController:
                     state.save(state_dir)
                     return 2
                 state.calibration_run_id = calibration["run_id"]
-                state.status = "running"
-                state.current_phase = "primary"
+                state.status = "calibrated"
+                state.current_phase = "calibrated"
                 state.save(state_dir)
+
+            if calibration_only:
+                return 0
 
             provider = self.build_provider(lane_id, persistent=True)
             resumed_preflight = provider.preflight()
@@ -1043,6 +1119,7 @@ class WaveController:
                     f"Provider fingerprint drift for lane {lane_id}; lane invalidated"
                 )
 
+            state.status = "running"
             for repeat in range(1, WAVE1_PROTOCOL["primary_repeats"] + 1):
                 if repeat in state.completed_primary_repeat_numbers:
                     continue
@@ -1288,7 +1365,7 @@ def aggregate_pair(manifest_path: Path, pair_index: int) -> Path:
     wave_dir = manifest_path.parent
     control_root = Path(manifest["control_root"])
 
-    with PairLock(control_root, pair_index):
+    with PairLock(control_root, pair_index, manifest["manifest_hash"]):
         lane_ids = list(manifest["pairs"][pair_index - 1])
         states = [
             LaneState.load(wave_dir / "lanes" / lane_id)

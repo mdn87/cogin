@@ -49,6 +49,31 @@ Private suites, resumable session identifiers, raw runs, and staging evidence
 are not publication artifacts. Lane and pair reports describe CLI session
 configurations rather than raw-model capability.
 
+The Google lane set (`google-1`) applies the same protocol, suite, and
+calibration IDs to `gemini-4-argon-medium` and `gemini-3.8-flash-medium`, run
+through the Antigravity CLI (`agy`). Three agy-specific controls apply.
+
+- **Isolated profile.** Each lane and phase runs under its own controller-owned
+  profile directory, so operator hooks, plugins, and rules never load.
+- **Deny-all permissions.** The permission profile denies file, URL, command,
+  and MCP tools, and the provider requires agy to report the `request-review`
+  permission mode.
+- **Exact resume.** A continued retry must come back in the same conversation.
+  agy silently opens a new conversation for an unknown ID, and the provider
+  treats that as an isolation failure.
+
+Two asymmetries remain and must be stated next to any cross-family comparison.
+
+- **Tool exposure.** agy advertises its tools and refuses them when called,
+  while Claude Code removes tools from the session.
+- **Model identity.** Like Codex, agy reports only the requested selector, with
+  no server-side model identity.
+
+Calibration sessions use a separate profile that is never resumed, because agy
+has no flag that disables conversation persistence. Pair markers and pair locks
+are scoped to the manifest hash, so waves that share the control root never
+open each other's barriers.
+
 ## Suite construction
 
 A suite contains equal numbers of tasks at tiers 1 through 8. Generation is deterministic for a fixed taxonomy version, seed, maximum tier, and tasks-per-tier value.
