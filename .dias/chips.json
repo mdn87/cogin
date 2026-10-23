@@ -144,7 +144,7 @@
           "entryId": "cogin:wave-one-live-runs:calibrated-2026-10-22",
           "at": "2026-10-22T05:50:00.000Z",
           "kind": "stage-change",
-          "message": "Moved to active on 2026-10-22: the Wave 1 manifest was re-prepared for Claude Code 2.1.296 and Codex 0.163.0 (dbd05d3d), and both Pair 1 calibrations were admitted with 8 of 8 exact first attempts. No primary repeat has started."
+          "message": "Active 2026-10-22: Wave 1 manifest re-prepared: Claude Code 2.1.296/Codex 0.163.0 (dbd05d3d); both Pair 1 calibrations admitted at 8/8 exact first tries. No primary repeat started."
         }
       ]
     },
@@ -269,7 +269,7 @@
           "entryId": "cogin:orca-strategy-handoff:checked-2026-10-22",
           "at": "2026-10-22T05:50:00.000Z",
           "kind": "note",
-          "message": "2026-10-22 check: Orca still pins the strategy contract (1.0.0, digest c9412a5c) and nothing supersedes Cogin, but no Orca rule selects its techniques and no route supports skills, so the contract changes no behavior yet."
+          "message": "2026-10-22: Orca pins contract 1.0.0 (c9412a5c); Cogin not superseded. No Orca rule selects its techniques; no route supports skills. Contract changes no behavior yet."
         }
       ]
     }
