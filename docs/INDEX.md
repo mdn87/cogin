@@ -1,7 +1,7 @@
 # Documentation Index — Cogin
 
 ## Metadata
-- **Last Updated:** 2026-10-22
+- **Last Updated:** 2026-10-23
 
 ## Documents
 
@@ -16,6 +16,7 @@
 | superpowers/specs/2026-07-25-subscription-cli-benchmark-design.md | Wave 1 experiment design | Ready for review | 2026-07-25 |
 | evidence/wave-1-cli-characterization.md | Claude Code and Codex CLI output characterization | Evidence | 2026-08-01 |
 | evidence/agy-cli-characterization.md | Antigravity CLI (`agy`) characterization for the Google lanes | Evidence | 2026-10-22 |
+| [evidence/google-lanes-2026-10-23.md](evidence/google-lanes-2026-10-23.md) | Completed Google lanes and verified pair report | Complete | 2026-10-23 |
 | plans/agent-cli-comparison-harness.md | Agentic repo-work comparison across Claude, Codex, and agy | Spec, not implemented | 2026-10-22 |
 
 ## Plans

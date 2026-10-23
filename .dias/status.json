@@ -8,13 +8,13 @@
   "milestonePhase": "operational-proof",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-22T05:50:00.000Z",
+  "assessedAt": "2026-10-23T23:39:07.534Z",
   "confidence": "reported",
-  "currentMilestone": "Wave 1 subscription study: the controller, the strategy contract, and the agy Google lane set are shipped; both Pair 1 calibrations are admitted, and no primary repeat or pair report exists yet.",
-  "remainingSummary": "Run Pair 1's primary repeats and aggregate it, then Pairs 2 and 3; run the Google lane set; then widen the live model and thinking-level matrix.",
+  "currentMilestone": "Wave 1: controller and strategy contract shipped; both Google lanes and their pair report are complete. Claude/Codex Pair 1 is calibrated; its primary repeats remain.",
+  "remainingSummary": "Run Claude/Codex Pair 1 primary repeats and aggregate it, then Pairs 2 and 3; widen the live model and thinking-level matrix after those reports exist.",
   "nextChipId": "cogin:wave-one-live-runs",
   "source": {
-    "label": "Repo review 2026-10-22: 225 tests pass; Pair 1 calibrated under re-prepared manifest dbd05d3d; Google lane set prepared and preflighted.",
-    "updatedAt": "2026-10-22"
+    "label": "2026-10-23: 225 tests passed; Google lanes each scored 96/96 primary first attempts on agy 1.4.6; pair report verified.",
+    "updatedAt": "2026-10-23"
   }
 }

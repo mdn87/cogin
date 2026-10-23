@@ -153,18 +153,25 @@
       "chipId": "cogin:google-lane-set",
       "projectId": "cogin",
       "title": "Google lanes through the Antigravity CLI",
-      "summary": "AgyCliProvider and the google-1 lane set run Gemini 4 Argon and Gemini 3.8 Flash under the Wave 1 protocol and suite; manifest prepared and both lanes preflighted, no lane run yet.",
-      "stage": "ready",
+      "summary": "Both Google lanes completed calibration and three Wave 1 primary repeats through agy 1.4.6; 96/96 primary first attempts passed per lane and the pair report is verified.",
+      "stage": "done",
       "sequence": 55,
       "prereqs": [
         "cogin:wave-one-controller"
       ],
-      "linkedRunIds": [],
+      "linkedRunIds": [
+        "wave-gemini-4-argon-medium-primary-1-20261023T230243638290Z-f74949f79bb2",
+        "wave-gemini-4-argon-medium-primary-2-20261023T230644455341Z-7b5cdba9916e",
+        "wave-gemini-4-argon-medium-primary-3-20261023T231122358128Z-3a273ecb0c00",
+        "wave-gemini-3.8-flash-medium-primary-1-20261023T231758278101Z-c5cd1a2f7102",
+        "wave-gemini-3.8-flash-medium-primary-2-20261023T232424838326Z-9fae8a5dd334",
+        "wave-gemini-3.8-flash-medium-primary-3-20261023T233055078136Z-6775942d7fda"
+      ],
       "confidence": "reported",
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-10-22T05:50:00.000Z",
-        "updatedAt": "2026-10-22T05:50:00.000Z"
+        "updatedAt": "2026-10-23T23:39:07.534Z"
       },
       "evidence": [
         {
@@ -172,6 +179,12 @@
           "at": "2026-10-22T05:50:00.000Z",
           "kind": "created",
           "message": "Provider, lane set, and agy 1.4.5 manifest (738bc787) landed 2026-10-22; quota-free preflight passed for both lanes."
+        },
+        {
+          "entryId": "cogin:google-lane-set:completed-2026-10-23",
+          "at": "2026-10-23T23:39:07.534Z",
+          "kind": "stage-change",
+          "message": "Both Google lanes completed on agy 1.4.6: 8/8 calibration and 96/96 primary first attempts each; no infrastructure errors. Pair report verified; 225 tests passed."
         }
       ]
     },
