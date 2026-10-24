@@ -86,6 +86,19 @@ def test_review_and_approval_controls_in_chromium(app, monkeypatch):
             assert decisions == []
             assert page.evaluate("window.untrustedRan === undefined")
             expect(page.locator("#payload")).to_contain_text("<script>")
+            # A restart rotates the token. Stale pages must not present cached
+            # approval controls as live, and a new fragment link must reconnect.
+            server.token = "synthetic-rotated-review-token"
+            expect(page.locator("#session-status")).to_contain_text("Connection lost")
+            expect(page.locator("#approval")).to_be_hidden()
+            expect(page.locator("#start-claude")).to_be_disabled()
+            expect(page.locator("#stop")).to_be_disabled()
+            assert decisions == []
+            page.goto(f"http://127.0.0.1:{server.server_port}/#{server.token}")
+            page.locator("#sessions-tab").click()
+            expect(page.locator("#approval")).to_be_visible()
+            expect(page.locator("#error")).to_be_hidden()
+            assert decisions == []
             page.locator("#deny").click()
             expect(page.locator("#history")).to_contain_text("Interruptions: 1")
             expect(page.locator("#no-request")).to_have_text("No approval request is pending. The last session ended; see its result below.")

@@ -6,6 +6,7 @@ history.replaceState(null, "", location.pathname);
 let data, draft, current = 0, timer, saving = Promise.resolve(), saveFailed = false, submitting = false;
 let editVersion = 0, savedVersion = 0;
 let sessions = {sessions: [], pending: null, running: false}, actionBusy = false;
+let sessionsConnected = false, connectionError = "";
 const showError = error => { $("error").textContent = error.message || String(error); $("error").hidden = false; };
 async function api(path, body) {
   const response = await fetch("/api/" + path, {method: body === undefined ? "GET" : "POST", headers: {"X-Review-Token": token, "Content-Type": "application/json"}, body: body === undefined ? undefined : JSON.stringify(body)});
@@ -101,18 +102,22 @@ for (const name of ["review", "sessions"]) $(name + "-tab").onclick = () => {
   for (const other of ["review", "sessions"]) { $(other + "-panel").hidden = other !== name; $(other + "-tab").setAttribute("aria-pressed", String(other === name)); }
 };
 function renderSessions() {
-  $("start-claude").disabled = $("start-codex").disabled = sessions.running || actionBusy || !$("operator").value.trim();
-  $("operator").disabled = sessions.running || actionBusy;
-  $("stop").hidden = !sessions.running; $("stop").disabled = actionBusy;
-  $("session-status").textContent = sessions.running ? "Session running. Waiting for the CLI or checking its result…" : "No session running.";
+  $("start-claude").disabled = $("start-codex").disabled = !sessionsConnected || sessions.running || actionBusy || !$("operator").value.trim();
+  $("operator").disabled = !sessionsConnected || sessions.running || actionBusy;
+  $("stop").hidden = !sessions.running; $("stop").disabled = !sessionsConnected || actionBusy;
+  $("session-status").textContent = !sessionsConnected
+    ? "Connection lost. History may be out of date. Reopen the current private link after a server restart."
+    : sessions.running ? "Session running. Waiting for the CLI or checking its result…" : "No session running.";
   $("approval").hidden = !sessions.pending; $("no-request").hidden = !!sessions.pending;
-  $("no-request").textContent = sessions.running
+  $("no-request").textContent = !sessionsConnected
+    ? "Reconnect with the current private link to check for approval requests."
+    : sessions.running
     ? "No approval request is pending. The CLI may work without prompting; requests appear here only when it asks for a decision."
     : sessions.sessions.length
       ? "No approval request is pending. The last session ended; see its result below."
       : "No session is running. Start a session to collect approvals.";
   $("payload").textContent = sessions.pending ? JSON.stringify(sessions.pending.payload, null, 2) : "";
-  $("allow").disabled = $("deny").disabled = actionBusy;
+  $("allow").disabled = $("deny").disabled = !sessionsConnected || actionBusy;
   $("history").replaceChildren(...sessions.sessions.map(item => {
     const row = node("div", undefined, "session-row");
     row.append(node("strong", `${item.lane === "claude" ? "Claude" : "Codex"} · ${item.status}`), node("p", `Interruptions: ${item.interruptions ?? "unmeasured"} · Task: ${item.task_passed == null ? "unmeasured" : item.task_passed ? "passed" : "did not pass"}`));
@@ -121,7 +126,16 @@ function renderSessions() {
   }));
   if (!sessions.sessions.length) $("history").textContent = "No sessions collected yet.";
 }
-async function refreshSessions() { sessions = await api("sessions"); renderSessions(); }
+async function refreshSessions() {
+  try {
+    sessions = await api("sessions"); sessionsConnected = true;
+    if (connectionError && $("error").textContent === connectionError) $("error").hidden = true;
+    connectionError = "";
+  } catch (error) {
+    sessionsConnected = false; sessions.pending = null; connectionError = error.message;
+    throw error;
+  } finally { renderSessions(); }
+}
 async function sessionAction(path, body) {
   actionBusy = true; renderSessions();
   try { await api(path, body); await refreshSessions(); }
@@ -134,6 +148,9 @@ for (const decision of ["allow", "deny"]) $(decision).onclick = () => {
   if (sessions.pending) sessionAction("decision", {session_id: sessions.sessions.at(-1).id, request_id: sessions.pending.request_id, decision});
 };
 $("stop").onclick = () => sessionAction("stop", {session_id: sessions.sessions.at(-1).id});
+window.addEventListener("hashchange", () => {
+  if (location.hash.slice(1) && location.hash.slice(1) !== token) location.reload();
+});
 window.addEventListener("beforeunload", event => { if (savedVersion !== editVersion) { event.preventDefault(); event.returnValue = ""; } });
 (async () => {
   try {
@@ -144,5 +161,5 @@ window.addEventListener("beforeunload", event => { if (savedVersion !== editVers
     $("save-state").textContent = "Saved on this computer"; renderCase();
     await refreshSessions();
     const poll = async () => { try { await refreshSessions(); } catch (error) { showError(error); } finally { setTimeout(poll, 1000); } }; setTimeout(poll, 1000);
-  } catch (error) { showError(error); }
+  } catch (error) { sessionsConnected = false; renderSessions(); showError(error); }
 })();

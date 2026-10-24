@@ -7,8 +7,9 @@ valid only after a complete human observation or review.
 
 The [2026-10-24 results](../../docs/evidence/human-effort-results-2026-10-24.md)
 include six blind reviews and two passing Claude sessions with four human
-prompts each. Codex's inspection commands stalled; that incomplete capture
-remains unmeasured. Its execution path needs repair before a fresh run.
+prompts each. A separately approved MXC Codex capture passed with three human
+allows. Two legacy sandbox attempts and one MXC response timeout remain
+unmeasured; all attempts are retained.
 
 ## Local review console
 
@@ -21,6 +22,10 @@ python src/agent-cli-harness/review_console.py --open
 The console binds only to `127.0.0.1:8765`; use `--port 0` for an available
 port. Open the private link printed by the launcher. Keep one console process
 per package. The link is local access, not a remote reviewer invitation.
+After a server restart, reconnect every open review tab using the new private
+link. Opening that link in an existing tab reloads its connection automatically.
+A disconnected tab disables session controls and labels its cached history as
+potentially out of date; it cannot show cached approvals as live requests.
 
 - **Blind review:** read the task and original files, then one anonymous patch
   at a time. Select changed lines to revert; the page counts them. Give a
@@ -157,6 +162,8 @@ Codex captures reuse the existing file-backed subscription login in an ignored
 or skills. API-key authentication is rejected. Keep capture directories private:
 they contain credentials, raw sessions, and local paths. Share only the blind
 `reviewer/` directory or the sanitized public qualification report.
+The native runtime can still expose user-installed skills and remote plugins;
+an isolated auth directory alone does not prove complete context isolation.
 
 Neither a qualified approval channel nor a passing patch establishes a CLI
 ranking. The six unattended patches have completed attested blind cleanup

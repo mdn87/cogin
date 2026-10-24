@@ -6,8 +6,9 @@ The unattended comparison is complete. Separate [human measurement tools](HUMAN_
 provide a local browser console, prepare blind patch reviews, validate score
 imports, and capture explicit human approval decisions for qualified
 Claude/Codex interfaces. Six unattended patches have completed blind cleanup
-review. Two supervised Claude runs passed with four prompts each; Codex stalled
-without edits and remains unmeasured. See the [human results](../../docs/evidence/human-effort-results-2026-10-24.md).
+review. Two supervised Claude runs passed with four prompts each; an approved
+MXC Codex run passed with three prompts. Incomplete attempts remain unmeasured.
+See the [human results](../../docs/evidence/human-effort-results-2026-10-24.md).
 agy headless mode cannot prompt.
 Protocol v2 assigns real-browser acceptance to the independent verifier. Each
 subject implements the feature, updates and runs unit tests, and inspects its

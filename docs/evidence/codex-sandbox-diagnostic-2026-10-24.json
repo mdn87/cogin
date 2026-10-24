@@ -62,6 +62,16 @@
     "A read-only echo check is not a model task trial or a human interruption measurement.",
     "Legacy unelevated command startup hangs on this host; its deeper OS cause remains unknown.",
     "MXC allows host loopback; external networking remains restricted by the selected policy.",
-    "No new supervised run has been launched with MXC."
-  ]
+    "These diagnostics preceded the separately approved MXC supervised captures; see the human-effort results for measurements."
+  ],
+  "authorized_followup": {
+    "authorization": "Operator explicitly approved MXC for a fresh capture on 2026-10-24.",
+    "source_batch": "supervised-mxc-source-1",
+    "source_manifest_sha256": "5891cf26020ccfb8c9a595f11928995db7fcee83950f710a7ab635e015be98a8",
+    "captures": [
+      "codex-8d0830214671",
+      "codex-4e46769c7ad5"
+    ],
+    "successful_capture": "codex-4e46769c7ad5"
+  }
 }
