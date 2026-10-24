@@ -358,7 +358,7 @@
       "chipId": "cogin:human-effort-measurements",
       "projectId": "cogin",
       "title": "Collect human approval and blind cleanup measurements",
-      "summary": "Tooling is implemented. Human reviews and supervised sessions are uncollected; agy lacks a qualified headless approval channel. Missing scores remain null.",
+      "summary": "Local browser review and supervised controls are ready. Human measurements remain uncollected; agy lacks a supported approval channel. Missing scores remain null.",
       "stage": "blocked",
       "sequence": 75,
       "prereqs": [
@@ -369,7 +369,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-10-24T14:02:20.155043+00:00",
-        "updatedAt": "2026-10-24T14:02:20.155043+00:00"
+        "updatedAt": "2026-10-24T15:09:20.381394+00:00"
       },
       "evidence": [
         {
@@ -377,6 +377,12 @@
           "at": "2026-10-24T14:02:20.155043+00:00",
           "kind": "created",
           "message": "Six anonymous patches and validated score import ready. Human operator/reviewer needed; agy print mode cannot prompt. No actual human scores or supervised task trials collected."
+        },
+        {
+          "entryId": "cogin:human-effort-measurements:console-2026-10-24",
+          "at": "2026-10-24T15:09:20.381394+00:00",
+          "kind": "note",
+          "message": "Console adds saved blind reviews, line counts, locked submission, and explicit Claude/Codex approvals. 62 tests pass, including Chromium. Human measurements remain uncollected."
         }
       ]
     },
