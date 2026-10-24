@@ -23,7 +23,7 @@ no-retry baseline.
 
 ## The code and tests
 
-The implementation, full documentation, and the 188-test suite live in
+The implementation, full documentation, and automated tests live in
 [`src/taxonomy-bench/`](src/taxonomy-bench/) — see its
 [README](src/taxonomy-bench/README.md) for the complete metric list, the
 experimental controls, and provider setup.
@@ -39,3 +39,5 @@ python taxonomy_bench.py validate --taxonomy sample_data
 
 - [`src/taxonomy-bench/`](src/taxonomy-bench/) — the benchmark package, CLI, and tests
 - [`src/taxonomy-bench/STRATEGY_CONTRACT.md`](src/taxonomy-bench/STRATEGY_CONTRACT.md) — the data-only cognitive-strategy export contract
+- [`docs/runplans/matrix-2.md`](docs/runplans/matrix-2.md) — the expanded model and reasoning-effort experiment
+- [`docs/evidence/matrix-2-results-2026-10-23.md`](docs/evidence/matrix-2-results-2026-10-23.md) — live results, limitations, and machine-readable condition profiles

@@ -120,7 +120,7 @@
       "chipId": "cogin:wave-one-live-runs",
       "projectId": "cogin",
       "title": "Run Wave 1 live across three subscription pairs",
-      "summary": "Six lanes and three reports published; 567/576 first attempts correct. Historical Codex effort was unset and recovery used a different model; corrected controls are running.",
+      "summary": "Six lanes and three reports published; 567/576 first attempts correct. Historical Codex effort and recovery attribution are qualified; corrected controls are complete.",
       "stage": "done",
       "sequence": 50,
       "prereqs": [
@@ -138,7 +138,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-27T20:43:02.274Z",
-        "updatedAt": "2026-10-24T02:29:29.000Z"
+        "updatedAt": "2026-10-24T03:36:50.868Z"
       },
       "evidence": [
         {
@@ -212,18 +212,27 @@
       "chipId": "cogin:expand-live-model-matrix",
       "projectId": "cogin",
       "title": "Expand the live model matrix",
-      "summary": "After the Wave 1 pair reports exist, add more live models and thinking levels so strategy profiles rest on broader evidence than one wave.",
-      "stage": "active",
+      "summary": "Eight explicit model and effort conditions completed 24 primary repeats and four pair reports; combined profiles include corrected same-model recovery evidence.",
+      "stage": "done",
       "sequence": 60,
       "prereqs": [
         "cogin:wave-one-live-runs"
       ],
-      "linkedRunIds": [],
+      "linkedRunIds": [
+        "wave-gpt-5.6-terra-medium-primary-3-20261024T023331308682Z-ecfe39fbac70",
+        "wave-gpt-5.6-luna-medium-primary-3-20261024T024134906357Z-0ce28448084e",
+        "wave-gpt-6.1-sol-low-primary-3-20261024T025001593599Z-7a467994ffe2",
+        "wave-gpt-6-luna-low-primary-3-20261024T025801109392Z-9a43686d859a",
+        "wave-gpt-6.1-sol-medium-primary-3-20261024T030656821712Z-1e90a478d57d",
+        "wave-gpt-6-luna-medium-primary-3-20261024T031507691072Z-a79b6302ab4d",
+        "wave-gpt-6.1-sol-high-primary-3-20261024T032407270658Z-259890fefc92",
+        "wave-gpt-6-luna-high-primary-3-20261024T033325835301Z-9c99caa15f67"
+      ],
       "confidence": "reported",
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-05T12:00:00.000Z",
-        "updatedAt": "2026-10-24T02:23:09.431Z"
+        "updatedAt": "2026-10-24T03:36:50.868Z"
       },
       "evidence": [
         {
@@ -249,6 +258,12 @@
           "at": "2026-10-24T02:19:06.873Z",
           "kind": "stage-change",
           "message": "Unblocked: all six Claude/Codex Wave 1 lanes and three pair reports are complete and verified. Model and thinking-level expansion is next; no expansion started."
+        },
+        {
+          "entryId": "cogin:expand-live-model-matrix:completed-2026-10-24",
+          "at": "2026-10-24T03:36:50.868Z",
+          "kind": "stage-change",
+          "message": "Eight conditions, 24 primary runs and four pair reports verified: 704/768 first attempts, 755/768 after recovery. Model and effort stayed bound; 230 tests passed."
         }
       ]
     },

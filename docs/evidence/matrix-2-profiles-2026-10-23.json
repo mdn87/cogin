@@ -1,0 +1,729 @@
+{
+  "format_version": 1,
+  "report_kind": "model_effort_evidence",
+  "created_at": "2026-10-24T03:36:25.242125+00:00",
+  "source_commit": "87bff90",
+  "benchmark_version": "0.5.0",
+  "protocol_version": "1.1.0",
+  "manifest_hash": "f992f669372cff59ff2c778d679e2055af246aee90cc3cd39fba0fa7d41b1f92",
+  "suite_sha256": "ce79e1cc1ea9e9e42e6de238a8467676e5e9a1fcf4bf7528083db05c4b1e3fc0",
+  "cli_versions": {
+    "codex": "codex-cli 0.163.0"
+  },
+  "base_instruction_hash": "2a65b4c2db21f5a7ec6b4dff8f59cbf893e1137ce0bc1b37aabb3a407dceb4ce",
+  "combined_report_sha256": {
+    "matrix.json": "85661885afcf7c2db40d39842bcecb30e9f7d0fafad9838178ab080be4696e2d",
+    "matrix.html": "b338bd8af7f1f42f7e5e40631883a6c021690767e090c4028c9a4ef7daa89dd8"
+  },
+  "accepted_run_count": 32,
+  "distinct_task_sessions": 832,
+  "scored_attempts_including_calibration": 918,
+  "limitations": [
+    "One fixed suite of 32 tasks repeated three times; observations are not independent samples of general capability.",
+    "Each tier has four distinct tasks and twelve observations per condition.",
+    "Sequential, fixed-order execution; latency differences are observational.",
+    "Saved client contexts verify selected model, effort and read-only sandbox, not server-side model identity.",
+    "No tool calls were observed in saved primary sessions; advertised tool availability was not independently captured.",
+    "Recovery uses at most two continued-context diagnostic retries; a null rate means no first-attempt failures.",
+    "Historical Wave 1 Codex effort was unset and recovery used GPT-6.1 Sol; those runs are excluded.",
+    "These are benchmark condition profiles, not Orca routing rules or a change to the exported strategy contract."
+  ],
+  "profiles": [
+    {
+      "lane": "gpt-5.6-terra-medium",
+      "model": "gpt-5.6-terra",
+      "effort": "medium",
+      "repeat_count": 3,
+      "distinct_tasks": 32,
+      "primary_observations": 96,
+      "first_exact_by_repeat": [
+        32,
+        30,
+        32
+      ],
+      "first_exact": 94,
+      "eventual_exact_by_repeat": [
+        32,
+        32,
+        32
+      ],
+      "eventual_exact": 96,
+      "first_failures": 2,
+      "recovered_failures": 2,
+      "recovery_rate": 1.0,
+      "retry_attempts": 2,
+      "first_median_latency_ms": 4160.862,
+      "strict_json_first": 96,
+      "tiers": [
+        {
+          "tier": 1,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 2,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 3,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 4,
+          "observations": 12,
+          "first_exact": 11,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 5,
+          "observations": 12,
+          "first_exact": 11,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 6,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 7,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 8,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        }
+      ],
+      "calibration_first_exact": 8,
+      "calibration_run_id": "wave-gpt-5.6-terra-medium-calibration-0-20261024T022745019688Z-1639d60de18b",
+      "primary_run_ids": [
+        "wave-gpt-5.6-terra-medium-primary-1-20261024T022818765820Z-f1147daa078e",
+        "wave-gpt-5.6-terra-medium-primary-2-20261024T023041949232Z-138898b322b9",
+        "wave-gpt-5.6-terra-medium-primary-3-20261024T023331308682Z-ecfe39fbac70"
+      ],
+      "abandoned_run_ids": [],
+      "invocation_hash": "9fce1402a4b52a1dc5f0e90e478e9ab05646a1018058bfeb176b778a06b924f3",
+      "tool_policy_hash": "7dc5f047daf288d5e99e0204e0332b8d0058ad9ca1c4fe10bb9f98eb99467d0c",
+      "lane_report_hash": "c749adda83faf7572ed3bf36fcaa92a36146acb75b2dc9c711414155113d62cb"
+    },
+    {
+      "lane": "gpt-5.6-luna-medium",
+      "model": "gpt-5.6-luna",
+      "effort": "medium",
+      "repeat_count": 3,
+      "distinct_tasks": 32,
+      "primary_observations": 96,
+      "first_exact_by_repeat": [
+        29,
+        28,
+        28
+      ],
+      "first_exact": 85,
+      "eventual_exact_by_repeat": [
+        32,
+        32,
+        31
+      ],
+      "eventual_exact": 95,
+      "first_failures": 11,
+      "recovered_failures": 10,
+      "recovery_rate": 0.9090909090909091,
+      "retry_attempts": 12,
+      "first_median_latency_ms": 3351.931,
+      "strict_json_first": 96,
+      "tiers": [
+        {
+          "tier": 1,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 2,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 3,
+          "observations": 12,
+          "first_exact": 9,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 4,
+          "observations": 12,
+          "first_exact": 9,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 5,
+          "observations": 12,
+          "first_exact": 9,
+          "eventual_exact": 11
+        },
+        {
+          "tier": 6,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 7,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 8,
+          "observations": 12,
+          "first_exact": 10,
+          "eventual_exact": 12
+        }
+      ],
+      "calibration_first_exact": 7,
+      "calibration_run_id": "wave-gpt-5.6-luna-medium-calibration-0-20261024T023642708781Z-6778201defdd",
+      "primary_run_ids": [
+        "wave-gpt-5.6-luna-medium-primary-1-20261024T023714212555Z-604969e38ef9",
+        "wave-gpt-5.6-luna-medium-primary-2-20261024T023919348370Z-9e63705d8570",
+        "wave-gpt-5.6-luna-medium-primary-3-20261024T024134906357Z-0ce28448084e"
+      ],
+      "abandoned_run_ids": [],
+      "invocation_hash": "fc355228fd74166b4b51d588b1bc1dae08bad47a4b3b47a75ba98d9e8006a803",
+      "tool_policy_hash": "7dc5f047daf288d5e99e0204e0332b8d0058ad9ca1c4fe10bb9f98eb99467d0c",
+      "lane_report_hash": "1a2670669e2d79d89a3403a9dc566b0dec09b4530a9d3161d648056e51ce9222"
+    },
+    {
+      "lane": "gpt-6.1-sol-low",
+      "model": "gpt-6.1-sol",
+      "effort": "low",
+      "repeat_count": 3,
+      "distinct_tasks": 32,
+      "primary_observations": 96,
+      "first_exact_by_repeat": [
+        32,
+        32,
+        32
+      ],
+      "first_exact": 96,
+      "eventual_exact_by_repeat": [
+        32,
+        32,
+        32
+      ],
+      "eventual_exact": 96,
+      "first_failures": 0,
+      "recovered_failures": 0,
+      "recovery_rate": null,
+      "retry_attempts": 0,
+      "first_median_latency_ms": 4184.9895,
+      "strict_json_first": 96,
+      "tiers": [
+        {
+          "tier": 1,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 2,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 3,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 4,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 5,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 6,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 7,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 8,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        }
+      ],
+      "calibration_first_exact": 8,
+      "calibration_run_id": "wave-gpt-6.1-sol-low-calibration-0-20261024T024441545061Z-07e19c379520",
+      "primary_run_ids": [
+        "wave-gpt-6.1-sol-low-primary-1-20261024T024517737464Z-b6b0a50511cb",
+        "wave-gpt-6.1-sol-low-primary-2-20261024T024736168604Z-223309a9cf32",
+        "wave-gpt-6.1-sol-low-primary-3-20261024T025001593599Z-7a467994ffe2"
+      ],
+      "abandoned_run_ids": [],
+      "invocation_hash": "93fabcba3a015c69107e8a0a1a429888ea752b3696d2e5365ca32008af0f72f5",
+      "tool_policy_hash": "7dc5f047daf288d5e99e0204e0332b8d0058ad9ca1c4fe10bb9f98eb99467d0c",
+      "lane_report_hash": "3b4ecea59b6ce83c5bfa2f4ad5f0f930b413ca5cc738faf9aca2886917e8d827"
+    },
+    {
+      "lane": "gpt-6-luna-low",
+      "model": "gpt-6-luna",
+      "effort": "low",
+      "repeat_count": 3,
+      "distinct_tasks": 32,
+      "primary_observations": 96,
+      "first_exact_by_repeat": [
+        26,
+        25,
+        23
+      ],
+      "first_exact": 74,
+      "eventual_exact_by_repeat": [
+        29,
+        29,
+        29
+      ],
+      "eventual_exact": 87,
+      "first_failures": 22,
+      "recovered_failures": 13,
+      "recovery_rate": 0.5909090909090909,
+      "retry_attempts": 34,
+      "first_median_latency_ms": 3144.721,
+      "strict_json_first": 96,
+      "tiers": [
+        {
+          "tier": 1,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 2,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 3,
+          "observations": 12,
+          "first_exact": 11,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 4,
+          "observations": 12,
+          "first_exact": 8,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 5,
+          "observations": 12,
+          "first_exact": 9,
+          "eventual_exact": 10
+        },
+        {
+          "tier": 6,
+          "observations": 12,
+          "first_exact": 8,
+          "eventual_exact": 11
+        },
+        {
+          "tier": 7,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 8,
+          "observations": 12,
+          "first_exact": 2,
+          "eventual_exact": 6
+        }
+      ],
+      "calibration_first_exact": 7,
+      "calibration_run_id": "wave-gpt-6-luna-low-calibration-0-20261024T025245412316Z-264b6a9985bb",
+      "primary_run_ids": [
+        "wave-gpt-6-luna-low-primary-1-20261024T025314786617Z-3d8721d1a8bd",
+        "wave-gpt-6-luna-low-primary-2-20261024T025529962668Z-ecb533974a1f",
+        "wave-gpt-6-luna-low-primary-3-20261024T025801109392Z-9a43686d859a"
+      ],
+      "abandoned_run_ids": [],
+      "invocation_hash": "5d29a27f9006b1c5ad500085bb15b46a844c9cd07b571250eeaaa8d000f0aacf",
+      "tool_policy_hash": "7dc5f047daf288d5e99e0204e0332b8d0058ad9ca1c4fe10bb9f98eb99467d0c",
+      "lane_report_hash": "61248d2b4bc7012b05139c800f35b48b510591214957a1a2337a4756918330c7"
+    },
+    {
+      "lane": "gpt-6.1-sol-medium",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "repeat_count": 3,
+      "distinct_tasks": 32,
+      "primary_observations": 96,
+      "first_exact_by_repeat": [
+        32,
+        32,
+        32
+      ],
+      "first_exact": 96,
+      "eventual_exact_by_repeat": [
+        32,
+        32,
+        32
+      ],
+      "eventual_exact": 96,
+      "first_failures": 0,
+      "recovered_failures": 0,
+      "recovery_rate": null,
+      "retry_attempts": 0,
+      "first_median_latency_ms": 4289.157,
+      "strict_json_first": 96,
+      "tiers": [
+        {
+          "tier": 1,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 2,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 3,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 4,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 5,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 6,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 7,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 8,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        }
+      ],
+      "calibration_first_exact": 8,
+      "calibration_run_id": "wave-gpt-6.1-sol-medium-calibration-0-20261024T030115045324Z-61431569be10",
+      "primary_run_ids": [
+        "wave-gpt-6.1-sol-medium-primary-1-20261024T030148754539Z-1496b2c0e8be",
+        "wave-gpt-6.1-sol-medium-primary-2-20261024T030428194219Z-0b4651b102cf",
+        "wave-gpt-6.1-sol-medium-primary-3-20261024T030656821712Z-1e90a478d57d"
+      ],
+      "abandoned_run_ids": [],
+      "invocation_hash": "1e73c5685ea6494d947d47d9c7a6f63ca4609aa13cd29902af778f55911b10df",
+      "tool_policy_hash": "7dc5f047daf288d5e99e0204e0332b8d0058ad9ca1c4fe10bb9f98eb99467d0c",
+      "lane_report_hash": "0154921b399748438ed0e43437e114c743b7e6f47bdbc2b9e4e9342bfec53302"
+    },
+    {
+      "lane": "gpt-6-luna-medium",
+      "model": "gpt-6-luna",
+      "effort": "medium",
+      "repeat_count": 3,
+      "distinct_tasks": 32,
+      "primary_observations": 96,
+      "first_exact_by_repeat": [
+        26,
+        24,
+        26
+      ],
+      "first_exact": 76,
+      "eventual_exact_by_repeat": [
+        31,
+        31,
+        31
+      ],
+      "eventual_exact": 93,
+      "first_failures": 20,
+      "recovered_failures": 17,
+      "recovery_rate": 0.85,
+      "retry_attempts": 27,
+      "first_median_latency_ms": 3196.184,
+      "strict_json_first": 96,
+      "tiers": [
+        {
+          "tier": 1,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 2,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 3,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 4,
+          "observations": 12,
+          "first_exact": 7,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 5,
+          "observations": 12,
+          "first_exact": 10,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 6,
+          "observations": 12,
+          "first_exact": 7,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 7,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 8,
+          "observations": 12,
+          "first_exact": 4,
+          "eventual_exact": 9
+        }
+      ],
+      "calibration_first_exact": 8,
+      "calibration_run_id": "wave-gpt-6-luna-medium-calibration-0-20261024T030951198218Z-e8ed76b237fe",
+      "primary_run_ids": [
+        "wave-gpt-6-luna-medium-primary-1-20261024T031016659040Z-93e062cc9561",
+        "wave-gpt-6-luna-medium-primary-2-20261024T031234963343Z-90d48243f831",
+        "wave-gpt-6-luna-medium-primary-3-20261024T031507691072Z-a79b6302ab4d"
+      ],
+      "abandoned_run_ids": [],
+      "invocation_hash": "fcd5da153325c6cb78e0a96c3bbbc7eaefb6d21b87c07fc30c7df709c39ce220",
+      "tool_policy_hash": "7dc5f047daf288d5e99e0204e0332b8d0058ad9ca1c4fe10bb9f98eb99467d0c",
+      "lane_report_hash": "a329fd8c495b38f7af9c0f0917e6295dadde86c3f5eee1fee703cec97a6eecbf"
+    },
+    {
+      "lane": "gpt-6.1-sol-high",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "repeat_count": 3,
+      "distinct_tasks": 32,
+      "primary_observations": 96,
+      "first_exact_by_repeat": [
+        32,
+        32,
+        32
+      ],
+      "first_exact": 96,
+      "eventual_exact_by_repeat": [
+        32,
+        32,
+        32
+      ],
+      "eventual_exact": 96,
+      "first_failures": 0,
+      "recovered_failures": 0,
+      "recovery_rate": null,
+      "retry_attempts": 0,
+      "first_median_latency_ms": 4763.8485,
+      "strict_json_first": 96,
+      "tiers": [
+        {
+          "tier": 1,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 2,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 3,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 4,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 5,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 6,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 7,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 8,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        }
+      ],
+      "calibration_first_exact": 8,
+      "calibration_run_id": "wave-gpt-6.1-sol-high-calibration-0-20261024T031804893491Z-880a862a24e4",
+      "primary_run_ids": [
+        "wave-gpt-6.1-sol-high-primary-1-20261024T031841786683Z-fcc35528efa4",
+        "wave-gpt-6.1-sol-high-primary-2-20261024T032122539677Z-ba90a5dbd12a",
+        "wave-gpt-6.1-sol-high-primary-3-20261024T032407270658Z-259890fefc92"
+      ],
+      "abandoned_run_ids": [],
+      "invocation_hash": "7538bd23c9e37c3216c97646784fd1fc6e3b00a1d231e60b63cd12fe530e1fb7",
+      "tool_policy_hash": "7dc5f047daf288d5e99e0204e0332b8d0058ad9ca1c4fe10bb9f98eb99467d0c",
+      "lane_report_hash": "87d718d462a1edd78aa5e0cf860808c71b0169e53c329922d8b5531facb793a6"
+    },
+    {
+      "lane": "gpt-6-luna-high",
+      "model": "gpt-6-luna",
+      "effort": "high",
+      "repeat_count": 3,
+      "distinct_tasks": 32,
+      "primary_observations": 96,
+      "first_exact_by_repeat": [
+        28,
+        29,
+        30
+      ],
+      "first_exact": 87,
+      "eventual_exact_by_repeat": [
+        32,
+        32,
+        32
+      ],
+      "eventual_exact": 96,
+      "first_failures": 9,
+      "recovered_failures": 9,
+      "recovery_rate": 1.0,
+      "retry_attempts": 11,
+      "first_median_latency_ms": 3638.0265,
+      "strict_json_first": 96,
+      "tiers": [
+        {
+          "tier": 1,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 2,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 3,
+          "observations": 12,
+          "first_exact": 9,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 4,
+          "observations": 12,
+          "first_exact": 11,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 5,
+          "observations": 12,
+          "first_exact": 9,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 6,
+          "observations": 12,
+          "first_exact": 10,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 7,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        },
+        {
+          "tier": 8,
+          "observations": 12,
+          "first_exact": 12,
+          "eventual_exact": 12
+        }
+      ],
+      "calibration_first_exact": 7,
+      "calibration_run_id": "wave-gpt-6-luna-high-calibration-0-20261024T032725411428Z-01dec9045751",
+      "primary_run_ids": [
+        "wave-gpt-6-luna-high-primary-1-20261024T032754563936Z-bd9cecfb743e",
+        "wave-gpt-6-luna-high-primary-2-20261024T033043129837Z-87d157482902",
+        "wave-gpt-6-luna-high-primary-3-20261024T033325835301Z-9c99caa15f67"
+      ],
+      "abandoned_run_ids": [],
+      "invocation_hash": "a399e63ab01148ce6e1d53c0ca2529a8116d70e37e21207ef30357b460c7ca49",
+      "tool_policy_hash": "7dc5f047daf288d5e99e0204e0332b8d0058ad9ca1c4fe10bb9f98eb99467d0c",
+      "lane_report_hash": "06c78ecf8f28301fb3359338b23cd38f388b0a3e94e9751a3de7be6582bc5e97"
+    }
+  ]
+}

@@ -4,17 +4,17 @@
   "projectLabel": "Cogin",
   "assessmentState": "scored",
   "assessmentScope": "current-milestone",
-  "percentComplete": 0,
+  "percentComplete": 100,
   "milestonePhase": "operational-proof",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-24T02:23:09.431Z",
+  "assessedAt": "2026-10-24T03:36:50.868Z",
   "confidence": "reported",
-  "currentMilestone": "Expand the live matrix with GPT-6.1 Sol and GPT-6 Luna at explicit low, medium, and high effort, using the locked suite and verified Wave 1 reports.",
-  "remainingSummary": "Bind lane effort into invocations and manifests, execute six new conditions, and publish comparable model and effort profiles.",
-  "nextChipId": "cogin:expand-live-model-matrix",
+  "currentMilestone": "Expanded live matrix completed with six new model and effort conditions, two corrected controls, four pair reports, and combined evidence profiles.",
+  "remainingSummary": "Model and effort expansion is complete. The next separate step is to feed the profiles into Orca and verify that they change a real choice.",
+  "nextChipId": "cogin:orca-strategy-handoff",
   "source": {
-    "label": "Wave 1 is complete. Matrix expansion is active; explicit effort binding is required before the six new conditions run.",
+    "label": "All eight conditions completed with verified model and effort selections. Four pair reports and combined profiles are published; 230 tests passed.",
     "updatedAt": "2026-10-23"
   }
 }
