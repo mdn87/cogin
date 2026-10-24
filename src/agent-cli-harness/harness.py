@@ -19,6 +19,10 @@ HERE = Path(__file__).resolve().parent
 MODELS = {"claude": "claude-sonnet-5", "codex": "gpt-6.1-sol", "agy": "gemini-3.8-flash-medium"}
 INTENDED = {"app.py", "test_app.py"}
 TIMEOUT = 600
+AGY_TASK_COMMANDS = [
+    "command(python -m unittest -q)",
+    "command(python browser_check.py --feature --screenshot browser.png)",
+]
 
 
 def digest(data):
@@ -210,7 +214,8 @@ def prepare(args):
                       "version": command([str(path), "--version"], env=environment()).stdout.strip(),
                       "model": MODELS[lane], "effort": "medium"}
         if lane == "agy":
-            pins[lane]["permission_syntax"] = "literal-prefix-v1"
+            pins[lane]["permission_syntax"] = "windows-command-regex-v1"
+            pins[lane]["exact_commands"] = list(AGY_TASK_COMMANDS)
         if lane == "codex" and args.windows_sandbox:
             pins[lane]["windows_sandbox"] = args.windows_sandbox
         verify_binary(pins[lane])
@@ -265,15 +270,24 @@ def prepare_corrected(args):
         "agy": "Allow Get-ChildItem and Get-Content for fixture inspection, including their verified dir/ls/cat/type aliases; sandbox and existing denies retained.",
     }
     manifest["lanes"]["codex"]["windows_sandbox"] = "unelevated"
-    manifest["lanes"]["agy"]["permission_syntax"] = "literal-prefix-v1"
+    manifest["lanes"]["agy"]["permission_syntax"] = "windows-command-regex-v1"
+    # Windows commands may require full-line matches even when their command
+    # prefix is granted. These are the exact commands in the frozen task.
+    manifest["lanes"]["agy"]["exact_commands"] = list(AGY_TASK_COMMANDS)
     manifest["lanes"]["agy"]["inspection_commands"] = [
         "command(Get-ChildItem)", "command(Get-Content)", "command(dir)", "command(ls)",
+        *[f"command(regex:{name} .*)" for name in ("Get-ChildItem", "Get-Content", "dir", "ls")],
         *[f"command({alias} {name})" for alias in ("cat", "type")
           for name in ("app.py", "test_app.py", "browser_check.py")],
     ]
     if args.allow_git_log:
         manifest["lanes"]["agy"]["inspection_commands"].append("command(git log)")
+        manifest["lanes"]["agy"]["inspection_commands"].append("command(regex:git log .*)")
+        manifest["lanes"]["agy"]["exact_commands"].append("command(git log -p -2)")
         manifest["permission_corrections"]["agy"] += " Read-only git log separately approved for the fixture repository."
+    if args.allow_git_metadata:
+        manifest["lanes"]["agy"]["read_seed_git_metadata"] = True
+        manifest["permission_corrections"]["agy"] += " Read-only seed Git metadata and exact Test-Path inspection separately approved."
     save(root / "manifest.json", manifest)
     (root / "manifest.sha256").write_text(file_hash(root / "manifest.json"))
     print(json.dumps({"corrected_batch": str(root), "seed_commit": manifest["seed_commit"]}), flush=True)
@@ -299,14 +313,23 @@ def invocation(lane, pin, worktree, home):
         permission_file = home / ".gemini/antigravity-cli/settings.json"
         # Keep historical manifests reproducible; new manifests pin corrected
         # literal-prefix semantics documented by the CLI permission engine.
-        if pin.get("permission_syntax") == "literal-prefix-v1":
+        if pin.get("permission_syntax") in {"literal-prefix-v1", "windows-command-regex-v1"}:
             allows = [f"read_file({worktree.as_posix()})", f"write_file({worktree.as_posix()})",
                       "command(python)", "command(git diff)", "command(git status)"]
+            if pin["permission_syntax"] == "windows-command-regex-v1":
+                allows += ["command(regex:python .*)", "command(regex:git diff .*)", "command(regex:git status .*)"]
         else:
             allows = ["read_file(*)", f"write_file({worktree.as_posix()}/**)",
                       "command(python *)", "command(git diff*)", "command(git status*)"]
+        if pin.get("read_seed_git_metadata"):
+            git_dir = worktree.parent.parent / "seed" / ".git"
+            allows.append(f"read_file({git_dir.as_posix()})")
+            for target in (git_dir, git_dir / "worktrees" / worktree.name):
+                for spelling in {str(target), target.as_posix()}:
+                    for quote in ('"', "'", ""):
+                        allows.append(f"command(Test-Path {quote}{spelling}{quote})")
         save(permission_file, {"permissions": {
-            "allow": [*allows, *pin.get("inspection_commands", [])],
+            "allow": [*allows, *pin.get("inspection_commands", []), *pin.get("exact_commands", [])],
             "deny": ["read_url(*)", "execute_url(*)", "mcp(*)"],
         }})
         argv = [executable, "--print=", "--input-format", "stream-json", "--output-format", "stream-json",
@@ -505,6 +528,8 @@ def main():
                            help="Record the actual user approval; this option does not itself grant permission")
     corrected.add_argument("--allow-git-log", action="store_true",
                            help="Include only with separate authorization for fixture Git history inspection")
+    corrected.add_argument("--allow-git-metadata", action="store_true",
+                           help="Include only with approval for read-only seed Git metadata and path inspection")
     args = parser.parse_args()
     if args.action == "prepare":
         prepare(args)

@@ -20,6 +20,10 @@ environments. API-key environment variables are removed, and existing
 subscription authentication is used. No global PATH or user setting changes
 are needed.
 
+Repository attributes preserve LF bytes for the hashed Python and fixture
+files across Windows checkouts. An integrity mismatch stops preparation;
+the controller never silently replaces a frozen hash.
+
 The seed app lists three tasks. The subject must add a status filter, update
 tests, run the local app through the provided Chromium helper, and inspect its
 diff. Only `app.py` and `test_app.py` are intended edits. Each trial starts in a
@@ -83,8 +87,19 @@ python src/agent-cli-harness/harness.py --root <new-directory> report --include 
 `prepare-corrected` enables the approved Windows sandbox setting and fixture
 inspection commands. `--allow-git-log` requires separate approval for that
 command. These options record permission; they do not supply authorization.
+`--allow-git-metadata` separately records approved read-only access to the
+isolated seed repository's `.git` directory and exact path-existence checks.
+Linked worktrees otherwise point outside the trial's sandbox file grants.
+This correction must be live-verified after approval; it is not enabled by
+default or retroactively applied to earlier trials.
 agy rules use literal command prefixes, not shell globs, and workspace paths
 grant recursive file access. See the [official rules](https://antigravity.google/docs/permissions).
+Windows can require full-command matches. New batches therefore use documented
+`regex:` rules for argument variations within the authorized Python,
+`git diff`/`status`, and fixture-inspection command classes. Git-history rules
+are added only by the approved correction. Exact entries for the frozen test
+and browser commands are also recorded. No rule grants arbitrary commands or
+all Git subcommands.
 The harness retains `--sandbox` and denies URL/MCP operations. CLI-specific
 permission handling and actual sandbox availability remain comparison limits.
 

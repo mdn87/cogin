@@ -8,13 +8,13 @@
   "milestonePhase": "operational-proof",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-24T07:58:43.075439+00:00",
+  "assessedAt": "2026-10-24T08:23:20.765103+00:00",
   "confidence": "reported",
   "currentMilestone": "Pinned unattended CLI comparison: two of three lanes have valid repeat pairs.",
-  "remainingSummary": "agy needs separately approved fixture Git history access and two valid trials. Supervised approval counts and blind human cleanup remain a later phase.",
+  "remainingSummary": "agy needs approved read-only access to isolated seed Git metadata and two valid trials. Supervised approval counts and blind human cleanup remain a later phase.",
   "nextChipId": "cogin:agent-cli-comparison-harness",
   "source": {
-    "label": "Two of three repeatability gates pass (67% of lane pairs); 13 harness tests and 230 existing tests pass. Comparison incomplete.",
+    "label": "Two of three repeatability gates pass. 15 harness tests pass; agy Python/Git command matching verified, but linked metadata is inaccessible in its sandbox.",
     "updatedAt": "2026-10-24"
   }
 }

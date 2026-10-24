@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "recorded_at": "2026-10-24T07:58:21.902574+00:00",
-  "status": "incomplete: agy requires separately approved Git history inspection and two valid trials",
-  "manifest_sha256": "bfbbeff2389f8eebabcc966caaeae5dd166a8ef6cc3b7c7db1b4622db55f375f",
+  "recorded_at": "2026-10-24T08:23:18.063552+00:00",
+  "status": "unattended batch incomplete",
+  "manifest_sha256": "d8140cfd58dd5c13c6fe546dfa8e6cef49a8a5acac7cda6183dd5897f1cb9bb4",
   "seed_commit": "ffb5bb0a74367996b8e44a19ce1a3152820ae5a2",
   "prompt_sha256": "bd97b97c1595766ba82f01b7e59926d4d01069f12cba4742caca734579a94fdf",
   "fixture_hashes": {
@@ -11,7 +11,7 @@
     "browser_check.py": "d6c42ab4a42b937df34e13be695d811d1da5122a6e7fd5cb73a889914ed72bdf",
     "test_app.py": "e1a6ad89add46d4243be971820d1e64822ba85c26156905b7386f22d59b867cf"
   },
-  "scoring_source_sha256": "bd7ab40d71b5bec5f6be3ff91bc715bdbcde0efe06cc6133b6cd286a25ca18f7",
+  "scoring_source_sha256": "79fcae8ac4f5b3583145e762c50ad74bc52dc502e18b92f2578b3c3bf43affc0",
   "host": {
     "os": "Windows 11",
     "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
@@ -46,14 +46,25 @@
         "command(Get-Content)",
         "command(dir)",
         "command(ls)",
+        "command(regex:Get-ChildItem .*)",
+        "command(regex:Get-Content .*)",
+        "command(regex:dir .*)",
+        "command(regex:ls .*)",
         "command(cat app.py)",
         "command(cat test_app.py)",
         "command(cat browser_check.py)",
         "command(type app.py)",
         "command(type test_app.py)",
-        "command(type browser_check.py)"
+        "command(type browser_check.py)",
+        "command(git log)",
+        "command(regex:git log .*)"
       ],
-      "permission_syntax": "literal-prefix-v1"
+      "permission_syntax": "windows-command-regex-v1",
+      "exact_commands": [
+        "command(python -m unittest -q)",
+        "command(python browser_check.py --feature --screenshot browser.png)",
+        "command(git log -p -2)"
+      ]
     }
   },
   "subscription_authentication": {
@@ -88,24 +99,24 @@
   "cross_lane_evidence_eligible": false,
   "runs": [
     {
-      "source_batch": "batch-5",
-      "source_manifest_sha256": "bfbbeff2389f8eebabcc966caaeae5dd166a8ef6cc3b7c7db1b4622db55f375f",
+      "source_batch": "batch-8",
+      "source_manifest_sha256": "d8140cfd58dd5c13c6fe546dfa8e6cef49a8a5acac7cda6183dd5897f1cb9bb4",
       "run_id": "agy-1",
       "lane": "agy",
       "model": "gemini-3.8-flash-medium",
       "effort": "medium",
       "version": "1.4.7",
       "binary_sha256": "22588b6d5a6f6d2d66091c73dfb9255edc7bdafe9aff9dd20d958ce116496695",
-      "wall_seconds": 35.548,
+      "wall_seconds": 119.437,
       "returncode": 0,
       "timed_out": false,
       "valid": false,
       "protocol_errors": [
         "permission denial"
       ],
-      "assistant_events": 5,
+      "assistant_events": 10,
       "native_turns": 1,
-      "tool_events": 4,
+      "tool_events": 9,
       "permission_mode": "request-review",
       "reported_model": "gemini-3.8-flash-medium",
       "changed_lines": 0,
@@ -126,9 +137,9 @@
       "process_recovery_note": null,
       "subject_browser_artifact": false,
       "artifact_hashes": {
-        "stdout.jsonl": "e264dedc4fbf6e433eb0091dc86ece72a6679db167262fe2d0b2d85e62321a7d",
+        "stdout.jsonl": "530a213b652e09cdfb637ace20ab8af52523131469f4560df04733bb1e1c0158",
         "stderr.txt": "6f9b232ca1f3b43aa72e2ba63698c09b0796b612d5a17cf05efee31e6c79b713",
-        "invocation.json": "604eae2f3bca041473eb52ef13e665933a62012fae01335e3f8b84158ba876b9",
+        "invocation.json": "70597f7cad26b88c9e5638586418234a8502b607bc113c3b057559b21fd2e1b5",
         "changes.patch": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
     },
@@ -399,6 +410,141 @@
       }
     },
     {
+      "source_batch": "batch-7",
+      "source_manifest_sha256": "148fd2088921051043d6c9d9394266358af09e92e3062adefd97c4685461516c",
+      "run_id": "agy-1",
+      "lane": "agy",
+      "model": "gemini-3.8-flash-medium",
+      "effort": "medium",
+      "version": "1.4.7",
+      "binary_sha256": "22588b6d5a6f6d2d66091c73dfb9255edc7bdafe9aff9dd20d958ce116496695",
+      "wall_seconds": 60.326,
+      "returncode": 0,
+      "timed_out": false,
+      "valid": false,
+      "protocol_errors": [
+        "permission denial"
+      ],
+      "assistant_events": 5,
+      "native_turns": 1,
+      "tool_events": 4,
+      "permission_mode": "request-review",
+      "reported_model": "gemini-3.8-flash-medium",
+      "changed_lines": 0,
+      "off_target_lines": 0,
+      "off_target_files": [],
+      "off_target": false,
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": false
+      },
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "task_passed": false,
+      "test_command_observed": false,
+      "browser_command_observed": false,
+      "interruptions": null,
+      "human_cleanup_lines": null,
+      "process_recovery_note": null,
+      "subject_browser_artifact": false,
+      "artifact_hashes": {
+        "stdout.jsonl": "fa013eda1b6994433a57547e6683f413e691bb6e9183086b62ffdca63180150c",
+        "stderr.txt": "6f9b232ca1f3b43aa72e2ba63698c09b0796b612d5a17cf05efee31e6c79b713",
+        "invocation.json": "4165d637cb49b80d1f2da551fa190d3ec1d0e80a402249321ec34d9d31dd0016",
+        "changes.patch": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "source_batch": "batch-6",
+      "source_manifest_sha256": "432517fd32fc17b1de22394deb50daf815ef7addb12e21fdb0cc2149219d8356",
+      "run_id": "agy-1",
+      "lane": "agy",
+      "model": "gemini-3.8-flash-medium",
+      "effort": "medium",
+      "version": "1.4.7",
+      "binary_sha256": "22588b6d5a6f6d2d66091c73dfb9255edc7bdafe9aff9dd20d958ce116496695",
+      "wall_seconds": 19.71,
+      "returncode": 0,
+      "timed_out": false,
+      "valid": false,
+      "protocol_errors": [
+        "permission denial"
+      ],
+      "assistant_events": 6,
+      "native_turns": 1,
+      "tool_events": 5,
+      "permission_mode": "request-review",
+      "reported_model": "gemini-3.8-flash-medium",
+      "changed_lines": 0,
+      "off_target_lines": 0,
+      "off_target_files": [],
+      "off_target": false,
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": false
+      },
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "task_passed": false,
+      "test_command_observed": false,
+      "browser_command_observed": false,
+      "interruptions": null,
+      "human_cleanup_lines": null,
+      "process_recovery_note": null,
+      "subject_browser_artifact": false,
+      "artifact_hashes": {
+        "stdout.jsonl": "1d93c180f7d31c1aa0df568a616139db0dba3849c02f595017f52eb8d81bc308",
+        "stderr.txt": "6f9b232ca1f3b43aa72e2ba63698c09b0796b612d5a17cf05efee31e6c79b713",
+        "invocation.json": "6fa323bee9152fa7f4a535c945c243a25d273bfe3cba943bafd9dd6f2a1eb378",
+        "changes.patch": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "source_batch": "batch-5",
+      "source_manifest_sha256": "bfbbeff2389f8eebabcc966caaeae5dd166a8ef6cc3b7c7db1b4622db55f375f",
+      "run_id": "agy-1",
+      "lane": "agy",
+      "model": "gemini-3.8-flash-medium",
+      "effort": "medium",
+      "version": "1.4.7",
+      "binary_sha256": "22588b6d5a6f6d2d66091c73dfb9255edc7bdafe9aff9dd20d958ce116496695",
+      "wall_seconds": 35.548,
+      "returncode": 0,
+      "timed_out": false,
+      "valid": false,
+      "protocol_errors": [
+        "permission denial"
+      ],
+      "assistant_events": 5,
+      "native_turns": 1,
+      "tool_events": 4,
+      "permission_mode": "request-review",
+      "reported_model": "gemini-3.8-flash-medium",
+      "changed_lines": 0,
+      "off_target_lines": 0,
+      "off_target_files": [],
+      "off_target": false,
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": false
+      },
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "task_passed": false,
+      "test_command_observed": false,
+      "browser_command_observed": false,
+      "interruptions": null,
+      "human_cleanup_lines": null,
+      "process_recovery_note": null,
+      "subject_browser_artifact": false,
+      "artifact_hashes": {
+        "stdout.jsonl": "e264dedc4fbf6e433eb0091dc86ece72a6679db167262fe2d0b2d85e62321a7d",
+        "stderr.txt": "6f9b232ca1f3b43aa72e2ba63698c09b0796b612d5a17cf05efee31e6c79b713",
+        "invocation.json": "604eae2f3bca041473eb52ef13e665933a62012fae01335e3f8b84158ba876b9",
+        "changes.patch": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
       "source_batch": "batch-4",
       "source_manifest_sha256": "4978548c3efcbba93de5637fffc4b62100064b7a3f7c0c74920869ecf1fba7f2",
       "run_id": "agy-1",
@@ -536,7 +682,7 @@
     }
   ],
   "limitations": [
-    "Four protocol-valid trials cover Claude and Codex. agy has no valid pair; the three-lane comparison is incomplete.",
+    "4 protocol-valid trials are recorded. The cross-lane repeatability gate is False; this small task does not establish statistical equivalence or justify migration.",
     "Codex attempted the real browser but Windows returned PermissionError [WinError 5] creating a pipe. Both fresh patch replays passed unit and browser acceptance. This is an environment limitation, not evidence of incorrect patches.",
     "batch-3/codex-1 overlapped the excluded batch-4/agy-1 diagnostic for about 17 seconds. Wall times are descriptive only; no timing ranking is supported.",
     "Requested model selectors and effort are pinned; Claude and agy report their model in the stream, while the Codex stream does not attest its backend model identity.",
