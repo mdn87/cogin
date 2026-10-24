@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Cogin · Human review</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+<header><div><span class="eyebrow">COGIN / LOCAL COLLECTION</span><h1>A little human judgment.</h1><p>Review anonymous patches and respond to live approval requests.</p></div><span class="badge">Private on this computer</span></header>
+<nav aria-label="Collection type"><button id="review-tab" aria-pressed="true">Blind review</button><button id="sessions-tab" aria-pressed="false">Supervised sessions</button></nav>
+<p id="error" role="alert" hidden></p>
+<main>
+<section id="review-panel" aria-labelledby="review-tab">
+<div class="intro"><div><h2>Which changes would you revert?</h2><p>Select added lines you would remove and deleted lines you would restore before merging. A replacement counts as two changed lines. Context lines do not count.</p><p>Judge the task requirements, not stylistic alternatives. Read the patches without running their code. If you already know which CLI produced these patches, a different reviewer must complete this review.</p></div><div class="progress"><strong id="progress">Loading…</strong><span id="save-state" role="status">Opening review</span></div></div>
+<div class="review-layout"><aside><h3>Patches</h3><div id="cases"></div><details><summary>Task and original files</summary><pre id="task"></pre><div id="base"></div></details></aside>
+<article><div class="patch-heading"><div><span id="case-id" class="eyebrow"></span><h2 id="patch-title">Anonymous patch</h2></div><strong id="count" class="badge"></strong></div>
+<div id="diff" aria-label="Patch changes"></div>
+<fieldset id="scoring"><legend>Your review</legend><label for="reason">Why would you revert these lines, or why is no cleanup needed?</label><textarea id="reason" rows="3" maxlength="4000" placeholder="Give a specific reason for your judgment."></textarea>
+<div class="review-actions"><button id="zero">No cleanup needed</button><label><input id="reviewed" type="checkbox"> I reviewed the entire patch</label></div></fieldset>
+<div class="pagination"><button id="previous">← Previous</button><button id="next">Next patch →</button></div>
+</article></div>
+<section class="submission"><div><h2>Finish your review</h2><p>Progress saves automatically. Submit once every patch has a reason and your review is complete. Submission locks the scores.</p></div><div class="submit-fields"><label for="reviewer">Your name</label><input id="reviewer" maxlength="120" autocomplete="name"><label class="check"><input id="attestation" type="checkbox"> I reviewed all patches without knowing their CLI identities.</label><button class="primary" id="submit" disabled>Submit and lock review</button><p id="submitted" role="status" hidden>Review submitted and locked. Thank you. Your scores are saved.</p></div></section>
+</section>
+<section id="sessions-panel" aria-labelledby="sessions-tab" hidden>
+<div class="intro"><div><h2>Be there when a CLI asks.</h2><p>Start one isolated task session at a time. Read each request, then choose Allow once or Deny. Nothing is approved automatically by this page.</p><p>Actions permitted by the CLI’s policy may run without prompting. Each session allows up to 10 minutes, including your response time; verification follows.</p></div></div>
+<div class="session-layout"><section class="card"><h3>Start a session</h3><label for="operator">Operator name</label><input id="operator" maxlength="120" autocomplete="name"><div class="start-buttons"><button id="start-claude" class="primary">Start Claude</button><button id="start-codex" class="primary">Start Codex</button></div><p class="muted">agy is unavailable: its headless interface cannot ask a human for approval.</p><p id="session-status" role="status">No session running.</p><button id="stop" hidden>Stop current session</button></section>
+<section class="card"><h3>Approval requests</h3><p id="no-request">Requests will appear here during a session. Keep this page open.</p><div id="approval" hidden><p>Inspect the complete request before deciding.</p><pre id="payload"></pre><div class="start-buttons"><button id="allow" class="primary">Allow once</button><button id="deny">Deny</button></div></div></section></div>
+<section class="card history"><h3>Collected sessions</h3><div id="history">No sessions collected yet.</div><p class="muted">Missing measurements remain unmeasured. Stopping or denying may leave the task incomplete. Results stay separate from unattended trials.</p></section>
+</section>
+</main><footer>Cogin human effort study · Your judgment is the measurement.</footer>
+</body></html>

@@ -5,6 +5,50 @@ measurements without changing its trials, prompt, acceptance gates, or reports.
 Missing measurements stay `null` in JSON and `unmeasured` in Markdown. Zero is
 valid only after a complete human observation or review.
 
+## Local review console
+
+From the repository root, open the prepared six-case package in your browser:
+
+```powershell
+python src/agent-cli-harness/review_console.py --open
+```
+
+The console binds only to `127.0.0.1:8765`; use `--port 0` for an available
+port. Open the private link printed by the launcher. Keep one console process
+per package. The link is local access, not a remote reviewer invitation.
+
+- **Blind review:** read the task and original files, then one anonymous patch
+  at a time. Select changed lines to revert; the page counts them. Give a
+  specific reason and mark the patch reviewed. “No cleanup needed” explicitly
+  records a reviewed zero, but still requires a reason. Line edits clear the
+  reviewed flag. Do not run patch code or attest if you recognize identities.
+- Progress saves automatically on this computer. Wait for “Saved on this
+  computer” before closing. Reload to resume; competing tab edits are rejected
+  rather than silently overwritten. A preexisting manual score form is preserved
+  and must be imported using the command below before opening the console.
+- Enter your name, attest that the review was blind, and submit to lock all
+  scores. The controller mapping and derived reports are never served by the
+  browser. Submission rechecks the package and uses the existing score validator.
+- **Supervised sessions:** enter your name and explicitly start Claude or
+  Codex. Inspect each native request and click **Allow once** or **Deny**.
+  The page never grants persistent permission or answers automatically.
+  **Stop current session** cancels further approvals; timeout or a closed
+  console cannot turn missing observations into zero. Verification may continue
+  briefly after stopping. agy remains unavailable because it cannot prompt.
+
+The default session limit is 10 minutes. Keep the console process running while
+reviewing or supervising; closing the browser does not terminate the process.
+An interrupted session after a process restart requires controller inspection
+before another run. Start only one subject process across all launchers.
+
+Private draft, session, and derived report files live under the package's
+`controller/`. `collection-status.json` prepares an evidence summary after
+submission or session completion; it does not publish a Dias board update.
+Session directories can contain subscription credentials and must stay private.
+Use the CLI workflows below when a separate reviewer receives only `reviewer/`
+or when collecting from a terminal. Automated UI tests use synthetic packages
+and simulated approvals; they are not human measurements.
+
 ## Blind cleanup review
 
 The prepared package for the six accepted v2 patches is at

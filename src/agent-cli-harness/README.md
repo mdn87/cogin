@@ -3,8 +3,9 @@
 This experiment measures a small repo task with tools enabled. It is separate
 from Taxonomy Bench and does not use the Wave controller or its task scores.
 The unattended comparison is complete. Separate [human measurement tools](HUMAN_REVIEW.md)
-prepare blind patch reviews, validate score imports, and capture explicit human
-approval decisions for qualified Claude/Codex interfaces. Actual human scores
+provide a local browser console, prepare blind patch reviews, validate score
+imports, and capture explicit human approval decisions for qualified
+Claude/Codex interfaces. Actual human scores
 remain null until collected; agy headless mode cannot prompt for approval.
 Protocol v2 assigns real-browser acceptance to the independent verifier. Each
 subject implements the feature, updates and runs unit tests, and inspects its

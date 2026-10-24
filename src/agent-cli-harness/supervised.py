@@ -134,7 +134,7 @@ def launcher(lane, pin, worktree, home):
     return argv, env
 
 
-def bridge(lane, argv, env, cwd, prompt, artifacts, pin, *, operator, probe=False, timeout=600):
+def bridge(lane, argv, env, cwd, prompt, artifacts, pin, *, operator, probe=False, timeout=600, decision_provider=None):
     """Keep stdout and stdin independent so approval requests can be answered."""
     events, inbox = [], queue.Queue()
     start = time.monotonic()
@@ -175,6 +175,8 @@ def bridge(lane, argv, env, cwd, prompt, artifacts, pin, *, operator, probe=Fals
                 send({"id": "cogin-init", "method": "initialize", "params": {
                     "clientInfo": {"name": "cogin_supervised", "version": "1.0.0"}}})
             while time.monotonic() - start < timeout:
+                if decision_provider is not None and decision_provider.cancelled.is_set():
+                    raise ValueError("Operator stopped the session; no further approval sent")
                 try:
                     line = inbox.get(timeout=min(1, max(0.01, timeout - (time.monotonic() - start))))
                 except queue.Empty:
@@ -229,7 +231,8 @@ def bridge(lane, argv, env, cwd, prompt, artifacts, pin, *, operator, probe=Fals
                         raise ValueError("Duplicate approval request or missing effective policy")
                     seen.add(request["request_id"])
                     record(request)
-                    decision = "deny" if probe else console_decision(request, timeout - (time.monotonic() - start))
+                    choose = decision_provider or console_decision
+                    decision = "deny" if probe else choose(request, timeout - (time.monotonic() - start))
                     response = approval_response(lane, event, decision)
                     send(response)
                     record({"kind": "decision", "request_id": request["request_id"], "decision": decision,
@@ -277,10 +280,10 @@ def bridge(lane, argv, env, cwd, prompt, artifacts, pin, *, operator, probe=Fals
     return result
 
 
-def capture(source, lane, output, operator, *, probe=False, timeout=600):
+def capture(source, lane, output, operator, *, probe=False, timeout=600, decision_provider=None):
     if lane not in SUPPORTED:
         raise ValueError("agy print mode has no qualified human approval response channel; no supervised launch")
-    if not probe and (not sys.stdin.isatty() or not operator.strip()):
+    if not probe and ((decision_provider is None and not sys.stdin.isatty()) or not operator.strip()):
         raise ValueError("A named human at an interactive terminal is required; use --probe only for denial qualification")
     if not 1 <= timeout <= 3600:
         raise ValueError("Capture timeout must be between 1 and 3600 seconds")
@@ -306,9 +309,12 @@ def capture(source, lane, output, operator, *, probe=False, timeout=600):
         "protocol_version": harness.protocol_version(manifest), "mode": "qualification" if probe else "supervised",
         "lane": lane, "pin": pin, "seed_commit": manifest["seed_commit"], "prompt_sha256": harness.digest(prompt.encode()),
         "argv": argv, "operator": operator, "timeout_seconds": timeout,
+        "operator_channel": "browser" if decision_provider is not None else "terminal",
+        "operator_host_sha256": getattr(decision_provider, "host_sha256", None),
         "limitations": ["Supervised transport and permission profile differ from unattended trials; do not pool timings or turn counts.",
                         "Only human decisions are measurements; qualification denials are not human scores."]})
-    result = bridge(lane, argv, env, worktree, prompt, artifacts, pin, operator=operator, probe=probe, timeout=timeout)
+    result = bridge(lane, argv, env, worktree, prompt, artifacts, pin, operator=operator, probe=probe,
+                    timeout=timeout, decision_provider=decision_provider)
     revision = harness.archive(seed, worktree, artifacts, "subject")
     patch = artifacts / "changes.patch"
     patch.write_bytes(subprocess.check_output(["git", "diff", "--binary", manifest["seed_commit"], revision], cwd=seed))
