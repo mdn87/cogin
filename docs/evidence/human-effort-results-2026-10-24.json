@@ -297,6 +297,46 @@
         "test_app.py"
       ],
       "human_cleanup_lines": null
+    },
+    {
+      "lane": "codex",
+      "capture": "codex-9eea0625654f",
+      "mode": "supervised",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "version": "codex-cli 0.164.0",
+      "binary_sha256": "6f267830b029ee25d9339864aa867cd45de9f8fd4c5ea007d2e63c13a0c66d36",
+      "source_batch": "supervised-mxc-source-1",
+      "windows_sandbox": "mxc",
+      "operator_channel": "browser",
+      "operator_host_sha256": "5859b139105e03636188abdbf36eb1068d10b10761cca8f4b09fbf04436c8ca5",
+      "measurement_state": "measured",
+      "interruptions": 2,
+      "approved": 1,
+      "denied": 1,
+      "observed_requests": 2,
+      "unresolved_requests": 0,
+      "task_passed": false,
+      "capture_complete": true,
+      "completed": true,
+      "policy_verified": true,
+      "failure": null,
+      "returncode": 0,
+      "capture_manifest_sha256": "7aa31ff73c93ed6683f4d32f9a58e3c607ba781d31063d292aebf4bbb6157e0a",
+      "capture_source_sha256": "fe0893a0cd5e756ae0853f52ace12eaa22d46c80e6637ae97d634de8e380d7a3",
+      "source_manifest_sha256": "5891cf26020ccfb8c9a595f11928995db7fcee83950f710a7ab635e015be98a8",
+      "patch_sha256": "ea9543552607b13f5c3f100ba8fa8716e4696c0fb49c1be7573f444d8e2b919a",
+      "capture_sha256": "392c0bc5d26a585e2fde7dd1ff642fd6fd78f5987a042cb9631eacd36a19aad4",
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": false,
+        "browser_passed": false
+      },
+      "changed_lines": 110,
+      "changed_files": [
+        "test_app.py"
+      ],
+      "human_cleanup_lines": null
     }
   ],
   "limitations": [
@@ -307,6 +347,7 @@
     "Two legacy Codex captures remain incomplete with null approval counts; the second was stopped by the controller after operator approval to switch to MXC. Neither is a zero-interruption success.",
     "MXC captures use a separately authorized source manifest. The first timed out awaiting a human response; the operator started another. Retain all attempts; do not pool them with legacy sandbox observations.",
     "The Codex native runtime exposed user-installed skills despite the isolated auth directory; this is a CLI configuration observation, not an isolated model comparison.",
-    "agy headless mode cannot prompt; its supervised interruption count remains null."
+    "agy headless mode cannot prompt; its supervised interruption count remains null.",
+    "A later MXC repeat recorded two prompts (one allow, one denial) with a complete capture but failed unit and browser checks. Denial was respected; this is not a second task success."
   ]
 }

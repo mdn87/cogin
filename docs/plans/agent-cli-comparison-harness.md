@@ -6,9 +6,10 @@ The [v1 report](../evidence/agent-cli-comparison-2026-10-24.md) remains historic
 Human measurement tooling is implemented. Six attested blind reviews are
 collected: five zero-cleanup scores and one line selected for reversion.
 Two supervised Claude trials passed with four human prompts each. An approved
-MXC Codex trial passed with three; earlier incomplete attempts remain unmeasured.
+MXC Codex trial passed with three. A later repeat recorded one allow and one
+denial and left the task incomplete; earlier incomplete captures remain unmeasured.
 agy lacks an interactive approval channel. New supervised patch cleanup remains
-unmeasured, and one Codex completion is not a supervised repeatability result.
+unmeasured, and one Codex task pass is not a supervised repeatability result.
 See the [human results](../evidence/human-effort-results-2026-10-24.md), [operator guide](../../src/agent-cli-harness/HUMAN_REVIEW.md)
 and [interface qualification](../evidence/human-effort-tooling-2026-10-24.md).
 Implementation: [`src/agent-cli-harness`](../../src/agent-cli-harness/).

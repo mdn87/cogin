@@ -7,7 +7,9 @@ provide a local browser console, prepare blind patch reviews, validate score
 imports, and capture explicit human approval decisions for qualified
 Claude/Codex interfaces. Six unattended patches have completed blind cleanup
 review. Two supervised Claude runs passed with four prompts each; an approved
-MXC Codex run passed with three prompts. Incomplete attempts remain unmeasured.
+MXC Codex run passed with three prompts. A later repeat recorded two prompts
+(one allow, one denial) and left the task incomplete. Incomplete captures remain
+unmeasured.
 See the [human results](../../docs/evidence/human-effort-results-2026-10-24.md).
 agy headless mode cannot prompt.
 Protocol v2 assigns real-browser acceptance to the independent verifier. Each

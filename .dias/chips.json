@@ -358,7 +358,7 @@
       "chipId": "cogin:human-effort-measurements",
       "projectId": "cogin",
       "title": "Collect human approval and blind cleanup measurements",
-      "summary": "Six blind reviews done. Claude: two passes, 4 prompts each. Codex MXC: one pass, 3 prompts. Incomplete attempts retained; agy lacks an interactive approval channel.",
+      "summary": "Six blind reviews done. Claude: two passes, 4 prompts each. Codex MXC: one pass, 3 prompts; repeat failed after 1 allow and 1 denial. agy lacks an interactive approval channel.",
       "stage": "blocked",
       "sequence": 75,
       "prereqs": [
@@ -369,7 +369,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-10-24T14:02:20.155043+00:00",
-        "updatedAt": "2026-10-24T18:12:48.393936+00:00"
+        "updatedAt": "2026-10-24T18:25:29.193014+00:00"
       },
       "evidence": [
         {
@@ -407,6 +407,12 @@
           "at": "2026-10-24T18:12:48.393936+00:00",
           "kind": "note",
           "message": "Approved MXC capture passed unit/Chromium checks: 3 human allows, no denials. All six captures retained; 57 historical hashes unchanged. 62 tests pass, including reconnection."
+        },
+        {
+          "entryId": "cogin:human-effort-measurements:mxc-repeat-2026-10-24",
+          "at": "2026-10-24T18:25:29.193014+00:00",
+          "kind": "note",
+          "message": "MXC repeat: 2 prompts, 1 allow, 1 denial; unit/Chromium checks failed. Capture complete; denial respected. Seven captures, original scores and 57 historical hashes preserved."
         }
       ]
     },

@@ -8,13 +8,13 @@
   "milestonePhase": "closeout",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-24T18:12:48.393936+00:00",
+  "assessedAt": "2026-10-24T18:25:29.193014+00:00",
   "confidence": "reported",
-  "currentMilestone": "Six blind reviews and supervised results published: two Claude passes with 4 prompts each; one approved MXC Codex pass with 3. Incomplete attempts retained.",
-  "remainingSummary": "agy needs an interactive approval channel. New supervised patches have no cleanup scores. One completed Codex capture does not establish supervised repeatability.",
+  "currentMilestone": "Six blind reviews and seven supervised captures published. Claude: two passes. Codex MXC: one pass; repeat failed after one allow and one denial. All attempts retained.",
+  "remainingSummary": "agy needs an interactive approval channel. Supervised patches have no cleanup scores. Codex repeat failed after a denial; repeatable task success is unestablished.",
   "nextChipId": "cogin:human-effort-measurements",
   "source": {
-    "label": "62 tests pass, including token recovery. Six blind scores, three complete approval ledgers verified; six captures retained. Historical v2 hashes unchanged.",
+    "label": "Seven captures and six blind scores verified; MXC repeat failed after 1 allow and 1 denial. 57 historical hashes unchanged. Prior 62 tests passed at 47bf49f.",
     "updatedAt": "2026-10-24"
   }
 }

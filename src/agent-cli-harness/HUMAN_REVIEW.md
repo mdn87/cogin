@@ -9,7 +9,9 @@ The [2026-10-24 results](../../docs/evidence/human-effort-results-2026-10-24.md)
 include six blind reviews and two passing Claude sessions with four human
 prompts each. A separately approved MXC Codex capture passed with three human
 allows. Two legacy sandbox attempts and one MXC response timeout remain
-unmeasured; all attempts are retained.
+unmeasured. A later MXC repeat recorded two prompts (one allow, one denial)
+and left the task incomplete. Its capture is complete; its task did not pass.
+All attempts are retained.
 
 ## Local review console
 

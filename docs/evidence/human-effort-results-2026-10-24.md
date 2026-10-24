@@ -4,7 +4,8 @@ Six unattended patches have completed attested blind review. Two supervised
 Claude sessions passed with four human approval prompts each. An approved MXC
 Codex session passed with three human approval prompts. Three earlier Codex
 attempts remain incomplete and supply no valid interruption measurements.
-These observations do not establish a CLI ranking.
+A later MXC repeat recorded two prompts (one allow, one denial) and left the
+task incomplete. These observations do not establish a CLI ranking.
 
 The [sanitized records](human-effort-results-2026-10-24.json) retain binary,
 source, capture, patch, and receipt hashes. Credentials, raw sessions, local
@@ -29,6 +30,7 @@ unchanged. These scores do not cover the new supervised patches.
 | Codex legacy `340277b0b3e6` | Unmeasured | Unmeasured | Unmeasured | Stalled; controller stopped it before the approved MXC switch |
 | Codex MXC `8d0830214671` | Unmeasured | Unmeasured | Unmeasured | Timed out waiting for a human decision |
 | Codex MXC `4e46769c7ad5` | 3 | 3 | 0 | Passed fresh unit and Chromium checks |
+| Codex MXC `9eea0625654f` | 2 | 1 | 1 | Failed fresh unit and Chromium checks after a denied test edit |
 
 The operator chose to finish the extra Claude run; both captures are retained.
 Their native requests and explicit human decisions reconcile with the approval
@@ -63,7 +65,7 @@ described in the official
 The first MXC run received one human allow but timed out with a second request
 unanswered. An older browser tab still held an expired access token after the
 server restart. The operator started another run, and both open review tabs
-were reconnected. The final run received three explicit human allows, no denials,
+were reconnected. The successful run received three explicit human allows, no denials,
 and no unresolved requests. It edited only `app.py` and `test_app.py`, ran unit
 tests, and passed fresh patch replay and Chromium feature acceptance.
 
@@ -74,8 +76,18 @@ outside the sandbox. The native runtime also exposed user-installed skills
 despite its isolated auth directory. These are CLI configuration observations,
 not an isolated model comparison or proof that all MXC networking works.
 
-The final Codex capture is one completed observation, not a supervised repeatability
-result. Its three prompts cannot establish lower human effort than Claude's four:
+The later repeat (`9eea0625654f`) used the same pinned MXC source. The operator
+allowed the initial test edit, then denied the proposed switch from socket-based
+tests to in-memory HTTP handler tests after Windows error 10013. Codex respected
+the denial and ended with only `test_app.py` changed; `app.py` was unchanged.
+Both decisions reconciled with native events, with no unresolved request. The
+capture is complete and its two prompts are measured, but the task did not pass.
+Fresh unit and Chromium feature checks both failed. The denied edit was not
+retried by the controller.
+
+Only one Codex task has passed; the repeat does not establish repeatable success.
+The successful run's three prompts cannot establish lower human effort than
+Claude's four:
 permission profiles, outcomes, and sample sizes differ. All failed attempts are
 included in the sanitized records rather than replaced by the successful run.
 
@@ -87,10 +99,11 @@ comes from one human reviewer/operator.
 
 - Accepted receipt, input form, source package, capture manifests, raw artifact
   hashes, and approval ledgers validated using the existing review/report tools.
-- All six Git bundles verified; temporary subject worktrees were removed
+- All seven Git bundles verified; temporary subject worktrees were removed
   after archival. All 57 historical fingerprints and original v2 trial artifact
   hashes remained unchanged.
-- All 62 harness tests passed, including real Chromium checks for review
+- The previously run 62 harness tests passed at `47bf49f`, including real Chromium
+  checks for review
   submission, session states, disabling stale approval controls after token
   rotation, and reconnecting through a new private link without manual reload.
 
