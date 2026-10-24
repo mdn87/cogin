@@ -272,16 +272,16 @@
       "chipId": "cogin:agent-cli-comparison-harness",
       "projectId": "cogin",
       "title": "Agent CLI comparison harness",
-      "summary": "Pinned unattended harness implemented. Claude/Codex repeat pairs pass. agy command rules fixed, but its linked Git metadata is outside the sandbox; read-only metadata approval is pending.",
+      "summary": "Pinned unattended harness built. Claude/Codex repeat pairs pass. agy command rules fixed; linked Git metadata is outside its sandbox. Read-only metadata approval is pending.",
       "stage": "active",
       "sequence": 70,
       "prereqs": [],
       "linkedRunIds": [
-        "agent-cli/batch-1/claude-1",
-        "agent-cli/batch-1/claude-2",
-        "agent-cli/batch-3/codex-1",
-        "agent-cli/batch-3/codex-2",
-        "agent-cli/batch-8/agy-1"
+        "agent-cli:batch-1:claude-1",
+        "agent-cli:batch-1:claude-2",
+        "agent-cli:batch-3:codex-1",
+        "agent-cli:batch-3:codex-2",
+        "agent-cli:batch-8:agy-1"
       ],
       "confidence": "reported",
       "aheadOfPrereqs": null,
@@ -306,13 +306,13 @@
           "entryId": "cogin:agent-cli-comparison-harness:unattended-2026-10-24",
           "at": "2026-10-24T07:58:43.075439+00:00",
           "kind": "stage-change",
-          "message": "Harness implemented and pins verified. Claude/Codex repeatability gates pass; agy denied git log after approved bounded corrections. Four valid trials, no cross-lane conclusion. See docs/evidence/agent-cli-comparison-2026-10-24.md."
+          "message": "Harness built; pins verified. Claude/Codex repeat gates pass; agy denied git log after approved bounded fixes. Four valid trials; no cross-lane conclusion."
         },
         {
-          "entryId": "cogin:agent-cli-comparison-harness:windows-permissions-2026-10-24",
+          "entryId": "cogin:agent-cli-comparison-harness:win-permissions-2026-10-24",
           "at": "2026-10-24T08:23:20.765103+00:00",
           "kind": "note",
-          "message": "Approved Git log access applied. Windows regex rules now execute Python/Git; batches 6-8 remain excluded after denials. Batch 8 exposed inaccessible linked Git metadata; targeted read-only correction awaits approval. 15 tests pass."
+          "message": "Git log grant applied; Windows regex runs Python/Git. Batches 6-8 excluded: denials. Batch 8 linked Git metadata blocked; targeted read-only fix awaits approval. 15 tests pass."
         }
       ]
     },
