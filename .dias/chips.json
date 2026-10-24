@@ -358,7 +358,7 @@
       "chipId": "cogin:human-effort-measurements",
       "projectId": "cogin",
       "title": "Collect human approval and blind cleanup measurements",
-      "summary": "Local browser review and supervised controls are ready. Human measurements remain uncollected; agy lacks a supported approval channel. Missing scores remain null.",
+      "summary": "Six attested blind reviews collected: five zero-cleanup scores and one line to revert. Supervised sessions remain uncollected; agy lacks a supported approval channel.",
       "stage": "blocked",
       "sequence": 75,
       "prereqs": [
@@ -369,7 +369,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-10-24T14:02:20.155043+00:00",
-        "updatedAt": "2026-10-24T15:09:20.381394+00:00"
+        "updatedAt": "2026-10-24T16:16:22.933563+00:00"
       },
       "evidence": [
         {
@@ -383,6 +383,12 @@
           "at": "2026-10-24T15:09:20.381394+00:00",
           "kind": "note",
           "message": "Console adds saved blind reviews, line counts, locked submission, and explicit Claude/Codex approvals. 62 tests pass, including Chromium. Human measurements remain uncollected."
+        },
+        {
+          "entryId": "cogin:human-effort-measurements:reviewed-2026-10-24",
+          "at": "2026-10-24T16:16:22.933563+00:00",
+          "kind": "note",
+          "message": "Six submitted scores and reasons match saved answers; receipt and source hashes pass. Counts: 0,0,0,1,0,0. Submit now confirms on-page. Supervised sessions remain uncollected."
         }
       ]
     },

@@ -42,6 +42,7 @@ function queueSave() {
   return saving;
 }
 function changed() {
+  $("submit-confirmation").hidden = true;
   editVersion++;
   $("save-state").textContent = "Saving…";
   clearTimeout(timer); timer = setTimeout(queueSave, 250); updateProgress();
@@ -67,6 +68,8 @@ function renderCase() {
   $("previous").disabled = current === 0; $("next").disabled = current === data.cases.length - 1;
   $("reviewer").disabled = $("attestation").disabled = data.locked || submitting;
   $("submitted").hidden = !data.locked;
+  $("confirm-submit").disabled = $("cancel-submit").disabled = submitting;
+  if (data.locked) $("submit-confirmation").hidden = true;
   if (data.locked) $("save-state").textContent = "Submitted · scores locked";
   updateProgress();
 }
@@ -77,11 +80,21 @@ $("reviewer").oninput = () => { draft.reviewer = $("reviewer").value; changed();
 $("attestation").onchange = () => { draft.blind_attestation = $("attestation").checked; changed(); };
 $("previous").onclick = () => { current--; renderCase(); };
 $("next").onclick = () => { current++; renderCase(); };
-$("submit").onclick = async () => {
-  if (!confirm("Submit and lock all scores? You cannot edit them after submission.")) return;
+$("submit").onclick = () => {
+  $("submit-status").textContent = "";
+  $("submit-confirmation").hidden = false;
+  $("confirm-submit").focus();
+};
+$("cancel-submit").onclick = () => {
+  $("submit-confirmation").hidden = true;
+  $("submit").focus();
+};
+$("confirm-submit").onclick = async () => {
+  if ($("submit").disabled || $("submit-confirmation").hidden) return;
+  $("submit-status").textContent = "Saving and submitting your review…";
   submitting = true; renderCase();
-  try { await queueSave(); if (saveFailed) return; await api("submit", {revision: draft.revision}); data.locked = true; }
-  catch (error) { showError(error); }
+  try { await queueSave(); if (saveFailed) throw new Error("Your latest changes could not be saved. Reload before submitting."); await api("submit", {revision: draft.revision}); data.locked = true; }
+  catch (error) { $("submit-status").textContent = error.message; showError(error); }
   finally { submitting = false; renderCase(); }
 };
 for (const name of ["review", "sessions"]) $(name + "-tab").onclick = () => {

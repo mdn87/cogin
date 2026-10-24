@@ -29,6 +29,9 @@ def test_review_and_approval_controls_in_chromium(app, monkeypatch):
         with playwright.sync_playwright() as driver:
             browser = driver.chromium.launch()
             page = browser.new_page(viewport={"width": 1440, "height": 1100})
+            # Embedded browsers may suppress native dialogs. Submission must
+            # still offer a visible confirmation without relying on confirm().
+            page.add_init_script("window.confirm = () => false")
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
             page.goto(f"http://127.0.0.1:{server.server_port}/#{server.token}")
@@ -57,8 +60,14 @@ def test_review_and_approval_controls_in_chromium(app, monkeypatch):
                 page.screenshot(path=str(target / "review-console-mobile.png"), full_page=True)
                 assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                 page.set_viewport_size({"width": 1440, "height": 1100})
-            page.once("dialog", lambda dialog: dialog.accept())
             page.locator("#submit").click()
+            expect(page.locator("#submit-confirmation")).to_be_visible()
+            assert not app.is_locked()
+            page.locator("#cancel-submit").click()
+            expect(page.locator("#submit-confirmation")).to_be_hidden()
+            assert not app.is_locked()
+            page.locator("#submit").click()
+            page.locator("#confirm-submit").click()
             expect(page.locator("#submitted")).to_be_visible()
             page.reload()
             expect(page.locator("#reason")).to_be_disabled()

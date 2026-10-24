@@ -26,9 +26,11 @@ per package. The link is local access, not a remote reviewer invitation.
   computer” before closing. Reload to resume; competing tab edits are rejected
   rather than silently overwritten. A preexisting manual score form is preserved
   and must be imported using the command below before opening the console.
-- Enter your name, attest that the review was blind, and submit to lock all
-  scores. The controller mapping and derived reports are never served by the
-  browser. Submission rechecks the package and uses the existing score validator.
+- Enter your name, attest that the review was blind, click **Submit and lock
+  review**, then **Yes, submit and lock** in the on-page confirmation. **Keep
+  editing** cancels without submitting. The controller mapping and derived
+  reports are never served by the browser. Submission rechecks the package and
+  uses the existing score validator.
 - **Supervised sessions:** enter your name and explicitly start Claude or
   Codex. Inspect each native request and click **Allow once** or **Deny**.
   The page never grants persistent permission or answers automatically.

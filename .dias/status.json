@@ -8,13 +8,13 @@
   "milestonePhase": "closeout",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-24T15:09:20.381394+00:00",
+  "assessedAt": "2026-10-24T16:16:22.933563+00:00",
   "confidence": "reported",
-  "currentMilestone": "Human collection console delivered: saved blind reviews and explicit Claude/Codex approvals. Actual human measurements remain uncollected.",
-  "remainingSummary": "Human reviewer and operator needed to collect scores. agy headless mode auto-denies; a supported interactive approval channel is required for that lane.",
+  "currentMilestone": "Human collection console delivered; six attested blind reviews collected. Five patches need zero cleanup; one has one line selected for reversion.",
+  "remainingSummary": "Human operator needed for supervised sessions. agy headless mode cannot prompt; that lane requires a supported interactive approval channel.",
   "nextChipId": "cogin:human-effort-measurements",
   "source": {
-    "label": "62 tests pass, including Chromium review and simulated approvals. Local console ready; human measurements uncollected. agy cannot prompt. V2 evidence preserved.",
+    "label": "62 tests pass, including submission with native dialogs suppressed. Six review scores verified; supervised sessions uncollected. V2 source evidence preserved.",
     "updatedAt": "2026-10-24"
   }
 }
