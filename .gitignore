@@ -53,3 +53,6 @@ node_modules
 
 # Local Git worktrees
 .worktrees/
+
+# Private agent-comparison runs and isolated fixture repositories
+src/agent-cli-harness/runs/

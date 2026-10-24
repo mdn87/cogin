@@ -1,6 +1,9 @@
 # Agent CLI Comparison Harness
 
-**Status:** spec, not implemented
+**Status:** unattended harness implemented; live evidence and remaining limits
+are in [the 2026-10-24 report](../evidence/agent-cli-comparison-2026-10-24.md).
+Supervised approval counts and blind human cleanup scoring remain a later phase.
+Implementation: [`src/agent-cli-harness`](../../src/agent-cli-harness/).
 **Relationship to Wave 1:** none. This is a separate experiment with a separate
 harness. Do not extend `taxonomy_bench_wave.py` for it.
 
@@ -107,10 +110,19 @@ run the app, verify behavior in the browser, produce a clean diff.
 6. Diff and fresh-checkout test scorer.
 7. Report renderer; blind review pass for the cleanup metric.
 
-Steps 1-7 are roughly a day.
+Steps 1-6 and unattended report rendering are implemented. Approval-event
+counting and blind human review are not implemented; their scores remain null.
 
 ## Gate
 
 The harness is trustworthy only when the same lane run twice on the seed SHA
 produces the same turn count within noise and the same off-target diff verdict.
 Until then, cross-lane differences are not evidence.
+
+The first unattended batch freezes tolerance at an assistant-event difference
+of `max(2, ceil(0.25 * larger_count))`, with matching off-target verdicts and two
+protocol-valid trials. Assistant-event counts have different meanings across
+CLIs; this checks within-lane consistency. Binary paths, hashes, versions,
+requested models/effort, permissions, prompt and fixture hashes are recorded.
+Denied or incomplete trials are retained and excluded rather than retried
+silently. Permission changes require approval and a separate batch.
