@@ -1,0 +1,485 @@
+{
+  "schema_version": 1,
+  "protocol_version": 2,
+  "recorded_at": "2026-10-24T13:24:45.868242+00:00",
+  "status": "unattended v2 trial collection complete",
+  "manifest_sha256": "a041bcda70413d6c0227e66009bc94f39b41858deebfd6f8a5d9b00d5ef1270d",
+  "seed_commit": "ffb5bb0a74367996b8e44a19ce1a3152820ae5a2",
+  "prompt_sha256": "e47ebc9926fe7e8d1f0b4d991b2d67c709e777a2ee4b739c99af11ec4ac2d85b",
+  "fixture_hashes": {
+    ".gitignore": "6092ed74faaa59ce74f8b62d09985305f7909f7253baec201a72edeb5fc492e1",
+    "app.py": "27bf02f5bb74fb103fce278c24a0a813c1057f20e75ef704a114854ce900d08e",
+    "browser_check.py": "d6c42ab4a42b937df34e13be695d811d1da5122a6e7fd5cb73a889914ed72bdf",
+    "test_app.py": "e1a6ad89add46d4243be971820d1e64822ba85c26156905b7386f22d59b867cf"
+  },
+  "scoring_source_sha256": "4eaecd99b1df1709dad92792adda3d68df13666a4c8a7bc96a771afe3fdf2d95",
+  "historical_v1_report": "agent-cli-comparison-2026-10-24.json",
+  "browser_verification_owner": "independent clean-checkout verifier",
+  "host": {
+    "os": "Windows 11",
+    "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+    "browser": {
+      "browser": "chromium",
+      "browser_version": "149.0.7827.55",
+      "feature": false,
+      "result": "passed"
+    }
+  },
+  "pins": {
+    "claude": {
+      "sha256": "76de74f7694a5bdc03378a5f837c9e132827bf004c98c276bc4e9094ff06769a",
+      "version": "2.1.296 (Claude Code)",
+      "model": "claude-sonnet-5",
+      "effort": "medium"
+    },
+    "codex": {
+      "sha256": "6f267830b029ee25d9339864aa867cd45de9f8fd4c5ea007d2e63c13a0c66d36",
+      "version": "codex-cli 0.164.0",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "windows_sandbox": "unelevated"
+    },
+    "agy": {
+      "sha256": "22588b6d5a6f6d2d66091c73dfb9255edc7bdafe9aff9dd20d958ce116496695",
+      "version": "1.4.7",
+      "model": "gemini-3.8-flash-medium",
+      "effort": "medium",
+      "inspection_commands": [
+        "command(Get-ChildItem)",
+        "command(Get-Content)",
+        "command(dir)",
+        "command(ls)",
+        "command(regex:Get-ChildItem .*)",
+        "command(regex:Get-Content .*)",
+        "command(regex:dir .*)",
+        "command(regex:ls .*)",
+        "command(cat app.py)",
+        "command(cat test_app.py)",
+        "command(cat browser_check.py)",
+        "command(type app.py)",
+        "command(type test_app.py)",
+        "command(type browser_check.py)",
+        "command(git log)",
+        "command(regex:git log .*)"
+      ],
+      "permission_syntax": "windows-command-regex-v2",
+      "exact_commands": [
+        "command(python -m unittest -q)",
+        "command(python browser_check.py --feature --screenshot browser.png)",
+        "command(regex:^Select-String -Path \\* -Pattern \"status-filter\"$)",
+        "command(git log -p -2)",
+        "command(regex:^git show ffb5bb0a74367996b8e44a19ce1a3152820ae5a2$)"
+      ],
+      "read_seed_git_metadata": true,
+      "cmd_directory_listing": true,
+      "shell": {
+        "sha256": "fa2c8bb1e35cdd62ad15cd06a1d8f2c5961e9725a9bfa1e7cfd2c322f49e9619",
+        "version": "PowerShell 7.6.7"
+      }
+    }
+  },
+  "runs": [
+    {
+      "source_batch": "protocol-v2-batch-2",
+      "source_manifest_sha256": "a041bcda70413d6c0227e66009bc94f39b41858deebfd6f8a5d9b00d5ef1270d",
+      "run_id": "agy-1",
+      "lane": "agy",
+      "repeat": 1,
+      "protocol_version": 2,
+      "model": "gemini-3.8-flash-medium",
+      "effort": "medium",
+      "version": "1.4.7",
+      "binary_sha256": "22588b6d5a6f6d2d66091c73dfb9255edc7bdafe9aff9dd20d958ce116496695",
+      "wall_seconds": 288.348,
+      "returncode": 0,
+      "timed_out": false,
+      "valid": true,
+      "protocol_errors": [],
+      "assistant_events": 19,
+      "native_turns": 1,
+      "tool_events": 18,
+      "permission_mode": "request-review",
+      "reported_model": "gemini-3.8-flash-medium",
+      "changed_files": [
+        "app.py",
+        "test_app.py"
+      ],
+      "changed_lines": 167,
+      "off_target_lines": 0,
+      "off_target_files": [],
+      "off_target": false,
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": true
+      },
+      "patch_sha256": "8f58ca89610d5cae3c04bf52356d02f6bcf9b4d897650dff9d839e5c5b6cab62",
+      "task_passed": true,
+      "test_command_observed": true,
+      "browser_command_observed": false,
+      "subject_browser_artifact": false,
+      "interruptions": null,
+      "human_cleanup_lines": null,
+      "artifact_hashes": {
+        "stdout.jsonl": "35b9ccf15ceadceff126accac81d82aa46645aea7724774eb4023cc5c6f73a7a",
+        "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "invocation.json": "f97571bd0325462e810c0a9a802cf8a49c8fc3a26d883ec8dc65e3761ffb6f2a",
+        "changes.patch": "8f58ca89610d5cae3c04bf52356d02f6bcf9b4d897650dff9d839e5c5b6cab62",
+        "output.bundle": "ebc5d5e106dca5a929695879a233cfb62c1319783f937499c60eede810dc980d",
+        "fresh-tests.txt": "1ace896c6b73fc82b85e36bfa660eb655c2c6ffe68d714a7513f591d44e0e3cd",
+        "fresh-browser.txt": "cd0b12378047c194dd6b6e0ddc6bd98239d1723c010134dbc77f609162d457dd",
+        "fresh-browser.png": "48d0d40d65d9d7fac41f52e16c3950d63d2b0945ae2159cd2b0cb1a41210721f"
+      }
+    },
+    {
+      "source_batch": "protocol-v2-batch-2",
+      "source_manifest_sha256": "a041bcda70413d6c0227e66009bc94f39b41858deebfd6f8a5d9b00d5ef1270d",
+      "run_id": "agy-2",
+      "lane": "agy",
+      "repeat": 2,
+      "protocol_version": 2,
+      "model": "gemini-3.8-flash-medium",
+      "effort": "medium",
+      "version": "1.4.7",
+      "binary_sha256": "22588b6d5a6f6d2d66091c73dfb9255edc7bdafe9aff9dd20d958ce116496695",
+      "wall_seconds": 250.004,
+      "returncode": 0,
+      "timed_out": false,
+      "valid": true,
+      "protocol_errors": [],
+      "assistant_events": 22,
+      "native_turns": 1,
+      "tool_events": 21,
+      "permission_mode": "request-review",
+      "reported_model": "gemini-3.8-flash-medium",
+      "changed_files": [
+        "app.py",
+        "test_app.py"
+      ],
+      "changed_lines": 141,
+      "off_target_lines": 0,
+      "off_target_files": [],
+      "off_target": false,
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": true
+      },
+      "patch_sha256": "c0932bdc3c2d9948159f050ad90ed3ea0ecc5d6c4de94ee90d501208ffb494cc",
+      "task_passed": true,
+      "test_command_observed": true,
+      "browser_command_observed": false,
+      "subject_browser_artifact": false,
+      "interruptions": null,
+      "human_cleanup_lines": null,
+      "artifact_hashes": {
+        "stdout.jsonl": "e89f69c4264aab2ca08a14218c793f4b693a2ef359b974da40227b32311ae232",
+        "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "invocation.json": "742e2c4bd35fcc4487719f738df33ebeb93d2167c1eee30fbf01aafbf1ed88a0",
+        "changes.patch": "c0932bdc3c2d9948159f050ad90ed3ea0ecc5d6c4de94ee90d501208ffb494cc",
+        "output.bundle": "f382bb2059cffabfc8a5d8a3ea2cbad00940ed17c253bca27d8d3fdcd6304704",
+        "fresh-tests.txt": "1ace896c6b73fc82b85e36bfa660eb655c2c6ffe68d714a7513f591d44e0e3cd",
+        "fresh-browser.txt": "cd0b12378047c194dd6b6e0ddc6bd98239d1723c010134dbc77f609162d457dd",
+        "fresh-browser.png": "48d0d40d65d9d7fac41f52e16c3950d63d2b0945ae2159cd2b0cb1a41210721f"
+      }
+    },
+    {
+      "source_batch": "protocol-v2-batch-1",
+      "source_manifest_sha256": "adbe87b09e4013c8a40c284c1641fc7370b23134732a909c3633fdcefef5b07e",
+      "run_id": "claude-1",
+      "lane": "claude",
+      "repeat": 1,
+      "protocol_version": 2,
+      "model": "claude-sonnet-5",
+      "effort": "medium",
+      "version": "2.1.296 (Claude Code)",
+      "binary_sha256": "76de74f7694a5bdc03378a5f837c9e132827bf004c98c276bc4e9094ff06769a",
+      "wall_seconds": 47.726,
+      "returncode": 0,
+      "timed_out": false,
+      "valid": true,
+      "protocol_errors": [],
+      "assistant_events": 14,
+      "native_turns": 9,
+      "tool_events": 8,
+      "permission_mode": "acceptEdits",
+      "reported_model": "claude-sonnet-5",
+      "changed_files": [
+        "app.py",
+        "test_app.py"
+      ],
+      "changed_lines": 128,
+      "off_target_lines": 0,
+      "off_target_files": [],
+      "off_target": false,
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": true
+      },
+      "patch_sha256": "e682a41c053dab718480c5bcba8209485df310bbcda307a7979dbb44f062a5a5",
+      "task_passed": true,
+      "test_command_observed": true,
+      "browser_command_observed": false,
+      "subject_browser_artifact": false,
+      "interruptions": null,
+      "human_cleanup_lines": null,
+      "artifact_hashes": {
+        "stdout.jsonl": "1ce4f7b0ca4870893dd73648093bdd3807318a4fcbaab4e8a5e5c46bb7020e49",
+        "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "invocation.json": "f229b606bde59c6c7c45eb2a2b5e3a8983e88fe997e4c2ac7a4b3b1685ada7b2",
+        "changes.patch": "e682a41c053dab718480c5bcba8209485df310bbcda307a7979dbb44f062a5a5",
+        "output.bundle": "770a9b20d5b1565911976f0be1e10f39e6e67387f9a0a8bafc804e13c3e2c260",
+        "fresh-tests.txt": "c2b19081acc19f74164f1916602aeb5d7e1d502f228746bfdd824fce92b18bd5",
+        "fresh-browser.txt": "cd0b12378047c194dd6b6e0ddc6bd98239d1723c010134dbc77f609162d457dd",
+        "fresh-browser.png": "48d0d40d65d9d7fac41f52e16c3950d63d2b0945ae2159cd2b0cb1a41210721f"
+      }
+    },
+    {
+      "source_batch": "protocol-v2-batch-1",
+      "source_manifest_sha256": "adbe87b09e4013c8a40c284c1641fc7370b23134732a909c3633fdcefef5b07e",
+      "run_id": "claude-2",
+      "lane": "claude",
+      "repeat": 2,
+      "protocol_version": 2,
+      "model": "claude-sonnet-5",
+      "effort": "medium",
+      "version": "2.1.296 (Claude Code)",
+      "binary_sha256": "76de74f7694a5bdc03378a5f837c9e132827bf004c98c276bc4e9094ff06769a",
+      "wall_seconds": 43.576,
+      "returncode": 0,
+      "timed_out": false,
+      "valid": true,
+      "protocol_errors": [],
+      "assistant_events": 12,
+      "native_turns": 8,
+      "tool_events": 7,
+      "permission_mode": "acceptEdits",
+      "reported_model": "claude-sonnet-5",
+      "changed_files": [
+        "app.py",
+        "test_app.py"
+      ],
+      "changed_lines": 119,
+      "off_target_lines": 0,
+      "off_target_files": [],
+      "off_target": false,
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": true
+      },
+      "patch_sha256": "0a7cbd19c97ddf0f7e40534575c5f34cf16e9d1f24f0505289d781feb52732ca",
+      "task_passed": true,
+      "test_command_observed": true,
+      "browser_command_observed": false,
+      "subject_browser_artifact": false,
+      "interruptions": null,
+      "human_cleanup_lines": null,
+      "artifact_hashes": {
+        "stdout.jsonl": "9713f95dd3c16770ecd3c5e176d8f4eb1be8a657224761c6cbaa48c1e83af99f",
+        "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "invocation.json": "b3eb41211ef11a871313dc6b810de092b214ae3dabeda11487f15e61b411840e",
+        "changes.patch": "0a7cbd19c97ddf0f7e40534575c5f34cf16e9d1f24f0505289d781feb52732ca",
+        "output.bundle": "d2de5fb43bf1ad194b5a8749def5dd9ad5e6ae49dfca2dfd4faf42c314c55217",
+        "fresh-tests.txt": "8ba745e795edce97faf079d3348502982c075f5eac606eec17eccacc0783f018",
+        "fresh-browser.txt": "cd0b12378047c194dd6b6e0ddc6bd98239d1723c010134dbc77f609162d457dd",
+        "fresh-browser.png": "48d0d40d65d9d7fac41f52e16c3950d63d2b0945ae2159cd2b0cb1a41210721f"
+      }
+    },
+    {
+      "source_batch": "protocol-v2-batch-1",
+      "source_manifest_sha256": "adbe87b09e4013c8a40c284c1641fc7370b23134732a909c3633fdcefef5b07e",
+      "run_id": "codex-1",
+      "lane": "codex",
+      "repeat": 1,
+      "protocol_version": 2,
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "version": "codex-cli 0.164.0",
+      "binary_sha256": "6f267830b029ee25d9339864aa867cd45de9f8fd4c5ea007d2e63c13a0c66d36",
+      "wall_seconds": 109.741,
+      "returncode": 0,
+      "timed_out": false,
+      "valid": true,
+      "protocol_errors": [],
+      "assistant_events": 3,
+      "native_turns": null,
+      "tool_events": 6,
+      "permission_mode": null,
+      "reported_model": null,
+      "changed_files": [
+        "app.py",
+        "test_app.py"
+      ],
+      "changed_lines": 107,
+      "off_target_lines": 0,
+      "off_target_files": [],
+      "off_target": false,
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": true
+      },
+      "patch_sha256": "f0f4df2814252b23f60c090eeceae24a6b92e99e3008de6e4a582eeb95df3146",
+      "task_passed": true,
+      "test_command_observed": true,
+      "browser_command_observed": false,
+      "subject_browser_artifact": false,
+      "interruptions": null,
+      "human_cleanup_lines": null,
+      "artifact_hashes": {
+        "stdout.jsonl": "e770e2fadc8b04a7481d1923276faea92e5236e76cd676d75d734049a99b23fd",
+        "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "invocation.json": "becc55fda8ee045ebb8716b19a86f98c1844cd89256fc9bbd3a8ad5a887048b0",
+        "changes.patch": "f0f4df2814252b23f60c090eeceae24a6b92e99e3008de6e4a582eeb95df3146",
+        "output.bundle": "78aec4d9bf3ae6ebbe8ec84b500196966d840473643c129f48d6e661c15a8711",
+        "fresh-tests.txt": "90d820987eebeed643123fcd7b1049e2c374e338a279e52de52f374f6eca350d",
+        "fresh-browser.txt": "cd0b12378047c194dd6b6e0ddc6bd98239d1723c010134dbc77f609162d457dd",
+        "fresh-browser.png": "af51c4356bd9b2fe54cb3b37c8d91d50397bd6f1c0f0c2ffd99450e85d024202"
+      }
+    },
+    {
+      "source_batch": "protocol-v2-batch-1",
+      "source_manifest_sha256": "adbe87b09e4013c8a40c284c1641fc7370b23134732a909c3633fdcefef5b07e",
+      "run_id": "codex-2",
+      "lane": "codex",
+      "repeat": 2,
+      "protocol_version": 2,
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "version": "codex-cli 0.164.0",
+      "binary_sha256": "6f267830b029ee25d9339864aa867cd45de9f8fd4c5ea007d2e63c13a0c66d36",
+      "wall_seconds": 44.57,
+      "returncode": 0,
+      "timed_out": false,
+      "valid": true,
+      "protocol_errors": [],
+      "assistant_events": 2,
+      "native_turns": null,
+      "tool_events": 4,
+      "permission_mode": null,
+      "reported_model": null,
+      "changed_files": [
+        "app.py",
+        "test_app.py"
+      ],
+      "changed_lines": 111,
+      "off_target_lines": 0,
+      "off_target_files": [],
+      "off_target": false,
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": true
+      },
+      "patch_sha256": "250982fdbad97ebe5efcb468df8fa6392f41af83155acd4907490aacd67dc609",
+      "task_passed": true,
+      "test_command_observed": true,
+      "browser_command_observed": false,
+      "subject_browser_artifact": false,
+      "interruptions": null,
+      "human_cleanup_lines": null,
+      "artifact_hashes": {
+        "stdout.jsonl": "7b62692040ba345883365b9e1b9978a717380ccd04205a478527bc2eea26f12c",
+        "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "invocation.json": "81585aa1016352976c4ef93b354c2ef79c6655f09e98ba8c8b389a399fea6388",
+        "changes.patch": "250982fdbad97ebe5efcb468df8fa6392f41af83155acd4907490aacd67dc609",
+        "output.bundle": "b70ed4ea2b819b03cd5c2e7743e00f272e8955c65f9968db0a17517bd794eb45",
+        "fresh-tests.txt": "01b59886a0b6fa2153962fa8db2628558f54f6970bd120fa93475aee3050774e",
+        "fresh-browser.txt": "cd0b12378047c194dd6b6e0ddc6bd98239d1723c010134dbc77f609162d457dd",
+        "fresh-browser.png": "97b8412a088d2f00b27bd5c9998ae2f9ff753c4d9bf53e58e14b757ff0da1ff6"
+      }
+    }
+  ],
+  "excluded_previous_trials": [
+    {
+      "source_batch": "protocol-v2-batch-1",
+      "source_manifest_sha256": "adbe87b09e4013c8a40c284c1641fc7370b23134732a909c3633fdcefef5b07e",
+      "run_id": "agy-1",
+      "lane": "agy",
+      "repeat": 1,
+      "protocol_version": 2,
+      "model": "gemini-3.8-flash-medium",
+      "effort": "medium",
+      "version": "1.4.7",
+      "binary_sha256": "22588b6d5a6f6d2d66091c73dfb9255edc7bdafe9aff9dd20d958ce116496695",
+      "wall_seconds": 98.556,
+      "returncode": 0,
+      "timed_out": false,
+      "valid": false,
+      "protocol_errors": [
+        "permission denial"
+      ],
+      "assistant_events": 7,
+      "native_turns": 1,
+      "tool_events": 6,
+      "permission_mode": "request-review",
+      "reported_model": "gemini-3.8-flash-medium",
+      "changed_files": [],
+      "changed_lines": 0,
+      "off_target_lines": 0,
+      "off_target_files": [],
+      "off_target": false,
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": false
+      },
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "task_passed": false,
+      "test_command_observed": false,
+      "browser_command_observed": false,
+      "subject_browser_artifact": false,
+      "interruptions": null,
+      "human_cleanup_lines": null,
+      "artifact_hashes": {
+        "stdout.jsonl": "7da56806a4f6287e0e0d6c7ff7122ba8c9e1ad840b8bcda428da5d46a7ae451a",
+        "stderr.txt": "6f9b232ca1f3b43aa72e2ba63698c09b0796b612d5a17cf05efee31e6c79b713",
+        "invocation.json": "6efb8a4db1dcad2802a427af2430008da5c79340b667fb60d8dab394a05a158a",
+        "changes.patch": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "output.bundle": "8ef5a5f12c1f43fce2c8d6797f8c7d04c8c1af05f3571982e44dae6ff8ce820c",
+        "fresh-tests.txt": "ee0c415ed4ae39e66df00a3da1f6fcdc7a293e8b1f299a9c60c9ad0594c0faa0",
+        "fresh-browser.txt": "6078f3da62b28ed7f954741409a608f726f399382dcc2e16c119fb7524ea9315"
+      }
+    }
+  ],
+  "repeatability": {
+    "claude": {
+      "eligible": true,
+      "assistant_event_counts": [
+        14,
+        12
+      ],
+      "allowed_difference": 4,
+      "reason": "within predeclared tolerance"
+    },
+    "codex": {
+      "eligible": true,
+      "assistant_event_counts": [
+        3,
+        2
+      ],
+      "allowed_difference": 2,
+      "reason": "within predeclared tolerance"
+    },
+    "agy": {
+      "eligible": true,
+      "assistant_event_counts": [
+        19,
+        22
+      ],
+      "allowed_difference": 6,
+      "reason": "within predeclared tolerance"
+    }
+  },
+  "cross_lane_evidence_eligible": true,
+  "limitations": [
+    "Two repeats of one small task per lane do not establish statistical equivalence, a model ranking, or a migration recommendation.",
+    "V2 measures browser-correct patches through an independent verifier; it does not measure subjects driving a browser. V1 scores and timing are historical and are not pooled with v2.",
+    "Requested model selectors and medium effort are pinned. The Codex event stream does not attest its backend model identity.",
+    "CLI implementations and sandbox behavior differ. The agy sandbox flag is retained; its presence alone does not establish OS sandbox availability.",
+    "Assistant-event counts have provider-specific semantics and support only the frozen within-lane repeatability gate.",
+    "Supervised interruptions and blind human cleanup scores remain unmeasured (null)."
+  ]
+}

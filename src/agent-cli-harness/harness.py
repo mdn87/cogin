@@ -9,6 +9,8 @@ import json
 import math
 import os
 from pathlib import Path
+import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -89,6 +91,40 @@ def score_numstat(text):
     return {"changed_lines": total, "off_target_lines": off, "off_target_files": files, "off_target": bool(files)}
 
 
+def observe_command(result, command_text):
+    """Recognize direct Python runs, not filenames in searches or quoted text."""
+    try:
+        lexer = shlex.shlex(command_text, posix=True, punctuation_chars=";&|")
+        lexer.whitespace_split = True
+        lexer.commenters = ""
+        tokens = list(lexer)
+    except ValueError:
+        return
+    segments = [[]]
+    for token in tokens:
+        if token and all(char in ";&|" for char in token):
+            segments.append([])
+        else:
+            segments[-1].append(token)
+    for args in segments:
+        if not args:
+            continue
+        executable = args[0].replace("\\", "/").rsplit("/", 1)[-1].lower()
+        if executable in {"pwsh", "pwsh.exe", "powershell", "powershell.exe", "bash", "sh"}:
+            for index, token in enumerate(args[1:], 1):
+                if token.lower() in {"-command", "-c", "-lc"} and index + 1 < len(args):
+                    observe_command(result, args[index + 1])
+                    break
+        elif re.fullmatch(r"python(?:[23](?:\.\d+)?)?(?:\.exe)?", executable):
+            arguments = args[1:]
+            while arguments and arguments[0] in {"-u", "-B", "-E", "-I", "-s", "-S"}:
+                arguments = arguments[1:]
+            if arguments:
+                script = arguments[0].replace("\\", "/").rsplit("/", 1)[-1]
+                result["browser_command_observed"] |= script == "browser_check.py"
+                result["test_command_observed"] |= arguments[:2] == ["-m", "unittest"]
+
+
 def parse_events(lane, text):
     result = {"completed": False, "assistant_events": 0, "tool_events": 0,
               "native_turns": None, "permission_mode": None, "reported_model": None,
@@ -118,8 +154,7 @@ def parse_events(lane, text):
                     result["assistant_events"] += 1
                 elif item.get("type") in {"command_execution", "mcp_tool_call", "web_search", "file_change"}:
                     result["tool_events"] += 1
-                    result["browser_command_observed"] |= "browser_check.py" in item.get("command", "")
-                    result["test_command_observed"] |= "unittest" in item.get("command", "")
+                    observe_command(result, item.get("command", ""))
         elif lane == "claude":
             if kind == "system" and event.get("subtype") == "init":
                 result.update(permission_mode=event.get("permissionMode"), reported_model=event.get("model"),
@@ -131,8 +166,7 @@ def parse_events(lane, text):
                         result["tool_events"] += 1
                         if item.get("name") == "Bash":
                             cmd = item.get("input", {}).get("command", "")
-                            result["browser_command_observed"] |= "browser_check.py" in cmd
-                            result["test_command_observed"] |= "unittest" in cmd
+                            observe_command(result, cmd)
             elif kind == "result":
                 result["completed"] = event.get("subtype") == "success" and not event.get("is_error", False)
                 result["native_turns"] = event.get("num_turns")
@@ -159,8 +193,7 @@ def parse_events(lane, text):
                     elif step.get("step_type") == "tool":
                         result["tool_events"] += 1
                         tool_text = tool_inputs.get(key, "")
-                        result["browser_command_observed"] |= "browser_check.py" in tool_text
-                        result["test_command_observed"] |= "unittest" in tool_text
+                        observe_command(result, tool_text)
             elif kind == "result":
                 terminal = event.get("result", {})
                 result["completed"] = terminal.get("status") == "SUCCESS"
@@ -197,6 +230,24 @@ def repeatability(runs):
             "reason": "within predeclared tolerance" if stable else "repeatability gate failed"}
 
 
+def protocol_version(manifest):
+    version = manifest.get("protocol_version", 1)
+    if type(version) is not int or version not in (1, 2):
+        raise ValueError("Unsupported comparison protocol version")
+    return version
+
+
+def task_passed(manifest, run):
+    version = protocol_version(manifest)
+    accepted = (run["verification"].get("tests_passed", False)
+                and run["verification"].get("browser_passed", False)
+                and run["test_command_observed"] and not run["off_target"]
+                and "test_app.py" in run["changed_files"])
+    if version == 1:
+        accepted = accepted and run["browser_command_observed"] and run["subject_browser_artifact"]
+    return bool(accepted)
+
+
 def prepare(args):
     root = args.root.resolve()
     if root.exists():
@@ -217,14 +268,15 @@ def prepare(args):
                       "version": command([str(path), "--version"], env=environment()).stdout.strip(),
                       "model": MODELS[lane], "effort": "medium"}
         if lane == "agy":
-            pins[lane]["permission_syntax"] = "windows-command-regex-v1"
+            pins[lane]["permission_syntax"] = "windows-command-regex-v2"
             pins[lane]["exact_commands"] = list(AGY_TASK_COMMANDS)
         if lane == "codex" and args.windows_sandbox:
             pins[lane]["windows_sandbox"] = args.windows_sandbox
         verify_binary(pins[lane])
-    prompt = (HERE / "task.txt").read_bytes().replace(b"\r\n", b"\n")
+    version = args.protocol_version
+    prompt = (HERE / ("task-v2.txt" if version == 2 else "task.txt")).read_bytes().replace(b"\r\n", b"\n")
     (root / "task.txt").write_bytes(prompt)
-    manifest = {"schema_version": 1, "created_at": datetime.now(timezone.utc).isoformat(),
+    manifest = {"schema_version": 1, "protocol_version": version, "created_at": datetime.now(timezone.utc).isoformat(),
                 "seed_commit": seed_commit, "prompt_sha256": digest(prompt), "lanes": pins,
                 "mode": "unattended", "repeats": 2, "timeout_seconds": TIMEOUT,
                 "repeatability": {"absolute_assistant_events": 2, "relative_assistant_events": 0.25},
@@ -244,6 +296,7 @@ def load_manifest(root):
     if file_hash(root / "manifest.json") != (root / "manifest.sha256").read_text().strip():
         raise ValueError("Manifest changed")
     manifest = json.loads((root / "manifest.json").read_text())
+    protocol_version(manifest)
     if file_hash(root / "task.txt") != manifest["prompt_sha256"]:
         raise ValueError("Task prompt changed")
     for name, expected in manifest["fixture_hashes"].items():
@@ -255,6 +308,10 @@ def load_manifest(root):
 def prepare_corrected(args):
     source = args.source.resolve()
     manifest = load_manifest(source)
+    previous_version = protocol_version(manifest)
+    requested_version = args.protocol_version or previous_version
+    if requested_version < previous_version:
+        raise ValueError("Cannot downgrade comparison protocol")
     root = args.root.resolve()
     if root.exists():
         raise ValueError("Corrected batch directory already exists")
@@ -264,7 +321,15 @@ def prepare_corrected(args):
     command(["git", "clone", "--no-local", "--single-branch", "--no-tags", "--branch", "main", str(source / "seed"), str(root / "seed")])
     if git(root / "seed", "rev-parse", "HEAD").stdout.strip() != manifest["seed_commit"]:
         raise ValueError("Corrected batch seed differs")
-    shutil.copyfile(source / "task.txt", root / "task.txt")
+    if requested_version != previous_version:
+        prompt = (HERE / "task-v2.txt").read_bytes().replace(b"\r\n", b"\n")
+        (root / "task.txt").write_bytes(prompt)
+        manifest["prompt_sha256"] = digest(prompt)
+        manifest["protocol_version"] = requested_version
+        manifest["protocol_migration"] = {"from": previous_version, "to": requested_version,
+                                           "authorization": args.authorization}
+    else:
+        shutil.copyfile(source / "task.txt", root / "task.txt")
     manifest["created_at"] = datetime.now(timezone.utc).isoformat()
     manifest["parent_manifest_sha256"] = file_hash(source / "manifest.json")
     manifest["permission_corrections"] = {
@@ -273,7 +338,8 @@ def prepare_corrected(args):
         "agy": "Allow Get-ChildItem and Get-Content for fixture inspection, including their verified dir/ls/cat/type aliases; sandbox and existing denies retained.",
     }
     manifest["lanes"]["codex"]["windows_sandbox"] = "unelevated"
-    manifest["lanes"]["agy"]["permission_syntax"] = "windows-command-regex-v1"
+    manifest["lanes"]["agy"]["permission_syntax"] = "windows-command-regex-v2"
+    manifest["permission_corrections"]["agy"] += " Multiline Python matching fixes the existing Python command grant; no other command prefix added."
     manifest["lanes"]["agy"]["cmd_directory_listing"] = True
     manifest["permission_corrections"]["agy"] += " Exact cmd /c dir spelling of authorized fixture listing; no other cmd commands or arguments."
     # Windows commands may require full-line matches even when their command
@@ -330,11 +396,13 @@ def invocation(lane, pin, worktree, home):
         permission_file = home / ".gemini/antigravity-cli/settings.json"
         # Keep historical manifests reproducible; new manifests pin corrected
         # literal-prefix semantics documented by the CLI permission engine.
-        if pin.get("permission_syntax") in {"literal-prefix-v1", "windows-command-regex-v1"}:
+        if pin.get("permission_syntax") in {"literal-prefix-v1", "windows-command-regex-v1", "windows-command-regex-v2"}:
             allows = [f"read_file({worktree.as_posix()})", f"write_file({worktree.as_posix()})",
                       "command(python)", "command(git diff)", "command(git status)"]
             if pin["permission_syntax"] == "windows-command-regex-v1":
                 allows += ["command(regex:python .*)", "command(regex:git diff .*)", "command(regex:git status .*)"]
+            elif pin["permission_syntax"] == "windows-command-regex-v2":
+                allows += [r"command(regex:^python [\s\S]*$)", "command(regex:git diff .*)", "command(regex:git status .*)"]
         else:
             allows = ["read_file(*)", f"write_file({worktree.as_posix()}/**)",
                       "command(python *)", "command(git diff*)", "command(git status*)"]
@@ -463,6 +531,7 @@ def finalize_run(root, lane, repeat):
     stderr = (artifacts / "stderr.txt").read_text(encoding="utf-8", errors="replace")
     errors = protocol_errors(lane, pin, parsed, returncode, timeout, stderr)
     result = {"run_id": run_id, "lane": lane, "repeat": repeat, "model": pin["model"],
+              "protocol_version": protocol_version(manifest),
               "effort": "medium", "version": pin["version"], "binary_sha256": pin["sha256"],
               "wall_seconds": elapsed, "returncode": returncode, "timed_out": timeout,
               "valid": not errors, "protocol_errors": errors, **parsed, **score,
@@ -470,10 +539,8 @@ def finalize_run(root, lane, repeat):
               "subject_browser_artifact": (artifacts / "subject-browser.png").is_file(),
               "process_recovery_note": process.get("recovery_note"),
               "interruptions": None, "human_cleanup_lines": None,
-              "task_passed": verification.get("tests_passed", False) and verification.get("browser_passed", False)
-                             and parsed["test_command_observed"] and parsed["browser_command_observed"]
-                             and (artifacts / "subject-browser.png").is_file()
-                             and not score["off_target"] and "test_app.py" in git(seed, "diff", "--name-only", manifest["seed_commit"], revision).stdout.splitlines()}
+              "changed_files": git(seed, "diff", "--name-only", manifest["seed_commit"], revision).stdout.splitlines()}
+    result["task_passed"] = task_passed(manifest, result)
     save(artifacts / "result.json", result)
     print(json.dumps({k: result[k] for k in ("run_id", "valid", "task_passed", "wall_seconds", "assistant_events", "protocol_errors")}), flush=True)
     return result
@@ -481,13 +548,19 @@ def finalize_run(root, lane, repeat):
 
 def assess_record(path, manifest):
     run = json.loads(path.read_text())
+    version = protocol_version(manifest)
+    if protocol_version(run) != version:
+        raise ValueError("Trial and manifest protocol versions differ")
     parsed = parse_events(run["lane"], path.with_name("stdout.jsonl").read_text(encoding="utf-8", errors="replace"))
     errors = protocol_errors(run["lane"], manifest["lanes"][run["lane"]], parsed,
                              run["returncode"], run["timed_out"], path.with_name("stderr.txt").read_text(encoding="utf-8", errors="replace"))
     run.update(parsed)
     run.update(valid=not errors, protocol_errors=errors)
-    run["task_passed"] = (run["task_passed"] and parsed["test_command_observed"]
-                          and parsed["browser_command_observed"] and path.with_name("subject-browser.png").is_file())
+    if version == 1:
+        run["task_passed"] = (run["task_passed"] and parsed["test_command_observed"]
+                              and parsed["browser_command_observed"] and path.with_name("subject-browser.png").is_file())
+    else:
+        run["task_passed"] = task_passed(manifest, run)
     return run
 
 
@@ -499,6 +572,8 @@ def report(root, include=()):
     superseded = []
     for previous_root in include:
         prior = load_manifest(previous_root)
+        if protocol_version(prior) != protocol_version(manifest):
+            raise ValueError("Cannot combine different comparison protocol versions")
         if any(manifest[key] != prior[key] for key in ("seed_commit", "prompt_sha256", "fixture_hashes")):
             raise ValueError("Cannot combine different tasks or seed fixtures")
         for lane in MODELS:
@@ -510,7 +585,8 @@ def report(root, include=()):
             elif manifest["lanes"][lane] == prior["lanes"][lane]:
                 runs.extend(previous)
     gates = {lane: repeatability([r for r in runs if r["lane"] == lane]) for lane in MODELS}
-    summary = {"manifest_sha256": file_hash(root / "manifest.json"), "seed_commit": manifest["seed_commit"],
+    summary = {"protocol_version": protocol_version(manifest),
+               "manifest_sha256": file_hash(root / "manifest.json"), "seed_commit": manifest["seed_commit"],
                "prompt_sha256": manifest["prompt_sha256"], "runs": runs, "repeatability": gates,
                "cross_lane_evidence_eligible": all(g["eligible"] for g in gates.values()),
                "limitations": manifest["limitations"], "scoring_source_sha256": file_hash(Path(__file__)),
@@ -533,6 +609,7 @@ def main():
     for lane in MODELS:
         prep.add_argument("--" + lane, required=True)
     prep.add_argument("--windows-sandbox", choices=("unelevated", "elevated"))
+    prep.add_argument("--protocol-version", type=int, choices=(1, 2), default=2)
     run = sub.add_parser("run")
     run.add_argument("--lane", choices=MODELS, required=True)
     run.add_argument("--repeat", type=int, choices=(1, 2), required=True)
@@ -551,6 +628,8 @@ def main():
                            help="Include only with approval for read-only seed Git metadata and path inspection")
     corrected.add_argument("--agy-shell", type=Path,
                            help="Pin an installed PowerShell executable first on the agy child PATH")
+    corrected.add_argument("--protocol-version", type=int, choices=(1, 2),
+                           help="Explicit authorized protocol migration in a new batch; otherwise inherit source")
     args = parser.parse_args()
     if args.action == "prepare":
         prepare(args)

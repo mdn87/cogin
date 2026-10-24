@@ -213,3 +213,81 @@ def test_fixture_search_rule_rejects_other_paths_patterns_and_chains():
                       'Select-String -Path * -Pattern "secret"',
                       'Select-String -Path * -Pattern "status-filter"; whoami'):
         assert not re.search(pattern, forbidden)
+
+
+def passing_patch():
+    return {"verification": {"tests_passed": True, "browser_passed": True},
+            "test_command_observed": True, "browser_command_observed": False,
+            "subject_browser_artifact": False, "off_target": False,
+            "changed_files": ["app.py", "test_app.py"]}
+
+
+def test_v2_accepts_independently_verified_patch_without_subject_browser():
+    assert harness.task_passed({"protocol_version": 2}, passing_patch())
+    assert not harness.task_passed({}, passing_patch())
+    assert harness.task_passed({}, {**passing_patch(), "browser_command_observed": True,
+                                   "subject_browser_artifact": True})
+
+
+@pytest.mark.parametrize("change", [
+    {"verification": {"tests_passed": True, "browser_passed": False}},
+    {"verification": {"tests_passed": False, "browser_passed": True}},
+    {"test_command_observed": False},
+    {"off_target": True},
+    {"changed_files": ["app.py"]},
+])
+def test_v2_still_requires_browser_acceptance_tests_and_scope(change):
+    assert not harness.task_passed({"protocol_version": 2}, {**passing_patch(), **change})
+
+
+def test_report_rejects_mixed_protocols_even_if_task_hashes_match(tmp_path, monkeypatch):
+    current = {"protocol_version": 2, "seed_commit": "seed", "prompt_sha256": "prompt", "fixture_hashes": {}}
+    old = {**current, "protocol_version": 1}
+    monkeypatch.setattr(harness, "load_manifest", lambda root: current if root.name == "new" else old)
+    with pytest.raises(ValueError, match="protocol"):
+        harness.report(tmp_path / "new", [tmp_path / "old"])
+
+
+def test_unknown_protocol_is_rejected():
+    with pytest.raises(ValueError, match="protocol"):
+        harness.protocol_version({"protocol_version": 99})
+
+
+def test_windows_v2_rule_matches_multiline_python_without_other_command_prefixes(tmp_path):
+    import re
+
+    pin = {"executable": "agy.exe", "model": "model", "effort": "medium",
+           "permission_syntax": "windows-command-regex-v2"}
+    argv, _ = harness.invocation("agy", pin, tmp_path / "wt", tmp_path / "home")
+    allows = json.loads((tmp_path / "home/.gemini/antigravity-cli/settings.json").read_text())["permissions"]["allow"]
+    rules = [rule[len("command(regex:"):-1] for rule in allows if rule.startswith("command(regex:")]
+    multiline = 'python -c "import io\nprint(io.StringIO())"'
+    assert any(re.search(rule, multiline) for rule in rules)
+    for forbidden in ('powershell -Command whoami', 'cmd /c ' + multiline, 'echo python hello'):
+        assert not any(re.search(rule, forbidden) for rule in rules)
+    assert "read_file(*)" not in allows
+    assert "--sandbox" in argv
+
+
+@pytest.mark.parametrize("command", [
+    'Get-Content browser_check.py; Get-Content test_unittest.py',
+    '"C:/Program Files/PowerShell/7/pwsh.exe" -Command "rg --files -g browser_check.py -g unittest"',
+    'echo "python browser_check.py; unittest"',
+])
+def test_codex_file_search_or_echo_is_not_test_or_browser_execution(command):
+    event = {"type": "item.completed", "item": {"type": "command_execution", "command": command}}
+    parsed = harness.parse_events("codex", json.dumps(event))
+    assert not parsed["browser_command_observed"]
+    assert not parsed["test_command_observed"]
+
+
+@pytest.mark.parametrize("command", [
+    'python -m unittest -q; python browser_check.py --feature',
+    'cd "C:/fixture" && python -m unittest -q && python browser_check.py --feature',
+    '"C:/Program Files/PowerShell/7/pwsh.exe" -Command \'python -m unittest -q; python browser_check.py --feature\'',
+])
+def test_observes_actual_python_commands_inside_shell_wrappers(command):
+    event = {"type": "item.completed", "item": {"type": "command_execution", "command": command}}
+    parsed = harness.parse_events("codex", json.dumps(event))
+    assert parsed["browser_command_observed"]
+    assert parsed["test_command_observed"]
