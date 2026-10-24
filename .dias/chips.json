@@ -288,7 +288,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-27T20:43:02.274Z",
-        "updatedAt": "2026-10-24T13:19:17.510194+00:00"
+        "updatedAt": "2026-10-24T14:02:20.155043+00:00"
       },
       "evidence": [
         {
@@ -344,6 +344,39 @@
           "at": "2026-10-24T13:19:17.510194+00:00",
           "kind": "note",
           "message": "First v2 agy attempt excluded after multiline Python denial. Corrected matching stays within the Python grant; a new agy pair passes. No subject browser run required."
+        },
+        {
+          "entryId": "cogin:agent-cli-comparison-harness:human-tools-2026-10-24",
+          "at": "2026-10-24T14:02:20.155043+00:00",
+          "kind": "note",
+          "message": "Human measurement tools pass 53 tests. Six blind review cases prepared; Claude/Codex deny channels qualified. agy headless auto-denies. Actual human scores remain null."
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "chipId": "cogin:human-effort-measurements",
+      "projectId": "cogin",
+      "title": "Collect human approval and blind cleanup measurements",
+      "summary": "Tooling is implemented. Human reviews and supervised sessions are uncollected; agy lacks a qualified headless approval channel. Missing scores remain null.",
+      "stage": "blocked",
+      "sequence": 75,
+      "prereqs": [
+        "cogin:agent-cli-comparison-harness"
+      ],
+      "linkedRunIds": [],
+      "confidence": "reported",
+      "aheadOfPrereqs": null,
+      "timestamps": {
+        "createdAt": "2026-10-24T14:02:20.155043+00:00",
+        "updatedAt": "2026-10-24T14:02:20.155043+00:00"
+      },
+      "evidence": [
+        {
+          "entryId": "cogin:human-effort-measurements:qualified-2026-10-24",
+          "at": "2026-10-24T14:02:20.155043+00:00",
+          "kind": "created",
+          "message": "Six anonymous patches and validated score import ready. Human operator/reviewer needed; agy print mode cannot prompt. No actual human scores or supervised task trials collected."
         }
       ]
     },

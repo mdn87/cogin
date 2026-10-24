@@ -3,7 +3,9 @@
 **Status:** unattended harness implemented; live evidence and remaining limits
 are in [the v2 report](../evidence/agent-cli-comparison-v2-2026-10-24.md).
 The [v1 report](../evidence/agent-cli-comparison-2026-10-24.md) remains historical.
-Supervised approval counts and blind human cleanup scoring remain a later phase.
+Human measurement tooling is implemented; actual supervised trials and blind
+human cleanup scores remain uncollected. See the [operator guide](../../src/agent-cli-harness/HUMAN_REVIEW.md)
+and [interface qualification](../evidence/human-effort-tooling-2026-10-24.md).
 Implementation: [`src/agent-cli-harness`](../../src/agent-cli-harness/).
 **Relationship to Wave 1:** none. This is a separate experiment with a separate
 harness. Do not extend `taxonomy_bench_wave.py` for it.
@@ -44,9 +46,11 @@ output events, permission profile, and conversation resume behavior.
 Interruption count is meaningless under auto-approve — it is zero by
 construction. Run each lane twice:
 
-- **Supervised** — `claude --permission-mode default`, `codex` default
-  approvals, and `agy` with a `request-review` permission profile. Scores
-  *interruptions* and *review burden*.
+- **Supervised** — the qualified interfaces are Claude `--permission-mode manual`
+  with a stdio permission host and Codex app-server with `on-request` and a human
+  reviewer. agy headless `request-review` auto-denies instead of prompting, so
+  it is unsupported for supervised capture. Scores require real human decisions;
+  qualification denials do not measure *interruptions* or *review burden*.
 - **Unattended** — `claude --permission-mode acceptEdits`, `codex -s
   workspace-write`, `agy --mode accept-edits`. Scores *wall-clock* and *diff
   quality*.
@@ -118,8 +122,12 @@ all three lanes require fresh repeats, and reports reject mixed versions.
 6. Diff and fresh-checkout test scorer.
 7. Report renderer; blind review pass for the cleanup metric.
 
-Steps 1-6 and unattended report rendering are implemented. Approval-event
-counting and blind human review are not implemented; their scores remain null.
+Steps 1-6 and unattended report rendering are implemented. Separate tooling now
+counts native approval requests and explicit human decisions, produces anonymous
+review packages, and imports attested cleanup scores. Six v2 patches are prepared
+for blind review. Human measurements remain null until collected; agy needs a
+supported interactive approval channel. Supervised captures are not pooled with
+unattended timing or repeatability results.
 
 ## Gate
 

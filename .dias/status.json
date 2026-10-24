@@ -8,13 +8,13 @@
   "milestonePhase": "closeout",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-24T13:19:17.510194+00:00",
+  "assessedAt": "2026-10-24T14:02:20.155043+00:00",
   "confidence": "reported",
-  "currentMilestone": "Protocol v2 unattended comparison complete: two valid task passes per lane with independent browser verification.",
-  "remainingSummary": "Supervised approval counts and blind human cleanup scoring remain a separate later phase. This small experiment does not establish a model ranking or justify migration.",
-  "nextChipId": null,
+  "currentMilestone": "Human measurement tooling delivered: six blind cases and qualified Claude/Codex approval capture. Actual human measurements remain uncollected.",
+  "remainingSummary": "Human reviewer and operator needed to collect scores. agy headless mode auto-denies; a supported interactive approval channel is required for that lane.",
+  "nextChipId": "cogin:human-effort-measurements",
   "source": {
-    "label": "V2 complete: six valid task passes, independent Chromium acceptance, and three repeatability gates. 34 harness tests pass; v1 evidence preserved.",
+    "label": "53 tests pass. Blind score import and approval capture implemented; no human scores collected. agy headless cannot prompt. Unattended v2 evidence preserved.",
     "updatedAt": "2026-10-24"
   }
 }
