@@ -536,6 +536,30 @@ class TestClaudeProvider:
 
 
 class TestCodexProvider:
+    @pytest.mark.parametrize("effort", ["low", "medium", "high"])
+    def test_model_and_effort_stay_bound_across_continuation(self, effort, tmp_path):
+        turns = []
+
+        def runner(args, stdin_text, cwd, timeout, env):
+            if "--version" in args:
+                return ProcessResult(tuple(args), 0, "codex-test", "", 1.0)
+            # Model sessions use the CLI default when these controls are absent.
+            selected = args[args.index("-m") + 1] if "-m" in args else "default-model"
+            settings = [args[i + 1] for i, arg in enumerate(args) if arg == "-c"]
+            turns.append((selected, settings))
+            return ProcessResult(tuple(args), 0, CODEX_SUCCESS_JSONL, "", 1.0)
+
+        provider = CodexCliProvider(
+            selector="gpt-6-luna", effort=effort, persistent=True,
+            subject_root=tmp_path, runner=runner,
+        )
+        first = provider.complete("Public task", {})
+        retry = provider.complete("Diagnostic", {}, previous_response_id=first.response_id)
+        assert not first.error and not retry.error
+        assert turns == [("gpt-6-luna", [f'model_reasoning_effort="{effort}"'])] * 2
+        other = CodexCliProvider(selector="gpt-6-luna", effort="high" if effort != "high" else "low")
+        assert provider.invocation_hash != other.invocation_hash
+
 
     def test_codex_preflight_accepts_chatgpt_status_on_stderr(self):
         runner = _fake_runner(

@@ -25,7 +25,20 @@ Changing any of these produces a different experimental condition.
 
 ## Subscription CLI Wave protocol
 
-Wave 1 fixes seed 42, medium effort, prompt JSON, isolated tool-free sessions,
+Matrix 2 uses protocol 1.1 with an explicit model and effort for each lane,
+including resumed turns. It adds GPT-6.1 Sol and GPT-6 Luna at low, medium,
+and high effort, with explicit-medium Terra and Luna controls. The suite,
+calibration selection, repeat counts, recovery policy, and family/pair gates
+remain the same. Model/effort selections must also match saved CLI turn
+contexts before accepting the expanded evidence.
+
+Historical Codex Wave 1 invocations left effort unset, and their nine recovery
+turns selected the default model. Their first-attempt scores remain evidence
+for the selected models with unbound effort; their medium labels and
+model-specific recovery claims are not verified. Preserve those artifacts
+and use the corrected controls for model-specific recovery profiles.
+
+Wave 1's design targets seed 42, medium effort, prompt JSON, isolated tool-free sessions,
 zero transport retries, an eight-task calibration subset, three 32-task
 primary repeats, and up to two diagnostic continued-context retries. Every
 repeat completes all first attempts before recovery.

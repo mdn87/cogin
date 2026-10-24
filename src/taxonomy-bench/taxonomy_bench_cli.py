@@ -430,6 +430,16 @@ class ClaudeCliProvider(Provider):
 # ---------------------------------------------------------------------------
 
 
+def codex_policy_hashes(selector: str, effort: str | None = None) -> tuple[str, str]:
+    policy = {"sandbox": "read-only", "ignore_user_config": True, "ignore_rules": True}
+    invocation = {"selector": selector, **policy}
+    if effort is not None:
+        if effort not in {"low", "medium", "high"}:
+            raise BenchError(f"Unsupported Codex benchmark effort: {effort}")
+        invocation.update({"effort": effort, "resume_model": selector})
+    return canonical_hash(invocation), canonical_hash(policy)
+
+
 class CodexCliProvider(Provider):
     """Provider that invokes the Codex CLI with subscription auth."""
 
@@ -440,7 +450,7 @@ class CodexCliProvider(Provider):
         self,
         selector: str,
         expected_model: str | None = None,
-        effort: str = "medium",
+        effort: str | None = None,
         timeout: float = 600.0,
         subject_root: Path | None = None,
         persistent: bool = False,
@@ -464,17 +474,7 @@ class CodexCliProvider(Provider):
             raise BenchError("Codex CLI not found; install with npm install -g @anthropic-ai/codex")
 
         self._cached_version: str | None = None
-        self.invocation_hash = canonical_hash({
-            "selector": self.selector,
-            "sandbox": "read-only",
-            "ignore_user_config": True,
-            "ignore_rules": True,
-        })
-        self.tool_policy_hash = canonical_hash({
-            "sandbox": "read-only",
-            "ignore_user_config": True,
-            "ignore_rules": True,
-        })
+        self.invocation_hash, self.tool_policy_hash = codex_policy_hashes(selector, effort)
         self.auth_mode = "subscription"
         self._instruction_hash = canonical_hash(BASE_INSTRUCTIONS)
 
@@ -536,7 +536,7 @@ class CodexCliProvider(Provider):
             cli_args = [
                 self.cli_path, "exec", "--sandbox", "read-only",
                 "--cd", str(self.subject_root),
-                "resume", previous_response_id, "--json",
+                "resume", previous_response_id, "--json", "-m", self.selector,
                 "--ignore-user-config", "--ignore-rules",
                 "--skip-git-repo-check", "-",
             ]
@@ -555,6 +555,9 @@ class CodexCliProvider(Provider):
             if self.subject_root:
                 cli_args.extend(["--cd", str(self.subject_root)])
             stdin_content = compose_subject_prompt(prompt)
+
+        if self.effort is not None:
+            cli_args.extend(["-c", f'model_reasoning_effort="{self.effort}"'])
 
         try:
             result = self._invoke(cli_args, stdin_content)

@@ -2,8 +2,8 @@
 
 Immutable manifests, deterministic calibration selection, family locks,
 restartable lane state, admission barriers, and pair aggregation for
-subscription-backed CLI benchmarks. Every lane set (Wave 1's Claude/Codex
-pairs and the Google lanes run through agy) uses the same Wave 1 protocol.
+subscription-backed CLI benchmarks. Matrix 2 binds per-lane effort under
+protocol 1.1; the original Wave 1 and Google manifests retain protocol 1.0.
 """
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ from taxonomy_bench_cli import (
     Completion,
     Provider,
     agy_policy_hashes,
+    codex_policy_hashes,
 )
 from taxonomy_bench_protocol import BenchError, canonical_hash, canonical_json
 
@@ -73,9 +74,29 @@ GOOGLE1_LANES: dict[str, dict[str, str]] = {
     for selector in pair
 }
 
+MATRIX2_PAIRS = (
+    ("gpt-5.6-terra-medium", "gpt-5.6-luna-medium"),
+    ("gpt-6.1-sol-low", "gpt-6-luna-low"),
+    ("gpt-6.1-sol-medium", "gpt-6-luna-medium"),
+    ("gpt-6.1-sol-high", "gpt-6-luna-high"),
+)
+MATRIX2_LANES = {
+    lane_id: {
+        "family": "codex", "selector": lane_id.rsplit("-", 1)[0],
+        "expected_model": lane_id.rsplit("-", 1)[0],
+        "effort": lane_id.rsplit("-", 1)[1],
+    }
+    for pair in MATRIX2_PAIRS for lane_id in pair
+}
+MATRIX2_PROTOCOL = {
+    **WAVE1_PROTOCOL, "version": "1.1.0", "medium_effort": False,
+    "effort_binding": "explicit_per_lane",
+}
+
 LANE_SETS: dict[str, dict[str, Any]] = {
     "wave-1": {"pairs": WAVE1_PAIRS, "lanes": WAVE1_LANES},
     "google-1": {"pairs": GOOGLE1_PAIRS, "lanes": GOOGLE1_LANES},
+    "matrix-2": {"pairs": MATRIX2_PAIRS, "lanes": MATRIX2_LANES, "protocol": MATRIX2_PROTOCOL},
 }
 ALL_LANES = sorted(
     lane_id for lane_set in LANE_SETS.values() for lane_id in lane_set["lanes"]
@@ -167,17 +188,7 @@ def collect_provider_metadata(lane_set: str = "wave-1") -> dict[str, Any]:
                 "strict_mcp_config": True,
             })
         else:
-            invocation = canonical_hash({
-                "selector": selector,
-                "sandbox": "read-only",
-                "ignore_user_config": True,
-                "ignore_rules": True,
-            })
-            tool_policy = canonical_hash({
-                "sandbox": "read-only",
-                "ignore_user_config": True,
-                "ignore_rules": True,
-            })
+            invocation, tool_policy = codex_policy_hashes(selector, lane.get("effort"))
         lanes[lane_id] = {
             "family": family,
             "requested_model": selector,
@@ -187,6 +198,8 @@ def collect_provider_metadata(lane_set: str = "wave-1") -> dict[str, Any]:
             "tool_policy_hash": tool_policy,
             "auth_mode": "subscription",
         }
+        if "effort" in lane:
+            lanes[lane_id]["effort"] = lane["effort"]
     return {
         "instruction_hash": canonical_hash(
             __import__(
@@ -239,6 +252,7 @@ def prepare_manifest(
     fingerprint matches. Never overwrites an existing manifest.
     """
     registry = _lane_set(lane_set)
+    protocol = registry.get("protocol", WAVE1_PROTOCOL)
     if not control_root.exists() or not control_root.is_dir():
         raise BenchError(
             f"Control root {control_root} must already exist and be a directory"
@@ -270,11 +284,13 @@ def prepare_manifest(
                 "tool_policy_hash": provider_metadata.get("tool_policy_hash", "unknown"),
                 "auth_mode": "subscription",
             }
+            if "effort" in lane:
+                lane_metadata[lane_id]["effort"] = lane["effort"]
 
     # Compute deterministic input fingerprint first
     input_fingerprint_data: dict[str, Any] = {
-        "protocol_version": WAVE1_VERSION,
-        "protocol_hash": canonical_hash(WAVE1_PROTOCOL),
+        "protocol_version": protocol["version"],
+        "protocol_hash": canonical_hash(protocol),
         "suite_sha256": compute_suite_sha256(suite_path),
         "suite_path": str(suite_path.absolute()),
         "calibration_ids": deterministic_calibration_ids(suite),
@@ -802,6 +818,7 @@ class WaveController:
         elif family == "codex":
             return CodexCliProvider(
                 selector=selector,
+                effort=lane_info.get("effort"),
                 expected_model=expected_model,
                 subject_root=self.subject_root,
                 persistent=persistent,
@@ -846,6 +863,7 @@ class WaveController:
             "invocation_hash": getattr(
                 provider, "invocation_hash", lane_meta.get("invocation_hash")
             ),
+            **({"effort": lane["effort"]} if "effort" in lane else {}),
         }
 
     def _pair_index(self, lane_id: str) -> int:
@@ -884,6 +902,7 @@ class WaveController:
             "tool_policy_hash": getattr(
                 provider, "tool_policy_hash", expected.get("tool_policy_hash")
             ),
+            **({"effort": getattr(provider, "effort", None)} if "effort" in lane else {}),
         }
 
     def _validate_provider_metadata(
@@ -897,6 +916,7 @@ class WaveController:
             "cli_version",
             "invocation_hash",
             "tool_policy_hash",
+            "effort",
         ):
             actual_key = "resolved_model" if key == "expected_model" else key
             expected_value = expected.get(key)
@@ -948,7 +968,7 @@ class WaveController:
                 "model": lane["selector"],
                 "requested_model": lane["selector"],
                 "resolved_model": lane["expected_model"],
-                "effort": "medium",
+                "effort": lane.get("effort", "medium"),
                 "repeat": repeat,
                 "wave_phase": phase,
                 "output_mode": "prompt",
@@ -1308,6 +1328,7 @@ def publish_lane_report(
         "kind": "wave_lane",
         "manifest_hash": manifest["manifest_hash"],
         "lane": state.lane,
+        "effort": manifest["lanes"][state.lane].get("effort", "medium"),
         "requested_model": lane_meta.get(
             "requested_model", manifest["lanes"][state.lane]["selector"]
         ),

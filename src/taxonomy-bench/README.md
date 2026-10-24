@@ -193,6 +193,19 @@ keyring. The profile denies every file, URL, command, and MCP tool. agy still
 advertises its tools to the model and refuses them only when called, unlike
 Claude Code's `--tools ""`, which removes them from the session.
 
+The `matrix-2` lane set adds GPT-6.1 Sol and GPT-6 Luna at low, medium, and
+high effort, plus explicit-medium GPT-5.6 Terra and Luna controls. Prepare it
+with `wave prepare --lanes matrix-2` in a new directory using the same suite
+and control root. All eight lanes share the Codex family lock and run
+sequentially; finish each pair report before starting the next pair.
+
+Matrix 2 uses protocol 1.1: model and effort are explicit on both initial and
+resumed turns, effort is bound into invocation hashes, and reports retain the
+lane's effort. Historical Codex Wave 1 effort was unset, and its nine recovery
+turns selected the CLI default model. Do not pool those recovery outcomes with
+Matrix 2. The complete schedule and verification requirements are in
+[`matrix-2.md`](../../docs/runplans/matrix-2.md).
+
 The generic `run` command intentionally rejects `claude-cli`, `codex-cli`, and
 `antigravity-cli`; subscription subjects must use the immutable manifest and
 Wave gates.

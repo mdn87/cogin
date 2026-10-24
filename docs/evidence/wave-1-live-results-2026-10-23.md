@@ -1,10 +1,12 @@
 # Claude/Codex Wave 1 results — 2026-10-23
 
-All six lanes completed calibration and three primary repeats, and all three pair reports are published and verified. The 576 primary tasks produced 567 exact first attempts; all nine failures recovered on the first diagnostic retry. These totals exclude calibration and abandoned runs.
+All six lanes completed calibration and three primary repeats, and all three pair reports were published. The 576 primary tasks produced 567 exact first attempts. These totals exclude calibration and abandoned runs.
+
+**Attribution correction, discovered during matrix expansion:** saved CLI turn contexts show that all nine Codex recovery turns used GPT-6.1 Sol, not the requested Terra or Luna. Codex effort was also left unset in both initial and recovery turns despite the report label of medium. First-attempt model selections match their lanes; recovery scores cannot be attributed to those models. The immutable raw reports preserve this historical harness behavior. Matrix 2 binds model and effort explicitly and reruns Terra and Luna as controls.
 
 ## Results
 
-| Lane | Primary repeats: exact first attempts | First attempts | After recovery | Retry attempts | Primary median latency |
+| Lane | Primary repeats: exact first attempts | First attempts | Observed final outputs (mixed-model recovery) | Retry attempts | Primary median latency |
 |---|---|---:|---:|---:|---:|
 | `claude-opus-5` | 32/32, 32/32, 32/32 | 96/96 | 96/96 | 0 | 3.489 s |
 | `gpt-5.6-sol` | 32/32, 32/32, 32/32 | 96/96 | 96/96 | 0 | 3.876 s |
@@ -13,7 +15,7 @@ All six lanes completed calibration and three primary repeats, and all three pai
 | `claude-fable-5` | 32/32, 32/32, 32/32 | 96/96 | 96/96 | 0 | 5.147 s |
 | `gpt-5.6-luna` | 29/32, 31/32, 29/32 | 89/96 | 96/96 | 7 | 3.365 s |
 
-All 576 primary first responses were strict JSON. Every accepted run had full scored coverage and no infrastructure errors. Opus, Sonnet, Fable, and Sol reached the suite's accuracy ceiling; recovery was therefore not measured for those lanes. Terra recovered two failures and Luna seven, each on its first diagnostic retry.
+All 576 primary first responses were strict JSON. Every accepted run had full scored coverage and no infrastructure errors. Opus, Sonnet, Fable, and Sol reached the suite's accuracy ceiling; recovery was therefore not measured for those lanes. The two Terra failures and seven Luna failures received correct outputs on their first retries, but those turns used GPT-6.1 Sol and are not evidence of Terra or Luna recovery ability.
 
 These results describe CLI session configurations on one fixed 32-task suite. They do not establish a general intelligence ranking. The latency figures pool each lane's 96 primary first attempts; paired execution, subscription load, and the small fixed suite limit comparisons.
 
@@ -23,7 +25,7 @@ These results describe CLI session configurations on one fixed 32-task suite. Th
 - Claude Code: 2.1.296. Codex CLI: 0.163.0. Neither CLI version changed during this session.
 - Manifest: `dbd05d3d331efeea798b981561b39dc25feb8207e60dafc42046619881cbea26`.
 - Private-suite SHA-256: `ce79e1cc1ea9e9e42e6de238a8467676e5e9a1fcf4bf7528083db05c4b1e3fc0`.
-- Conditions: medium effort, isolated task sessions, prompt JSON, recorded no-tool policy, zero transport retries, and up to two diagnostic continued-context retries after each repeat's first pass.
+- Recorded conditions: medium effort, isolated task sessions, prompt JSON, no-tool policy, zero transport retries, and up to two diagnostic continued-context retries after each repeat's first pass. Claude effort was explicit; Codex effort was not bound by its invocation, so its medium label is not verified.
 - Pairs ran in order, with at most one lane per subscription family and aggregation completed before the next pair began.
 - Pair 1 calibration was admitted on October 22. All 18 primary runs and the other four calibrations completed in this session, October 23 local time (October 24 UTC).
 - Claude model identity is checked from its model-usage output. Codex does not emit independent model identity in the consumed JSONL; its recorded resolved model is the requested selector. Treat Codex identity as client-selected, not server-verified.
@@ -36,15 +38,15 @@ Three interrupted runs remain preserved and excluded from scores:
 
 The Claude OAuth lock cleared before the approved backup operation could rename it. No lock backup or credential edit was made; the next whole-repeat restart succeeded.
 
-Terra's first recovery attempt exposed an adapter bug: `--sandbox` and `--cd` appeared after `codex exec resume`, where the CLI rejected them. Commit `40da894` moves them to the parent `exec` command and explicitly reads retry text from stdin. Sandbox policy, subject root, model selection, suite, manifest, and scoring were unchanged. The failed repeat was restarted from task 1 after a separate harmless two-turn continuation probe passed. Both accepted Terra recovery attempts and all seven Luna recoveries then succeeded. The probe is not part of the benchmark results.
+Terra's first recovery attempt exposed an adapter bug: `--sandbox` and `--cd` appeared after `codex exec resume`, where the CLI rejected them. Commit `40da894` moves them to the parent `exec` command and explicitly reads retry text from stdin. Sandbox policy, subject root, model selection, suite, manifest, and scoring were unchanged. The failed repeat was restarted from task 1 after a separate harmless two-turn continuation probe passed. Both accepted Terra recovery attempts and all seven Luna retries then produced correct outputs; the later session-context audit found that they used GPT-6.1 Sol. The probe is not part of the benchmark results.
 
 ## Verification
 
 - The initial 225-test suite passed; after the adapter fix, all 226 tests passed, including a regression test against the installed CLI argument parser. That test reproduced the original rejection before the fix.
-- A separate live continuation probe verified the same session and retained context without using benchmark tasks.
+- A separate live continuation probe verified the same session and retained context without using benchmark tasks. It did not check the resumed model; the later audit caught the model switch.
 - The repaired wheel built successfully; packaging verified 28 SHA-256 entries and the exact 29-entry archive.
 - Verified all 24 accepted runs: six calibrations, 18 primary repeats, 624 distinct task sessions, and 633 scored attempts including nine recovery attempts.
-- Checked exact task coverage, finite nonnegative latencies, recorded model selectors and CLI versions, manifest/suite and invocation/policy hashes, and absence of infrastructure errors in accepted runs.
+- Checked exact task coverage, finite nonnegative latencies, recorded selectors and CLI versions, manifest/suite and invocation/policy hashes, and absence of classified infrastructure errors in accepted runs. Recorded selectors alone did not detect the recovery model switch.
 - Recomputed every accepted run summary and matched it to the saved summary. Checked removal of resumable session IDs from finalized task and attempt fields.
 - Validated all six lane-report hashes and all three pair-report hashes and manifest-scoped aggregation markers. Each pair contains exactly six accepted primary runs.
 - Abandoned envelopes remain private. Their process errors are infrastructure outcomes and do not enter the accepted-run totals.

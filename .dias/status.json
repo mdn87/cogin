@@ -4,17 +4,17 @@
   "projectLabel": "Cogin",
   "assessmentState": "scored",
   "assessmentScope": "current-milestone",
-  "percentComplete": 100,
+  "percentComplete": 0,
   "milestonePhase": "operational-proof",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-24T02:19:06.873Z",
+  "assessedAt": "2026-10-24T02:23:09.431Z",
   "confidence": "reported",
-  "currentMilestone": "Wave 1 complete: all six Claude/Codex lanes and three pair reports verified; both Google lanes and their pair report are also complete.",
-  "remainingSummary": "Next milestone: expand the live model and thinking-level matrix using the completed Wave 1 evidence, then feed strategy profiles into Orca.",
+  "currentMilestone": "Expand the live matrix with GPT-6.1 Sol and GPT-6 Luna at explicit low, medium, and high effort, using the locked suite and verified Wave 1 reports.",
+  "remainingSummary": "Bind lane effort into invocations and manifests, execute six new conditions, and publish comparable model and effort profiles.",
   "nextChipId": "cogin:expand-live-model-matrix",
   "source": {
-    "label": "Wave 1 verified: 567/576 Claude/Codex first attempts, all nine failures recovered; three pair reports published; 226 tests passed.",
+    "label": "Wave 1 is complete. Matrix expansion is active; explicit effort binding is required before the six new conditions run.",
     "updatedAt": "2026-10-23"
   }
 }

@@ -1138,6 +1138,43 @@ def _fake_agy_runner(suite: dict, conversations: dict[str, str]):
     return runner
 
 
+class TestExpandedMatrix:
+    def test_explicit_efforts_are_bound_and_reported_without_changing_wave_one(self, tmp_path):
+        legacy, suite_path, control, _ = _prepared_wave(tmp_path)
+        suite = tb.load_suite(suite_path)
+        out = tmp_path / "matrix-2"
+        metadata = wave.collect_provider_metadata("matrix-2")
+        manifest = wave.prepare_manifest(suite, suite_path, control, metadata, out, lane_set="matrix-2")
+        assert manifest["protocol_version"] == "1.1.0"
+        assert manifest["protocol_hash"] != legacy["protocol_hash"]
+        assert manifest["suite_sha256"] == legacy["suite_sha256"]
+        assert manifest["calibration_ids"] == legacy["calibration_ids"]
+        assert len(manifest["lanes"]) == 8
+        subject = tmp_path / "subject"
+        subject.mkdir()
+        controller = wave.WaveController(out / "manifest.json", control, subject, out)
+        for lane_id, lane in manifest["lanes"].items():
+            provider = controller.build_provider(lane_id)
+            assert provider.effort == lane["effort"]
+            assert provider.invocation_hash == metadata["lanes"][lane_id]["invocation_hash"]
+        assert len({metadata["lanes"][f"gpt-6-luna-{e}"]["invocation_hash"] for e in ("low", "medium", "high")}) == 3
+        lane_id = manifest["pairs"][0][0]
+        def factory(lane_id, persistent):
+            provider = WaveOracleProvider(suite, manifest, lane_id, persistent=persistent)
+            provider.effort = manifest["lanes"][lane_id]["effort"]
+            return provider
+        controller.provider_factory = factory
+        assert controller.run_lane(lane_id) == 0
+        report = json.loads((out / "reports" / f"lane-{lane_id}" / "lane.json").read_text())
+        assert report["effort"] == "medium"
+        assert {row["effort"] for row in report["matrix"]["runs"]} == {"medium"}
+        state = wave.LaneState.load(out / "lanes" / lane_id)
+        assert state.provider_metadata["effort"] == "medium"
+        changed = dict(state.provider_metadata, effort="low")
+        with pytest.raises(BenchError, match="effort drift"):
+            controller._validate_provider_metadata(lane_id, changed)
+
+
 class TestGoogleLaneSet:
     def test_google_lane_set_is_one_antigravity_pair(self):
         assert wave.GOOGLE1_PAIRS == (GOOGLE_LANES,)
