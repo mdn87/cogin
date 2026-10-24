@@ -358,7 +358,7 @@
       "chipId": "cogin:human-effort-measurements",
       "projectId": "cogin",
       "title": "Collect human approval and blind cleanup measurements",
-      "summary": "Six attested blind reviews collected: five zero-cleanup scores and one line to revert. Supervised sessions remain uncollected; agy lacks a supported approval channel.",
+      "summary": "Six blind reviews collected. Two Claude runs passed with four prompts each. Codex command execution stalled; its count is unmeasured. agy lacks an approval channel.",
       "stage": "blocked",
       "sequence": 75,
       "prereqs": [
@@ -369,7 +369,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-10-24T14:02:20.155043+00:00",
-        "updatedAt": "2026-10-24T16:16:22.933563+00:00"
+        "updatedAt": "2026-10-24T17:41:38.529683+00:00"
       },
       "evidence": [
         {
@@ -389,6 +389,12 @@
           "at": "2026-10-24T16:16:22.933563+00:00",
           "kind": "note",
           "message": "Six submitted scores and reasons match saved answers; receipt and source hashes pass. Counts: 0,0,0,1,0,0. Submit now confirms on-page. Supervised sessions remain uncollected."
+        },
+        {
+          "entryId": "cogin:human-effort-measurements:captures-2026-10-24",
+          "at": "2026-10-24T17:41:38.529683+00:00",
+          "kind": "note",
+          "message": "Claude: two passes, each 3 allows and 1 denial. Codex: no edits, incomplete capture, count null. Six reviews verified; 57 historical hashes preserved. 62 tests pass."
         }
       ]
     },

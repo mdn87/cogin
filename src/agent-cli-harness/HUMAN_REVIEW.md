@@ -5,6 +5,11 @@ measurements without changing its trials, prompt, acceptance gates, or reports.
 Missing measurements stay `null` in JSON and `unmeasured` in Markdown. Zero is
 valid only after a complete human observation or review.
 
+The [2026-10-24 results](../../docs/evidence/human-effort-results-2026-10-24.md)
+include six blind reviews and two passing Claude sessions with four human
+prompts each. Codex's inspection commands stalled; that incomplete capture
+remains unmeasured. Its execution path needs repair before a fresh run.
+
 ## Local review console
 
 From the repository root, open the prepared six-case package in your browser:
@@ -37,6 +42,9 @@ per package. The link is local access, not a remote reviewer invitation.
   **Stop current session** cancels further approvals; timeout or a closed
   console cannot turn missing observations into zero. Verification may continue
   briefly after stopping. agy remains unavailable because it cannot prompt.
+  A running session with no pending request needs no decision: permitted work
+  may proceed without a prompt. When the session ends, read its task result
+  below; an unmeasured count is not zero.
 
 The default session limit is 10 minutes. Keep the console process running while
 reviewing or supervising; closing the browser does not terminate the process.

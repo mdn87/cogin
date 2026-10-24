@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "scope": "Separate human cleanup review and supervised approval observations",
+  "blind_review": {
+    "attested": true,
+    "reviewer_count": 1,
+    "receipt_sha256": "4a0bbe61f328b01ef5040950ea9568a6cc795cacfdd58a48c6d9999f59fbac26",
+    "source_report_sha256": "4c18be3ab132cd00b610486d14868a90d9e8f17a446ce5034cd0b9e0aa703311",
+    "runs": [
+      {
+        "lane": "codex",
+        "run_id": "codex-1",
+        "source_batch": "protocol-v2-batch-1",
+        "patch_sha256": "f0f4df2814252b23f60c090eeceae24a6b92e99e3008de6e4a582eeb95df3146",
+        "changed_lines": 107,
+        "human_cleanup_lines": 0
+      },
+      {
+        "lane": "claude",
+        "run_id": "claude-2",
+        "source_batch": "protocol-v2-batch-1",
+        "patch_sha256": "0a7cbd19c97ddf0f7e40534575c5f34cf16e9d1f24f0505289d781feb52732ca",
+        "changed_lines": 119,
+        "human_cleanup_lines": 0
+      },
+      {
+        "lane": "codex",
+        "run_id": "codex-2",
+        "source_batch": "protocol-v2-batch-1",
+        "patch_sha256": "250982fdbad97ebe5efcb468df8fa6392f41af83155acd4907490aacd67dc609",
+        "changed_lines": 111,
+        "human_cleanup_lines": 0
+      },
+      {
+        "lane": "claude",
+        "run_id": "claude-1",
+        "source_batch": "protocol-v2-batch-1",
+        "patch_sha256": "e682a41c053dab718480c5bcba8209485df310bbcda307a7979dbb44f062a5a5",
+        "changed_lines": 128,
+        "human_cleanup_lines": 1
+      },
+      {
+        "lane": "agy",
+        "run_id": "agy-2",
+        "source_batch": "protocol-v2-batch-2",
+        "patch_sha256": "c0932bdc3c2d9948159f050ad90ed3ea0ecc5d6c4de94ee90d501208ffb494cc",
+        "changed_lines": 141,
+        "human_cleanup_lines": 0
+      },
+      {
+        "lane": "agy",
+        "run_id": "agy-1",
+        "source_batch": "protocol-v2-batch-2",
+        "patch_sha256": "8f58ca89610d5cae3c04bf52356d02f6bcf9b4d897650dff9d839e5c5b6cab62",
+        "changed_lines": 167,
+        "human_cleanup_lines": 0
+      }
+    ]
+  },
+  "supervised_captures": [
+    {
+      "lane": "claude",
+      "capture": "claude-cfbbac84179d",
+      "mode": "supervised",
+      "model": "claude-sonnet-5",
+      "effort": "medium",
+      "version": "2.1.296 (Claude Code)",
+      "binary_sha256": "76de74f7694a5bdc03378a5f837c9e132827bf004c98c276bc4e9094ff06769a",
+      "operator_channel": "browser",
+      "operator_host_sha256": "59b635637984427ecdae7f9c959c162043190ba72bc69be34fadc312c6175155",
+      "measurement_state": "measured",
+      "interruptions": 4,
+      "approved": 3,
+      "denied": 1,
+      "observed_requests": 4,
+      "unresolved_requests": 0,
+      "task_passed": true,
+      "capture_complete": true,
+      "completed": true,
+      "policy_verified": true,
+      "failure": null,
+      "returncode": 0,
+      "capture_manifest_sha256": "dfe5ec9458f67404959548d820ed5a66347bdc3f6ab23cbef368bf66d610ef2b",
+      "capture_source_sha256": "fe0893a0cd5e756ae0853f52ace12eaa22d46c80e6637ae97d634de8e380d7a3",
+      "source_manifest_sha256": "a041bcda70413d6c0227e66009bc94f39b41858deebfd6f8a5d9b00d5ef1270d",
+      "patch_sha256": "5653035f79a6d0220050e1843546e1fba28aa30a702eb3f847819c5789c17f02",
+      "capture_sha256": "187db87e3e207c88c2be01fe59ae5abb78f4142a2dff71bb3c395b27581dae11",
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": true
+      },
+      "changed_lines": 126,
+      "changed_files": [
+        "app.py",
+        "test_app.py"
+      ],
+      "human_cleanup_lines": null
+    },
+    {
+      "lane": "claude",
+      "capture": "claude-9cd8acaf639a",
+      "mode": "supervised",
+      "model": "claude-sonnet-5",
+      "effort": "medium",
+      "version": "2.1.296 (Claude Code)",
+      "binary_sha256": "76de74f7694a5bdc03378a5f837c9e132827bf004c98c276bc4e9094ff06769a",
+      "operator_channel": "browser",
+      "operator_host_sha256": "59b635637984427ecdae7f9c959c162043190ba72bc69be34fadc312c6175155",
+      "measurement_state": "measured",
+      "interruptions": 4,
+      "approved": 3,
+      "denied": 1,
+      "observed_requests": 4,
+      "unresolved_requests": 0,
+      "task_passed": true,
+      "capture_complete": true,
+      "completed": true,
+      "policy_verified": true,
+      "failure": null,
+      "returncode": 0,
+      "capture_manifest_sha256": "dfe5ec9458f67404959548d820ed5a66347bdc3f6ab23cbef368bf66d610ef2b",
+      "capture_source_sha256": "fe0893a0cd5e756ae0853f52ace12eaa22d46c80e6637ae97d634de8e380d7a3",
+      "source_manifest_sha256": "a041bcda70413d6c0227e66009bc94f39b41858deebfd6f8a5d9b00d5ef1270d",
+      "patch_sha256": "0bc2eb17d570387e06ae8bb5f5be1385b5f27a3370141210b4051b1b3a145f2f",
+      "capture_sha256": "5a2134054198367b7e59af4848b396dbc3b1076dff91438c0997c875d47142ec",
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": true
+      },
+      "changed_lines": 113,
+      "changed_files": [
+        "app.py",
+        "test_app.py"
+      ],
+      "human_cleanup_lines": null
+    },
+    {
+      "lane": "codex",
+      "capture": "codex-5f078968f17e",
+      "mode": "supervised",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "version": "codex-cli 0.164.0",
+      "binary_sha256": "6f267830b029ee25d9339864aa867cd45de9f8fd4c5ea007d2e63c13a0c66d36",
+      "operator_channel": "browser",
+      "operator_host_sha256": "59b635637984427ecdae7f9c959c162043190ba72bc69be34fadc312c6175155",
+      "measurement_state": "unmeasured",
+      "interruptions": null,
+      "approved": null,
+      "denied": null,
+      "observed_requests": 0,
+      "unresolved_requests": 0,
+      "task_passed": false,
+      "capture_complete": false,
+      "completed": true,
+      "policy_verified": true,
+      "failure": null,
+      "returncode": 1,
+      "capture_manifest_sha256": "f5219682914bf8955b71c998e90539d9c116346dcaea562a3106d390f93dd3ea",
+      "capture_source_sha256": "fe0893a0cd5e756ae0853f52ace12eaa22d46c80e6637ae97d634de8e380d7a3",
+      "source_manifest_sha256": "a041bcda70413d6c0227e66009bc94f39b41858deebfd6f8a5d9b00d5ef1270d",
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "capture_sha256": "5ecf760cab539b291af8f5d61ed49d76716946942daeae853eff9c6043476dfd",
+      "verification": {
+        "patch_applied": true,
+        "tests_passed": true,
+        "browser_passed": false
+      },
+      "changed_lines": 0,
+      "changed_files": [],
+      "human_cleanup_lines": null
+    }
+  ],
+  "limitations": [
+    "One human reviewer; small sample, no ranking or migration conclusion.",
+    "Cleanup scores describe six unattended patches, not the new supervised patches.",
+    "Human rationale about one error-response line is unverified; no vulnerability conclusion is claimed.",
+    "Supervised transports and permission profiles differ; do not pool timing or assistant-event counts.",
+    "Codex inspection commands did not return; no edits were made. Capture incomplete, process exit 1, approval count null; not a zero-interruption success.",
+    "agy headless mode cannot prompt; its supervised interruption count remains null."
+  ]
+}

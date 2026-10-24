@@ -106,6 +106,11 @@ function renderSessions() {
   $("stop").hidden = !sessions.running; $("stop").disabled = actionBusy;
   $("session-status").textContent = sessions.running ? "Session running. Waiting for the CLI or checking its result…" : "No session running.";
   $("approval").hidden = !sessions.pending; $("no-request").hidden = !!sessions.pending;
+  $("no-request").textContent = sessions.running
+    ? "No approval request is pending. The CLI may work without prompting; requests appear here only when it asks for a decision."
+    : sessions.sessions.length
+      ? "No approval request is pending. The last session ended; see its result below."
+      : "No session is running. Start a session to collect approvals.";
   $("payload").textContent = sessions.pending ? JSON.stringify(sessions.pending.payload, null, 2) : "";
   $("allow").disabled = $("deny").disabled = actionBusy;
   $("history").replaceChildren(...sessions.sessions.map(item => {

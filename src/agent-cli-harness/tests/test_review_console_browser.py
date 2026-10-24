@@ -17,8 +17,10 @@ def test_review_and_approval_controls_in_chromium(app, monkeypatch):
     server = review_console.make_server(app, 0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     decisions = []
+    request_ready = threading.Event()
 
     def simulated_capture(source, lane, output, operator, *, decision_provider):
+        assert request_ready.wait(20)
         decisions.append(decision_provider({"request_id": "synthetic-1", "payload": {
             "command": "<script>window.untrustedRan=true</script>", "test_fixture": True}}, 20))
         return {"interruptions": 1, "task_passed": False}
@@ -74,14 +76,19 @@ def test_review_and_approval_controls_in_chromium(app, monkeypatch):
             assert app.is_locked()
             assert next(iter(human_review.read(app.package / "controller/accepted-scores.json")["scores"].values()))["human_cleanup_lines"] == 0
             page.locator("#sessions-tab").click()
+            expect(page.locator("#no-request")).to_have_text("No session is running. Start a session to collect approvals.")
             page.locator("#operator").fill("Synthetic operator")
             page.locator("#start-claude").click()
+            expect(page.locator("#no-request")).to_contain_text("No approval request is pending. The CLI may work without prompting")
+            request_ready.set()
             expect(page.locator("#approval")).to_be_visible()
+            expect(page.locator("#no-request")).to_be_hidden()
             assert decisions == []
             assert page.evaluate("window.untrustedRan === undefined")
             expect(page.locator("#payload")).to_contain_text("<script>")
             page.locator("#deny").click()
             expect(page.locator("#history")).to_contain_text("Interruptions: 1")
+            expect(page.locator("#no-request")).to_have_text("No approval request is pending. The last session ended; see its result below.")
             assert decisions == ["deny"]
             assert not errors
             browser.close()

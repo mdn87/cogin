@@ -5,7 +5,9 @@ are in [the v2 report](../evidence/agent-cli-comparison-v2-2026-10-24.md).
 The [v1 report](../evidence/agent-cli-comparison-2026-10-24.md) remains historical.
 Human measurement tooling is implemented. Six attested blind reviews are
 collected: five zero-cleanup scores and one line selected for reversion.
-Supervised trials are being collected separately. See the [operator guide](../../src/agent-cli-harness/HUMAN_REVIEW.md)
+Two supervised Claude trials passed with four human prompts each. Codex stalled
+without edits and remains unmeasured; agy lacks an interactive approval channel.
+See the [human results](../evidence/human-effort-results-2026-10-24.md), [operator guide](../../src/agent-cli-harness/HUMAN_REVIEW.md)
 and [interface qualification](../evidence/human-effort-tooling-2026-10-24.md).
 Implementation: [`src/agent-cli-harness`](../../src/agent-cli-harness/).
 **Relationship to Wave 1:** none. This is a separate experiment with a separate
