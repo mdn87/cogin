@@ -151,4 +151,6 @@ they contain credentials, raw sessions, and local paths. Share only the blind
 `reviewer/` directory or the sanitized public qualification report.
 
 Neither a qualified approval channel nor a passing patch establishes a CLI
-ranking. Actual human cleanup scores and supervised trials are still required.
+ranking. The six unattended patches have completed attested blind cleanup
+review; supervised approval measurements are collected separately. Cleanup
+reviews of new supervised patches are not implied by those earlier scores.

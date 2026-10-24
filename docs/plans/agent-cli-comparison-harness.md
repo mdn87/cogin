@@ -3,8 +3,9 @@
 **Status:** unattended harness implemented; live evidence and remaining limits
 are in [the v2 report](../evidence/agent-cli-comparison-v2-2026-10-24.md).
 The [v1 report](../evidence/agent-cli-comparison-2026-10-24.md) remains historical.
-Human measurement tooling is implemented; actual supervised trials and blind
-human cleanup scores remain uncollected. See the [operator guide](../../src/agent-cli-harness/HUMAN_REVIEW.md)
+Human measurement tooling is implemented. Six attested blind reviews are
+collected: five zero-cleanup scores and one line selected for reversion.
+Supervised trials are being collected separately. See the [operator guide](../../src/agent-cli-harness/HUMAN_REVIEW.md)
 and [interface qualification](../evidence/human-effort-tooling-2026-10-24.md).
 Implementation: [`src/agent-cli-harness`](../../src/agent-cli-harness/).
 **Relationship to Wave 1:** none. This is a separate experiment with a separate
@@ -124,8 +125,8 @@ all three lanes require fresh repeats, and reports reject mixed versions.
 
 Steps 1-6 and unattended report rendering are implemented. Separate tooling now
 counts native approval requests and explicit human decisions, produces anonymous
-review packages, and imports attested cleanup scores. Six v2 patches are prepared
-for blind review. Human measurements remain null until collected; agy needs a
+review packages, and imports attested cleanup scores. All six v2 patches have
+completed blind review. Missing measurements remain null; agy needs a
 supported interactive approval channel. Supervised captures are not pooled with
 unattended timing or repeatability results.
 
