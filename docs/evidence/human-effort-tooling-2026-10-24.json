@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "scope": "human measurement tooling qualification; not human trial results",
+  "harness_tests_passed": 53,
+  "blind_review_cases": 6,
+  "human_cleanup_scores": null,
+  "qualification": [
+    {
+      "lane": "claude",
+      "version": "2.1.296 (Claude Code)",
+      "binary_sha256": "76de74f7694a5bdc03378a5f837c9e132827bf004c98c276bc4e9094ff06769a",
+      "capture": "supervised-qualification-claude-3",
+      "status": "qualified-deny-path",
+      "observed_requests": 1,
+      "human_interruptions": null,
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "capture_sha256": "08b66908e1e9e4d5771c938187598b008409dff7960b73ffcb5a63352a8a9f18",
+      "capture_source_sha256": "8a39ecb0860304bcf66d713b78df29abb3a31bdfe57fec7f4eb08b8f32094757",
+      "artifacts": {
+        "stdout.jsonl": "e898c0ae5e3c0c33b9358b42f5a938a020309e6d2dfd9c8b44929d1937335cc1",
+        "stdin.jsonl": "28cd94a60d5b8441e458c94647f811237d44d06026ae4a3dbb408be01ad9e02f",
+        "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "approvals.jsonl": "26ea221560d3ac9d62c62d53fb1ffbc728df747018b18c555dad4738389d90a9",
+        "changes.patch": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "output.bundle": "58c0e3dff9fbdd0b52c1ae9ab91fdd00cd54c298e6d93a0c140412d28310d17e"
+      }
+    },
+    {
+      "lane": "codex",
+      "version": "codex-cli 0.164.0",
+      "binary_sha256": "6f267830b029ee25d9339864aa867cd45de9f8fd4c5ea007d2e63c13a0c66d36",
+      "capture": "supervised-qualification-codex-4",
+      "status": "qualified-deny-path",
+      "observed_requests": 1,
+      "human_interruptions": null,
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "capture_sha256": "cd822da97ebf25b7aabbbdd307426612a1ad6ffa2e416fa898d143f19dd2f099",
+      "capture_source_sha256": "8a39ecb0860304bcf66d713b78df29abb3a31bdfe57fec7f4eb08b8f32094757",
+      "artifacts": {
+        "stdout.jsonl": "c5d2bb04964773421514c6fcda01097ea6d9f3c9ce6db8a005ea96dc211da854",
+        "stdin.jsonl": "67d1c980ea8434496b723e6d83409172542e65ac1e5cd04a89daacab0cf367fb",
+        "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "approvals.jsonl": "357f0cd5b1380876386b92b8c570c117fb533f8ebbd78d869b66096dd4481a92",
+        "changes.patch": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "output.bundle": "b58a42fabeabb40f471705f6092deb4d55078a35e028c2789dccec01ed6c2cef"
+      }
+    },
+    {
+      "lane": "agy",
+      "version": "1.4.7",
+      "binary_sha256": "22588b6d5a6f6d2d66091c73dfb9255edc7bdafe9aff9dd20d958ce116496695",
+      "capture": "supervised-qualification-agy-1",
+      "status": "unsupported-headless-auto-denial",
+      "observed_requests": 0,
+      "human_interruptions": null,
+      "permission_mode": "request-review",
+      "permission_denials": 1,
+      "probe_file_created": false,
+      "artifacts": {
+        "stdout.jsonl": "10f4b5654a77e3394df8d6ed68af1604015dd83b98302998c90302615e74abfa",
+        "stderr.txt": "55297c92c5f0939d9e3ec626d7869bceadd2936372ab9e7a5f5b7a3ad2438741",
+        "qualification.json": "1a0cabb6b210913429e25eca16a8a8c286fe72ed1ee849af2beb801432bbfcfc"
+      }
+    }
+  ],
+  "retained_earlier_probes": [
+    {
+      "capture": "supervised-qualification-claude-1",
+      "outcome": "Harmless print command did not prompt; not channel qualification."
+    },
+    {
+      "capture": "supervised-qualification-claude-2",
+      "outcome": "Deny path qualified before artifact reporting was added."
+    },
+    {
+      "capture": "supervised-qualification-codex-1",
+      "outcome": "Runtime rejected untrusted approval policy despite generated schema."
+    },
+    {
+      "capture": "supervised-qualification-codex-2",
+      "outcome": "Host stopped without a grant because CLI offered cancel instead of decline."
+    },
+    {
+      "capture": "supervised-qualification-codex-3",
+      "outcome": "Cancel path qualified before artifact reporting was added."
+    }
+  ],
+  "limitations": [
+    "No actual human scores or supervised task trials collected.",
+    "Native allow-once responses are implemented and tested with a local protocol fixture, not live human approval.",
+    "agy requires a supported interactive approval channel before human interruption measurement.",
+    "Anonymous patch metadata does not prevent inference from code style; human blind attestation is required.",
+    "Supervised sessions use different transports and permission profiles; do not pool with unattended timing or repeatability."
+  ]
+}
