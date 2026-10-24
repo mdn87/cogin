@@ -4,17 +4,17 @@
   "projectLabel": "Cogin",
   "assessmentState": "scored",
   "assessmentScope": "current-milestone",
-  "percentComplete": 100,
+  "percentComplete": 67,
   "milestonePhase": "operational-proof",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-24T06:12:02.241292+00:00",
+  "assessedAt": "2026-10-24T07:58:43.075439+00:00",
   "confidence": "reported",
-  "currentMilestone": "Cogin profiles now change one bounded Orca behavior choice; production CLI controls verified.",
-  "remainingSummary": "Orca profile integration is complete. The separate agent CLI comparison harness remains specification-only and was not started.",
+  "currentMilestone": "Pinned unattended CLI comparison: two of three lanes have valid repeat pairs.",
+  "remainingSummary": "agy needs separately approved fixture Git history access and two valid trials. Supervised approval counts and blind human cleanup remain a later phase.",
   "nextChipId": "cogin:agent-cli-comparison-harness",
   "source": {
-    "label": "Orca PR #6 merged; 8 observations, 4 production selection controls, 167 targeted tests passed. Existing Windows failures reproduced at baseline.",
+    "label": "Two of three repeatability gates pass (67% of lane pairs); 13 harness tests and 230 existing tests pass. Comparison incomplete.",
     "updatedAt": "2026-10-24"
   }
 }

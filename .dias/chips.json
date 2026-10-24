@@ -272,16 +272,22 @@
       "chipId": "cogin:agent-cli-comparison-harness",
       "projectId": "cogin",
       "title": "Agent CLI comparison harness",
-      "summary": "Separate experiment scoring agentic repo work with tools required across Claude, Codex and agy lanes; spec written, nothing implemented.",
-      "stage": "vague",
+      "summary": "Pinned unattended harness implemented. Claude and Codex each have two valid trials; agy awaits approval for fixture Git history inspection. Supervised and blind-review phases remain.",
+      "stage": "active",
       "sequence": 70,
       "prereqs": [],
-      "linkedRunIds": [],
-      "confidence": "unknown",
+      "linkedRunIds": [
+        "agent-cli/batch-1/claude-1",
+        "agent-cli/batch-1/claude-2",
+        "agent-cli/batch-3/codex-1",
+        "agent-cli/batch-3/codex-2",
+        "agent-cli/batch-5/agy-1"
+      ],
+      "confidence": "reported",
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-27T20:43:02.274Z",
-        "updatedAt": "2026-10-22T05:50:00.000Z"
+        "updatedAt": "2026-10-24T07:58:43.075439+00:00"
       },
       "evidence": [
         {
@@ -295,6 +301,12 @@
           "at": "2026-10-22T05:50:00.000Z",
           "kind": "note",
           "message": "On 2026-10-22 one instrumented agy lane replaced both the retiring Gemini CLI lane and the hand-run Antigravity IDE lane in the spec."
+        },
+        {
+          "entryId": "cogin:agent-cli-comparison-harness:unattended-2026-10-24",
+          "at": "2026-10-24T07:58:43.075439+00:00",
+          "kind": "stage-change",
+          "message": "Harness implemented and pins verified. Claude/Codex repeatability gates pass; agy denied git log after approved bounded corrections. Four valid trials, no cross-lane conclusion. See docs/evidence/agent-cli-comparison-2026-10-24.md."
         }
       ]
     },
