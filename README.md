@@ -41,3 +41,4 @@ python taxonomy_bench.py validate --taxonomy sample_data
 - [`src/taxonomy-bench/STRATEGY_CONTRACT.md`](src/taxonomy-bench/STRATEGY_CONTRACT.md) — the data-only cognitive-strategy export contract
 - [`docs/runplans/matrix-2.md`](docs/runplans/matrix-2.md) — the expanded model and reasoning-effort experiment
 - [`docs/evidence/matrix-2-results-2026-10-23.md`](docs/evidence/matrix-2-results-2026-10-23.md) — live results, limitations, and machine-readable condition profiles
+- [`docs/evidence/orca-profile-integration-2026-10-24.md`](docs/evidence/orca-profile-integration-2026-10-24.md) — imported profiles and verified Orca behavior selection

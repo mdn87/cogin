@@ -8,13 +8,13 @@
   "milestonePhase": "operational-proof",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-24T03:36:50.868Z",
+  "assessedAt": "2026-10-24T06:12:02.241292+00:00",
   "confidence": "reported",
-  "currentMilestone": "Expanded live matrix completed with six new model and effort conditions, two corrected controls, four pair reports, and combined evidence profiles.",
-  "remainingSummary": "Model and effort expansion is complete. The next separate step is to feed the profiles into Orca and verify that they change a real choice.",
-  "nextChipId": "cogin:orca-strategy-handoff",
+  "currentMilestone": "Cogin profiles now change one bounded Orca behavior choice; production CLI controls verified.",
+  "remainingSummary": "Orca profile integration is complete. The separate agent CLI comparison harness remains specification-only and was not started.",
+  "nextChipId": "cogin:agent-cli-comparison-harness",
   "source": {
-    "label": "All eight conditions completed with verified model and effort selections. Four pair reports and combined profiles are published; 230 tests passed.",
-    "updatedAt": "2026-10-23"
+    "label": "Orca PR #6 merged; 8 observations, 4 production selection controls, 167 targeted tests passed. Existing Windows failures reproduced at baseline.",
+    "updatedAt": "2026-10-24"
   }
 }

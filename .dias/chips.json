@@ -303,19 +303,19 @@
       "chipId": "cogin:orca-strategy-handoff",
       "projectId": "cogin",
       "title": "Feed strategy profiles into Orca",
-      "summary": "Hand the exported strategy profiles to Orca behavior selection and check that they change at least one real choice.",
-      "stage": "vague",
+      "summary": "Eight profiles imported into Orca; a bounded Luna-low tier-2 rule changes production advice. Four CLI controls pass; strategy efficacy and worker activation remain unclaimed.",
+      "stage": "done",
       "sequence": 80,
       "prereqs": [
         "cogin:expand-live-model-matrix",
         "cogin:strategy-contract"
       ],
       "linkedRunIds": [],
-      "confidence": "unknown",
+      "confidence": "reported",
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-05T12:00:00.000Z",
-        "updatedAt": "2026-10-22T05:50:00.000Z"
+        "updatedAt": "2026-10-24T06:12:02.241292+00:00"
       },
       "evidence": [
         {
@@ -329,6 +329,12 @@
           "at": "2026-10-22T05:50:00.000Z",
           "kind": "note",
           "message": "2026-10-22: Orca pins contract 1.0.0 (c9412a5c); Cogin not superseded. No Orca rule selects its techniques; no route supports skills. Contract changes no behavior yet."
+        },
+        {
+          "entryId": "cogin:orca-strategy-handoff:completed-2026-10-24",
+          "at": "2026-10-24T06:12:02.241292+00:00",
+          "kind": "stage-change",
+          "message": "Orca PR #6 merged (070176c): 8 profiles imported; 4 production CLI controls and 167 tests pass. All 31 unrelated failures reproduced at baseline 66352ca."
         }
       ]
     }

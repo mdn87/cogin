@@ -1,0 +1,97 @@
+{
+  "created_at": "2026-10-24T06:12:02.241292+00:00",
+  "orca_pr": "https://github.com/mdn87/lugos-orca/pull/6",
+  "source_profile_commit": "6e9c69e",
+  "source_profile_sha256": "dc1c0e1e4ca4b8b5de26d58417addca1696a12732a17ab075c824514d6d73139",
+  "imported_conditions": 8,
+  "selection_verification": {
+    "result": "passed",
+    "mode": "production",
+    "production_eligible": true,
+    "registry_content_revision": {
+      "behavior_tree_sha256": "a32ac3f3b631ffc798655240c8a8e1ab60184f90a6889422c45361dc98c8fbf2",
+      "orca_commit": "070176cdbca98f2ab58d3bab25821f40010db31e"
+    },
+    "policy_advice_sha256": "60bcee3a68bf04ca95d3c0b2fde2c2fe6c5281506c885b920f63780267f00df9",
+    "cases": [
+      {
+        "model": "gpt-6-luna",
+        "effort": "low",
+        "tier": 1,
+        "graph_check_selected": false,
+        "advice_sha256": "4615ad371f1a81ab4667c6b2f3050f50b7b1dec7c4c784431533d8492d32d2e8"
+      },
+      {
+        "model": "gpt-6-luna",
+        "effort": "low",
+        "tier": 2,
+        "graph_check_selected": true,
+        "advice_sha256": "80edacdc182a7fabaaeec0f8434c2138811e69190d280e8ca5ec6a78422c400c"
+      },
+      {
+        "model": "gpt-6-luna",
+        "effort": "medium",
+        "tier": 2,
+        "graph_check_selected": false,
+        "advice_sha256": "9a474442f452d6d3c88aaee1a32341627ccf991b76d70555de66b3250090533d"
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "effort": "low",
+        "tier": 2,
+        "graph_check_selected": false,
+        "advice_sha256": "fcc7f46a487554322bbee3f7cc9b6e3532c27ea745545f00d729917f572b7ae4"
+      }
+    ],
+    "scope": "Real Orca CLI selection only; no provider calls or worker activation."
+  },
+  "validation": {
+    "targeted_passed": 167,
+    "targeted_skipped": 3,
+    "full_suite_passed": 1013,
+    "full_suite_skipped": 47,
+    "full_suite_initial_failures": 33,
+    "transient_dirty_registry_failures_cleared": 2,
+    "baseline_commit": "66352ca",
+    "baseline_reproduced_failures": [
+      "tests/test_hooks.py::HookTests::test_native_conversation_run_is_reused_across_processes",
+      "tests/test_hooks.py::HookTests::test_pre_snapshot_waits_for_split_event_record_commit",
+      "tests/test_hooks.py::HookTests::test_snapshot_lock_timeout_fails_open_without_marker_loop",
+      "tests/test_hooks.py::HookTests::test_stop_claim_is_exclusive_across_processes",
+      "tests/test_hooks.py::HookTests::test_stop_snapshot_waits_for_split_event_record_commit",
+      "tests/test_prune.py::test_prune_marker_directory_swap_never_deletes_escape_target",
+      "tests/test_sitrep.py::test_record_transaction_preserves_primary_and_all_release_failures[primary0]",
+      "tests/test_sitrep.py::test_record_transaction_preserves_primary_and_all_release_failures[primary1]",
+      "tests/test_sitrep.py::test_record_transaction_preserves_primary_and_all_release_failures[primary2]",
+      "tests/test_sitrep.py::test_record_transaction_acquire_cancellation_still_releases_lock",
+      "tests/test_sitrep.py::test_record_transaction_release_only_failure_is_domain_error",
+      "tests/test_sitrep.py::test_conversation_record_is_cross_process_idempotent",
+      "tests/test_sitrep.py::test_windows_native_api_uses_no_share_delete_and_handle_disposition",
+      "tests/test_sitrep.py::test_windows_native_tree_reuses_delete_access_ancestor_once",
+      "tests/test_sitrep.py::test_windows_native_close_tree_attempts_every_handle_and_reports_all",
+      "tests/test_sitrep.py::test_windows_native_open_reports_primary_and_all_close_failures",
+      "tests/test_sitrep.py::test_windows_native_api_reparse_failure_closes_all_opened_handles",
+      "tests/test_sitrep.py::test_windows_native_post_create_failure_preserves_primary_and_closes[primary0]",
+      "tests/test_sitrep.py::test_windows_native_post_create_failure_preserves_primary_and_closes[primary1]",
+      "tests/test_sitrep.py::test_windows_native_post_create_failure_preserves_primary_and_closes[primary2]",
+      "tests/test_sitrep.py::test_windows_native_tree_cancellation_closes_new_and_prior_handles[primary0]",
+      "tests/test_sitrep.py::test_windows_native_tree_cancellation_closes_new_and_prior_handles[primary1]",
+      "tests/test_sitrep.py::test_windows_native_missing_path_errors_are_explicit_file_not_found[2]",
+      "tests/test_sitrep.py::test_windows_native_missing_path_errors_are_explicit_file_not_found[3]",
+      "tests/test_statefs.py::test_posix_ancestor_handoff_releases_new_descriptor_once[primary0]",
+      "tests/test_statefs.py::test_posix_ancestor_handoff_releases_new_descriptor_once[primary1]",
+      "tests/test_statefs.py::test_posix_ancestor_handoff_releases_new_descriptor_once[primary2]",
+      "tests/test_statefs.py::test_retain_directory_rejects_symlinked_target",
+      "tests/test_statefs.py::test_retain_directory_rejects_symlinked_ancestor",
+      "tests/test_statefs.py::test_retain_directory_fails_closed_on_missing_target",
+      "tests/test_statefs.py::test_posix_lock_file_rejects_non_regular_lock_target"
+    ]
+  },
+  "limitations": [
+    "Instruction effectiveness was not measured.",
+    "Production Orca selection was exercised; no provider calls or Autowork worker activation.",
+    "Rule is limited to native Windows, Codex CLI, GPT-6 Luna low effort at tier 2.",
+    "Current selectors do not automatically enforce CLI-version freshness.",
+    "The full Windows suite retains 31 pre-existing failures reproduced on the unchanged baseline."
+  ]
+}
