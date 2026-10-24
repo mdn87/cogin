@@ -532,12 +532,13 @@ class CodexCliProvider(Provider):
     ) -> Completion:
         if previous_response_id is not None:
             # Continued retry: resume the task-local session
+            # Sandbox and cwd belong to exec, not its resume subcommand.
             cli_args = [
-                self.cli_path, "exec", "resume", previous_response_id,
-                "--json", "--sandbox", "read-only",
-                "--ignore-user-config", "--ignore-rules",
-                "--skip-git-repo-check",
+                self.cli_path, "exec", "--sandbox", "read-only",
                 "--cd", str(self.subject_root),
+                "resume", previous_response_id, "--json",
+                "--ignore-user-config", "--ignore-rules",
+                "--skip-git-repo-check", "-",
             ]
             stdin_content = prompt  # Retry instruction only
         else:

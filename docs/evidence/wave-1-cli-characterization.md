@@ -48,9 +48,13 @@ Prompt is sent via stdin. The `-` argument reads stdin.
 ### Continuation
 
 ```
-codex exec resume <thread-id> --json --sandbox read-only --skip-git-repo-check
-  --ignore-user-config --ignore-rules --cd <sterile-dir>
+codex exec --sandbox read-only --cd <sterile-dir> resume <thread-id> --json
+  --skip-git-repo-check --ignore-user-config --ignore-rules -
 ```
+
+Corrected on 2026-10-23 against Codex CLI 0.163.0: `--sandbox` and `--cd`
+belong before the `resume` subcommand. Putting them after it fails argument
+parsing. The final `-` explicitly reads the retry diagnostic from stdin.
 
 ## Claude Code CLI
 

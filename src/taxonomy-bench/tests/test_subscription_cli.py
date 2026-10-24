@@ -612,6 +612,37 @@ class TestCodexProvider:
         assert "resume" in args
         assert "thread_fixture" in args
 
+    def test_codex_continuation_parses_with_installed_cli(self, tmp_path):
+        """Exercise the real argument parser without auth or a model request."""
+        import shutil
+        from taxonomy_bench_cli import _production_runner
+
+        if shutil.which("codex") is None:
+            pytest.skip("Codex CLI is not installed")
+
+        def parser_runner(args, stdin_text, cwd, timeout, env):
+            if "resume" in args:
+                parsed = _production_runner(
+                    [*args, "--help"], "", cwd, timeout, env,
+                )
+                assert parsed.returncode == 0, parsed.stderr
+                assert stdin_text == "Retry diagnostic"
+                return ProcessResult(
+                    args=tuple(args), returncode=0, stdout=CODEX_SUCCESS_JSONL,
+                    stderr="", latency_ms=1.0,
+                )
+            return _production_runner(args, stdin_text, cwd, timeout, env)
+
+        provider = CodexCliProvider(
+            selector="gpt-5.6-sol", subject_root=tmp_path,
+            persistent=True, runner=parser_runner,
+        )
+        result = provider.complete(
+            "Retry diagnostic", {},
+            previous_response_id="00000000-0000-0000-0000-000000000000",
+        )
+        assert not result.error, result.error
+
     def test_codex_malformed_jsonl(self):
         runner = _fake_runner(CODEX_MALFORMED_JSONL)
         provider = CodexCliProvider(selector="gpt-5.6-sol", runner=runner)
