@@ -4,17 +4,17 @@
   "projectLabel": "Cogin",
   "assessmentState": "scored",
   "assessmentScope": "current-milestone",
-  "percentComplete": 65,
+  "percentComplete": 100,
   "milestonePhase": "operational-proof",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-23T23:39:07.534Z",
+  "assessedAt": "2026-10-24T02:19:06.873Z",
   "confidence": "reported",
-  "currentMilestone": "Wave 1: controller and strategy contract shipped; both Google lanes and their pair report are complete. Claude/Codex Pair 1 is calibrated; its primary repeats remain.",
-  "remainingSummary": "Run Claude/Codex Pair 1 primary repeats and aggregate it, then Pairs 2 and 3; widen the live model and thinking-level matrix after those reports exist.",
-  "nextChipId": "cogin:wave-one-live-runs",
+  "currentMilestone": "Wave 1 complete: all six Claude/Codex lanes and three pair reports verified; both Google lanes and their pair report are also complete.",
+  "remainingSummary": "Next milestone: expand the live model and thinking-level matrix using the completed Wave 1 evidence, then feed strategy profiles into Orca.",
+  "nextChipId": "cogin:expand-live-model-matrix",
   "source": {
-    "label": "2026-10-23: 225 tests passed; Google lanes each scored 96/96 primary first attempts on agy 1.4.6; pair report verified.",
+    "label": "Wave 1 verified: 567/576 Claude/Codex first attempts, all nine failures recovered; three pair reports published; 226 tests passed.",
     "updatedAt": "2026-10-23"
   }
 }

@@ -120,18 +120,25 @@
       "chipId": "cogin:wave-one-live-runs",
       "projectId": "cogin",
       "title": "Run Wave 1 live across three subscription pairs",
-      "summary": "Execute the six preflighted Claude and Codex lanes in pair order against the locked 32-task manifest and publish the three pair reports.",
-      "stage": "active",
+      "summary": "All six Claude/Codex lanes and three pair reports verified: 567/576 exact first attempts, 576/576 after recovery; three abandoned infrastructure runs excluded.",
+      "stage": "done",
       "sequence": 50,
       "prereqs": [
         "cogin:wave-one-controller"
       ],
-      "linkedRunIds": [],
+      "linkedRunIds": [
+        "wave-claude-opus-5-primary-3-20261024T014945714593Z-48ab22993733",
+        "wave-gpt-5.6-sol-primary-3-20261024T014517066681Z-8ff8f469d2ee",
+        "wave-claude-sonnet-5-primary-3-20261024T015917628563Z-9ecf2fc13fb4",
+        "wave-gpt-5.6-terra-primary-3-20261024T020339816548Z-7127e1ba85e0",
+        "wave-claude-fable-5-primary-3-20261024T021415412474Z-d7f99758aa95",
+        "wave-gpt-5.6-luna-primary-3-20261024T021134623622Z-a0e649c6c934"
+      ],
       "confidence": "reported",
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-27T20:43:02.274Z",
-        "updatedAt": "2026-10-22T05:50:00.000Z"
+        "updatedAt": "2026-10-24T02:19:06.873Z"
       },
       "evidence": [
         {
@@ -145,6 +152,12 @@
           "at": "2026-10-22T05:50:00.000Z",
           "kind": "stage-change",
           "message": "Active 2026-10-22: Wave 1 manifest re-prepared: Claude Code 2.1.296/Codex 0.163.0 (dbd05d3d); Pair 1 calibrations admitted at 8/8 exact first tries. No primary repeat started."
+        },
+        {
+          "entryId": "cogin:wave-one-live-runs:completed-2026-10-24",
+          "at": "2026-10-24T02:19:06.873Z",
+          "kind": "stage-change",
+          "message": "Six lanes and three pair reports verified: 567/576 first attempts; all nine failures recovered. Fixed Codex resume arguments; 226 tests passed. Three abandoned runs excluded."
         }
       ]
     },
@@ -194,7 +207,7 @@
       "projectId": "cogin",
       "title": "Expand the live model matrix",
       "summary": "After the Wave 1 pair reports exist, add more live models and thinking levels so strategy profiles rest on broader evidence than one wave.",
-      "stage": "blocked",
+      "stage": "planned",
       "sequence": 60,
       "prereqs": [
         "cogin:wave-one-live-runs"
@@ -204,7 +217,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-05T12:00:00.000Z",
-        "updatedAt": "2026-10-24T01:33:12.826Z"
+        "updatedAt": "2026-10-24T02:19:06.873Z"
       },
       "evidence": [
         {
@@ -224,6 +237,12 @@
           "at": "2026-10-24T01:33:12.826Z",
           "kind": "note",
           "message": "Blocked: Claude/Codex Wave 1 is still active. Only Pair 1 calibration is complete; primary repeats and all three pair reports are missing. Google results are separate."
+        },
+        {
+          "entryId": "cogin:expand-live-model-matrix:unblocked-2026-10-24",
+          "at": "2026-10-24T02:19:06.873Z",
+          "kind": "stage-change",
+          "message": "Unblocked: all six Claude/Codex Wave 1 lanes and three pair reports are complete and verified. Model and thinking-level expansion is next; no expansion started."
         }
       ]
     },
