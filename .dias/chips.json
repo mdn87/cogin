@@ -144,7 +144,7 @@
           "entryId": "cogin:wave-one-live-runs:calibrated-2026-10-22",
           "at": "2026-10-22T05:50:00.000Z",
           "kind": "stage-change",
-          "message": "Active 2026-10-22: Wave 1 manifest re-prepared: Claude Code 2.1.296/Codex 0.163.0 (dbd05d3d); both Pair 1 calibrations admitted at 8/8 exact first tries. No primary repeat started."
+          "message": "Active 2026-10-22: Wave 1 manifest re-prepared: Claude Code 2.1.296/Codex 0.163.0 (dbd05d3d); Pair 1 calibrations admitted at 8/8 exact first tries. No primary repeat started."
         }
       ]
     },
@@ -194,7 +194,7 @@
       "projectId": "cogin",
       "title": "Expand the live model matrix",
       "summary": "After the Wave 1 pair reports exist, add more live models and thinking levels so strategy profiles rest on broader evidence than one wave.",
-      "stage": "planned",
+      "stage": "blocked",
       "sequence": 60,
       "prereqs": [
         "cogin:wave-one-live-runs"
@@ -204,7 +204,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-05T12:00:00.000Z",
-        "updatedAt": "2026-09-27T20:43:02.274Z"
+        "updatedAt": "2026-10-24T01:33:12.826Z"
       },
       "evidence": [
         {
@@ -218,6 +218,12 @@
           "at": "2026-09-27T20:43:02.274Z",
           "kind": "stage-change",
           "message": "Moved from ready to planned on 2026-09-27: it presumes a completed first wave, and no live lane has run yet."
+        },
+        {
+          "entryId": "cogin:expand-live-model-matrix:prerequisite-blocked-2026-10-24",
+          "at": "2026-10-24T01:33:12.826Z",
+          "kind": "note",
+          "message": "Blocked: Claude/Codex Wave 1 is still active. Only Pair 1 calibration is complete; primary repeats and all three pair reports are missing. Google results are separate."
         }
       ]
     },
