@@ -108,10 +108,12 @@ def test_agy_permissions_use_literal_prefixes_and_workspace_paths(tmp_path):
     worktree = tmp_path / "worktree"
     home = tmp_path / "home"
     pin = {"executable": "agy.exe", "model": "model", "effort": "medium",
-           "permission_syntax": "literal-prefix-v1", "inspection_commands": ["command(Get-Content)"]}
+           "permission_syntax": "literal-prefix-v1", "inspection_commands": ["command(Get-Content)"],
+           "exact_commands": ["command(python -m unittest -q)"]}
     argv, env = harness.invocation("agy", pin, worktree, home)
     policy = json.loads((home / ".gemini/antigravity-cli/settings.json").read_text())["permissions"]
     assert "command(python)" in policy["allow"]
+    assert "command(python -m unittest -q)" in policy["allow"]
     assert "command(git diff)" in policy["allow"]
     assert "command(git status)" in policy["allow"]
     assert f"write_file({worktree.as_posix()})" in policy["allow"]
@@ -132,3 +134,31 @@ def test_reading_a_command_is_not_running_it():
         parsed = harness.parse_events(lane, json.dumps(event))
         assert not parsed["test_command_observed"]
         assert not parsed["browser_command_observed"]
+
+
+def test_windows_rules_allow_argument_variations_without_granting_all_commands(tmp_path):
+    pin = {"executable": "agy.exe", "model": "model", "effort": "medium",
+           "permission_syntax": "windows-command-regex-v1"}
+    argv, _ = harness.invocation("agy", pin, tmp_path / "wt", tmp_path / "home")
+    policy = json.loads((tmp_path / "home/.gemini/antigravity-cli/settings.json").read_text())["permissions"]
+    assert "command(regex:python .*)" in policy["allow"]
+    assert "command(regex:git diff .*)" in policy["allow"]
+    assert "command(regex:git status .*)" in policy["allow"]
+    assert "command(*)" not in policy["allow"]
+    assert "command(regex:git .*)" not in policy["allow"]
+    assert "--sandbox" in argv
+
+
+def test_git_metadata_grant_is_read_only_and_path_inspection_is_scoped(tmp_path):
+    root = tmp_path / "batch"
+    pin = {"executable": "agy.exe", "model": "model", "effort": "medium",
+           "permission_syntax": "windows-command-regex-v1", "read_seed_git_metadata": True}
+    harness.invocation("agy", pin, root / "worktrees/agy-1", root / "home")
+    allows = json.loads((root / "home/.gemini/antigravity-cli/settings.json").read_text())["permissions"]["allow"]
+    metadata = root / "seed/.git"
+    assert f"read_file({metadata.as_posix()})" in allows
+    assert f"write_file({metadata.as_posix()})" not in allows
+    inspections = [rule for rule in allows if "Test-Path" in rule]
+    assert inspections
+    assert all(metadata.as_posix() in rule.replace('\\', '/') for rule in inspections)
+    assert "command(Test-Path)" not in allows

@@ -1,6 +1,6 @@
 # Agent CLI comparison: 2026-10-24
 
-The pinning fix and unattended harness are implemented. Claude and Codex each have two protocol-valid trials and pass the declared repeatability gate. The three-lane batch remains incomplete: agy requested `git log -p -2`, which its approved rules denied. A separate approval for fixture Git history inspection is pending; no bypass or further agy run was attempted.
+The pinning fix and approved agy corrections are implemented. Status: unattended batch incomplete. The report records all primary outcomes and every excluded attempt; no model ranking is claimed.
 
 ## Pinned conditions
 
@@ -20,7 +20,7 @@ Full binary hashes, fixture hashes, source manifests, raw-artifact hashes and pe
 
 | Source / trial | Protocol valid | Task complete | Seconds | Assistant events | Fresh tests / browser | Off-target lines |
 |---|---|---|---:|---:|---|---:|
-| batch-5 / agy-1 | False | False | 35.548 | 5 | True / False | 0 |
+| batch-8 / agy-1 | False | False | 119.437 | 10 | True / False | 0 |
 | batch-3 / codex-1 | True | False | 78.877 | 5 | True / True | 0 |
 | batch-3 / codex-2 | True | False | 37.93 | 3 | True / True | 0 |
 | batch-1 / claude-1 | True | True | 37.988 | 14 | True / True | 0 |
@@ -28,7 +28,7 @@ Full binary hashes, fixture hashes, source manifests, raw-artifact hashes and pe
 
 Task completion requires an updated test file, no off-target edits, successful fresh unit/browser acceptance, observed subject test/browser commands, and a subject screenshot. Codex produced working patches and accurately reported that its sandbox prevented browser execution. Its task-complete value is false because the subject browser step could not finish.
 
-The repeatability gate requires two valid trials, matching off-target verdicts, and an assistant-event difference no greater than `max(2, ceil(0.25 * larger_count))`. Claude counts 14/15 pass (allowance 4); Codex counts 5/3 pass (allowance 2). agy is ineligible. These gates do not establish equivalence across providers.
+The repeatability gate requires two valid trials, matching off-target verdicts, and an assistant-event difference no greater than `max(2, ceil(0.25 * larger_count))`. See the machine-readable evidence for each lane: Claude counts 14/15 pass (allowance 4); Codex counts 5/3 pass (allowance 2). agy results use the same frozen tolerance. These gates do not establish equivalence across providers.
 
 ## Corrections and excluded attempts
 
@@ -36,13 +36,16 @@ The repeatability gate requires two valid trials, matching off-target verdicts, 
 - Approved correction: explicitly select the existing Codex `windows.sandbox="unelevated"` while retaining `workspace-write`, and allow agy fixture listing/reading while retaining its sandbox flag and URL/MCP denies.
 - Batch 2: Codex completed its model turn but archival collided with an inherited tag; output was recovered and bundled, but exit code and duration were unavailable. The trial is excluded. Archive tags now include the batch, seed clones omit tags, and process metadata is saved before archival. agy denied the `dir` alias.
 - Batch 3: two corrected Codex trials completed. Batch 4: agy could inspect files, but the original Python glob-style permission failed to match its command.
-- Batch 5: corrected literal command-prefix rules and workspace-scoped file grants allowed progress; agy then requested unapproved `git log -p -2`. The trial is excluded. It was not retried under broader permissions.
+- Batch 5: corrected literal command-prefix rules and workspace-scoped file grants allowed progress; agy then requested unapproved `git log -p -2`. The trial is excluded. Matt subsequently approved fixture Git-history access and running the batch.
+- Batch 6: the approved Git-history correction was recorded, but Windows denied the required unit-test command despite its Python prefix rule. Batch 7 added exact task commands; a baseline browser invocation without flags was denied. Both attempts remain excluded.
+- Batch 8: documented Windows regex rules encode argument variations for the already-authorized Python, Git diff/status/log and fixture-inspection commands. No arbitrary-command grant or sandbox bypass was added. The Python and Git rules matched, but Git could not read the linked seed metadata outside the trial folder. A subsequent Test-Path request on that metadata was denied. The trial remains excluded; read-only access to that isolated metadata is awaiting separate approval.
+- Git converted trusted fixture line endings during checkout after the first merge. Preparation stopped on the hash mismatch. Restoring the original LF bytes and adding repository attributes preserves the frozen hashes across future Windows checkouts.
 
 The agy permission syntax correction follows its [official CLI permission rules](https://antigravity.google/docs/permissions). The Codex setting follows its [Windows sandbox documentation](https://learn.chatgpt.com/docs/windows/windows-sandbox). No permission-denied trial is counted as a model failure. Old summaries remain intact; the report reparses raw streams with a hashed scorer snapshot, including stderr soft-denials even when agy emits terminal SUCCESS.
 
 ## Limits and remaining work
 
-- Four protocol-valid trials cover Claude and Codex. agy has no valid pair; the three-lane comparison is incomplete.
+- 4 protocol-valid trials are recorded. The cross-lane repeatability gate is False; this small task does not establish statistical equivalence or justify migration.
 - Codex attempted the real browser but Windows returned PermissionError [WinError 5] creating a pipe. Both fresh patch replays passed unit and browser acceptance. This is an environment limitation, not evidence of incorrect patches.
 - batch-3/codex-1 overlapped the excluded batch-4/agy-1 diagnostic for about 17 seconds. Wall times are descriptive only; no timing ranking is supported.
 - Requested model selectors and effort are pinned; Claude and agy report their model in the stream, while the Codex stream does not attest its backend model identity.
@@ -50,8 +53,8 @@ The agy permission syntax correction follows its [official CLI permission rules]
 - Assistant-event counts are provider-specific and support only the predeclared within-lane repeatability check.
 - Supervised interruptions and blind human cleanup scoring remain unmeasured (null). No migration recommendation follows.
 
-Remaining: obtain the requested bounded Git-history approval, run two agy trials in a new recorded batch, and recompute the gate. Supervised trials and blind human cleanup scoring remain a separate later phase.
+The batch remains incomplete at the linked Git metadata boundary. Read-only access and exact path inspection for the isolated seed/.git directory require the pending approval before another agy trial. The correction is implemented behind --allow-git-metadata but has not been applied to a live batch. Supervised trials and blind human cleanup scoring remain a separate later phase.
 
 ## Verification
 
-13 harness tests pass, including pin rejection, permission denial handling, prefix/path generation, parser semantics, repeatability and recoverable archive collisions. The existing Taxonomy Bench suite also passed (230 tests). All four valid subject patches passed fresh unit tests and the trusted real-Chromium feature checks.
+15 harness tests pass, including pin rejection, permission denial handling, Windows command rules, parser semantics, repeatability and recoverable archive collisions. The existing Taxonomy Bench suite previously passed (230 tests) and is unchanged. Fresh unit-test and real-Chromium results appear per trial in the table above.
