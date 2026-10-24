@@ -86,7 +86,9 @@ python src/agent-cli-harness/harness.py --root <new-directory> report --include 
 
 `prepare-corrected` enables the approved Windows sandbox setting and fixture
 inspection commands. `--allow-git-log` requires separate approval for that
-command. These options record permission; they do not supply authorization.
+history inspection. It also permits exactly `git show <frozen-seed-commit>`;
+other `git show` arguments remain denied. These options record permission;
+they do not supply authorization.
 `--allow-git-metadata` separately records approved read-only access to the
 isolated seed repository's `.git` directory and exact path-existence checks.
 Linked worktrees otherwise point outside the trial's sandbox file grants.
@@ -100,6 +102,17 @@ Windows can require full-command matches. New batches therefore use documented
 are added only by the approved correction. Exact entries for the frozen test
 and browser commands are also recorded. No rule grants arbitrary commands or
 all Git subcommands.
+Corrected batches also accept exactly `cmd /c dir`, the Windows spelling of
+the authorized fixture directory listing. Its anchored rule does not accept
+additional arguments, chained commands, or other `cmd` operations.
+After batch 12, corrected preparation also allows exactly
+`Select-String -Path * -Pattern "status-filter"` within the fixture. This rule
+has focused tests but has not yet been used in a live trial.
+If the inherited PATH selects an inaccessible app-bundled PowerShell, prepare
+a new corrected batch with `--agy-shell <installed-pwsh.exe>`. The harness pins
+that shell's hash and version, verifies both before and after each trial, and
+places its directory first only on the agy child's PATH. Existing batches and
+the parent environment remain unchanged.
 The harness retains `--sandbox` and denies URL/MCP operations. CLI-specific
 permission handling and actual sandbox availability remain comparison limits.
 

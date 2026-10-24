@@ -162,3 +162,54 @@ def test_git_metadata_grant_is_read_only_and_path_inspection_is_scoped(tmp_path)
     assert inspections
     assert all(metadata.as_posix() in rule.replace('\\', '/') for rule in inspections)
     assert "command(Test-Path)" not in allows
+
+
+def test_cmd_directory_listing_grant_matches_only_the_approved_command(tmp_path):
+    import re
+
+    pin = {"executable": "agy.exe", "model": "model", "effort": "medium",
+           "permission_syntax": "windows-command-regex-v1", "cmd_directory_listing": True}
+    harness.invocation("agy", pin, tmp_path / "wt", tmp_path / "home")
+    allows = json.loads((tmp_path / "home/.gemini/antigravity-cli/settings.json").read_text())["permissions"]["allow"]
+    rules = [rule[len("command(regex:"):-1] for rule in allows if rule.startswith("command(regex:")]
+    assert any(re.search(rule, "cmd /c dir") for rule in rules)
+    for forbidden in ("cmd /c dir C:/", "cmd /c dir & whoami", "cmd /c del app.py"):
+        assert not any(re.search(rule, forbidden) for rule in rules)
+
+
+def test_agy_pinned_shell_precedes_inherited_path_only_in_child(tmp_path, monkeypatch):
+    import os
+
+    monkeypatch.setenv("PATH", "inherited-path")
+    shell = tmp_path / "system-powershell/pwsh.exe"
+    pin = {"executable": "agy.exe", "model": "model", "effort": "medium",
+           "shell": {"executable": str(shell)}}
+    argv, env = harness.invocation("agy", pin, tmp_path / "wt", tmp_path / "home")
+    assert env["PATH"] == str(shell.parent) + os.pathsep + "inherited-path"
+    assert os.environ["PATH"] == "inherited-path"
+    assert "--sandbox" in argv
+
+
+def test_changed_pinned_shell_is_rejected_before_trial(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    binary = tmp_path / "agy.exe"
+    binary.write_bytes(b"pinned")
+    shell = tmp_path / "pwsh.exe"
+    shell.write_bytes(b"changed")
+    monkeypatch.setattr(harness, "command", lambda *args, **kwargs: SimpleNamespace(stdout="version"))
+    pin = {"executable": str(binary), "sha256": harness.file_hash(binary), "version": "version",
+           "shell": {"executable": str(shell), "sha256": "0" * 64, "version": "shell-version"}}
+    with pytest.raises(ValueError, match="binary hash"):
+        harness.verify_binary(pin)
+
+
+def test_fixture_search_rule_rejects_other_paths_patterns_and_chains():
+    import re
+
+    pattern = harness.AGY_FIXTURE_SEARCH[len("command(regex:"):-1]
+    assert re.search(pattern, 'Select-String -Path * -Pattern "status-filter"')
+    for forbidden in ('Select-String -Path C:/* -Pattern "status-filter"',
+                      'Select-String -Path * -Pattern "secret"',
+                      'Select-String -Path * -Pattern "status-filter"; whoami'):
+        assert not re.search(pattern, forbidden)

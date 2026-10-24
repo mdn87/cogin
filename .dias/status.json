@@ -8,13 +8,13 @@
   "milestonePhase": "operational-proof",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-24T08:23:20.765103+00:00",
+  "assessedAt": "2026-10-24T12:51:16.664145+00:00",
   "confidence": "reported",
   "currentMilestone": "Pinned unattended CLI comparison: two of three lanes have valid repeat pairs.",
-  "remainingSummary": "agy needs approved read-only access to isolated seed Git metadata and two valid trials. Supervised approval counts and blind human cleanup remain a later phase.",
+  "remainingSummary": "agy needs a working Playwright launch inside its existing sandbox and two valid repeats. Exact fixture-search correction is tested but not live-verified. Supervised counts and blind cleanup remain later.",
   "nextChipId": "cogin:agent-cli-comparison-harness",
   "source": {
-    "label": "Two of three repeatability gates pass. 15 harness tests pass; agy Python/Git command matching verified, but linked metadata is inaccessible in its sandbox.",
+    "label": "Claude/Codex repeat gates pass. agy metadata and shell fixes verified; batch 12 timed out or hit a search denial. 19 tests pass; agy remains incomplete.",
     "updatedAt": "2026-10-24"
   }
 }

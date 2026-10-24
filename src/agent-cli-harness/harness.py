@@ -23,6 +23,7 @@ AGY_TASK_COMMANDS = [
     "command(python -m unittest -q)",
     "command(python browser_check.py --feature --screenshot browser.png)",
 ]
+AGY_FIXTURE_SEARCH = r'command(regex:^Select-String -Path \* -Pattern "status-filter"$)'
 
 
 def digest(data):
@@ -72,6 +73,8 @@ def verify_binary(pin):
     version = command([pin["executable"], "--version"], env=environment()).stdout.strip()
     if version != pin["version"]:
         raise ValueError("Pinned CLI version changed")
+    if pin.get("shell"):
+        verify_binary(pin["shell"])
 
 
 def score_numstat(text):
@@ -271,9 +274,12 @@ def prepare_corrected(args):
     }
     manifest["lanes"]["codex"]["windows_sandbox"] = "unelevated"
     manifest["lanes"]["agy"]["permission_syntax"] = "windows-command-regex-v1"
+    manifest["lanes"]["agy"]["cmd_directory_listing"] = True
+    manifest["permission_corrections"]["agy"] += " Exact cmd /c dir spelling of authorized fixture listing; no other cmd commands or arguments."
     # Windows commands may require full-line matches even when their command
     # prefix is granted. These are the exact commands in the frozen task.
-    manifest["lanes"]["agy"]["exact_commands"] = list(AGY_TASK_COMMANDS)
+    manifest["lanes"]["agy"]["exact_commands"] = [*AGY_TASK_COMMANDS, AGY_FIXTURE_SEARCH]
+    manifest["permission_corrections"]["agy"] += " Exact status-filter search over current fixture files; no other paths, patterns, or chained commands."
     manifest["lanes"]["agy"]["inspection_commands"] = [
         "command(Get-ChildItem)", "command(Get-Content)", "command(dir)", "command(ls)",
         *[f"command(regex:{name} .*)" for name in ("Get-ChildItem", "Get-Content", "dir", "ls")],
@@ -284,10 +290,19 @@ def prepare_corrected(args):
         manifest["lanes"]["agy"]["inspection_commands"].append("command(git log)")
         manifest["lanes"]["agy"]["inspection_commands"].append("command(regex:git log .*)")
         manifest["lanes"]["agy"]["exact_commands"].append("command(git log -p -2)")
+        manifest["lanes"]["agy"]["exact_commands"].append(f"command(regex:^git show {manifest['seed_commit']}$)")
         manifest["permission_corrections"]["agy"] += " Read-only git log separately approved for the fixture repository."
+        manifest["permission_corrections"]["agy"] += " Exact git show of the frozen seed commit is covered by the same fixture-history inspection."
     if args.allow_git_metadata:
         manifest["lanes"]["agy"]["read_seed_git_metadata"] = True
         manifest["permission_corrections"]["agy"] += " Read-only seed Git metadata and exact Test-Path inspection separately approved."
+    if args.agy_shell:
+        shell = args.agy_shell.resolve(strict=True)
+        manifest["lanes"]["agy"]["shell"] = {
+            "executable": str(shell), "sha256": file_hash(shell),
+            "version": command([str(shell), "--version"], env=environment()).stdout.strip(),
+        }
+        manifest["permission_corrections"]["agy"] += " Pin installed PowerShell first on child PATH to avoid the inaccessible app-bundled shell."
     save(root / "manifest.json", manifest)
     (root / "manifest.sha256").write_text(file_hash(root / "manifest.json"))
     print(json.dumps({"corrected_batch": str(root), "seed_commit": manifest["seed_commit"]}), flush=True)
@@ -310,6 +325,8 @@ def invocation(lane, pin, worktree, home):
                 "--allowedTools", "Bash(python *),Bash(git diff*),Bash(git status*)"]
     else:
         env["USERPROFILE"] = env["HOME"] = str(home)
+        if pin.get("shell"):
+            env["PATH"] = str(Path(pin["shell"]["executable"]).parent) + os.pathsep + env.get("PATH", "")
         permission_file = home / ".gemini/antigravity-cli/settings.json"
         # Keep historical manifests reproducible; new manifests pin corrected
         # literal-prefix semantics documented by the CLI permission engine.
@@ -321,6 +338,8 @@ def invocation(lane, pin, worktree, home):
         else:
             allows = ["read_file(*)", f"write_file({worktree.as_posix()}/**)",
                       "command(python *)", "command(git diff*)", "command(git status*)"]
+        if pin.get("cmd_directory_listing"):
+            allows.append("command(regex:^cmd /c dir$)")
         if pin.get("read_seed_git_metadata"):
             git_dir = worktree.parent.parent / "seed" / ".git"
             allows.append(f"read_file({git_dir.as_posix()})")
@@ -530,6 +549,8 @@ def main():
                            help="Include only with separate authorization for fixture Git history inspection")
     corrected.add_argument("--allow-git-metadata", action="store_true",
                            help="Include only with approval for read-only seed Git metadata and path inspection")
+    corrected.add_argument("--agy-shell", type=Path,
+                           help="Pin an installed PowerShell executable first on the agy child PATH")
     args = parser.parse_args()
     if args.action == "prepare":
         prepare(args)
