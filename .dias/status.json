@@ -8,10 +8,10 @@
   "milestonePhase": "closeout",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-24T17:41:38.529683+00:00",
+  "assessedAt": "2026-10-24T17:48:19.285966+00:00",
   "confidence": "reported",
   "currentMilestone": "Human console and results published: six blind reviews and two passing Claude captures. Codex execution stalled; its approval count remains unmeasured.",
-  "remainingSummary": "Repair Codex command execution before fresh capture. agy needs an interactive approval channel. New supervised patches still need blind cleanup review.",
+  "remainingSummary": "Approve MXC for a fresh Codex capture; read-only diagnostics pass. agy needs an interactive approval channel. New supervised patches still need blind cleanup review.",
   "nextChipId": "cogin:human-effort-measurements",
   "source": {
     "label": "62 tests pass; six blind scores and two Claude approval ledgers verified. Codex incomplete, no edits. Historical v2 hashes preserved.",

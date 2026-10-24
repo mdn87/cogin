@@ -39,12 +39,23 @@ The turn ended without edits; the capture process exited with code 1 and
 `capture_complete` is false. Baseline unit tests passed, but the independent
 feature browser check failed. This is not a zero-interruption success.
 
-The command stall's cause remains unresolved. An additional local sandbox
-diagnostic was rejected before execution because that CLI command requires a
-named permission profile; it supplies no execution evidence. No permission
-policy was changed and no replacement supervised run was launched.
+Follow-up [sandbox diagnostics](codex-sandbox-diagnostic-2026-10-24.json)
+reproduced the stall outside the model and console: a simple `echo` timed out
+after 20 seconds under the pinned `unelevated` implementation. The same
+read-only check passed under MXC, both through `codex sandbox` and app-server
+`command/exec`, with exit code 0. The app-server check retained `workspaceWrite`
+and `networkAccess: false`. No model turn or human measurement was generated.
+An earlier diagnostic was rejected for missing a permission-profile argument;
+it supplies no execution evidence. The deeper legacy sandbox failure remains
+undiagnosed.
 
-Codex needs a working command-execution path before a fresh supervised capture.
+A fresh Codex capture can use MXC with `on-request`, reviewer `user`, and
+`workspace-write`. This proposed implementation change awaits operator approval
+and a separate source manifest; the failed capture stays intact. MXC changes
+Windows isolation and permits host loopback, as described in the official
+[Windows sandbox documentation](https://learn.chatgpt.com/docs/windows/windows-sandbox).
+No replacement supervised run has been launched.
+
 agy still lacks a supported interactive approval channel. Cleanup review of
 the two new Claude patches also remains unmeasured. The sample is small and
 comes from one human reviewer/operator.

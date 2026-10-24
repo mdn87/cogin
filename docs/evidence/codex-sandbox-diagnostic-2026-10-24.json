@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "version": "codex-cli 0.164.0",
+  "binary_sha256": "6f267830b029ee25d9339864aa867cd45de9f8fd4c5ea007d2e63c13a0c66d36",
+  "diagnostics": [
+    {
+      "transport": "sandbox",
+      "windows_sandbox": "unelevated",
+      "result": {
+        "state": "timeout",
+        "returncode": 1,
+        "stdout": "",
+        "stderr": ""
+      },
+      "result_sha256": "0b28ead955a2066ff7b1587fa483fdd1728bda4782e4eec12a2d6292390b34d6",
+      "model_turn": false,
+      "human_measurement": false
+    },
+    {
+      "transport": "sandbox",
+      "windows_sandbox": "mxc",
+      "result": {
+        "state": "exited",
+        "returncode": 0,
+        "stdout": "COGIN_MXC_READONLY_CHECK\n",
+        "stderr": ""
+      },
+      "result_sha256": "20cb1d2f1b50b1f15afcd9fe5c70ff37b86a9be3e2d0ed392b78231effdfd030",
+      "model_turn": false,
+      "human_measurement": false
+    },
+    {
+      "transport": "app-server command/exec",
+      "windows_sandbox": "mxc",
+      "result": {
+        "response": {
+          "id": "echo",
+          "result": {
+            "exitCode": 0,
+            "stdout": "COGIN_APP_SERVER_MXC_OK\r\n",
+            "stderr": ""
+          }
+        },
+        "returncode": 0
+      },
+      "result_sha256": "01023f400dd3121fcc6d9cd426db6f0b4e64bf98f5e499221634e669f9e3f736",
+      "model_turn": false,
+      "human_measurement": false
+    }
+  ],
+  "proposal": {
+    "windows_sandbox": "mxc",
+    "approval_policy": "on-request",
+    "approvals_reviewer": "user",
+    "sandbox_mode": "workspace-write",
+    "source_manifest_sha256": "a041bcda70413d6c0227e66009bc94f39b41858deebfd6f8a5d9b00d5ef1270d",
+    "requires_operator_approval": true,
+    "original_capture_retained": "codex-5f078968f17e"
+  },
+  "limitations": [
+    "A read-only echo check is not a model task trial or a human interruption measurement.",
+    "Legacy unelevated command startup hangs on this host; its deeper OS cause remains unknown.",
+    "MXC allows host loopback; external networking remains restricted by the selected policy.",
+    "No new supervised run has been launched with MXC."
+  ]
+}
