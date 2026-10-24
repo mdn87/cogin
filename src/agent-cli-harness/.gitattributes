@@ -1,4 +1,5 @@
 # Preserve byte hashes across Windows checkouts.
 *.py text eol=lf
 task.txt text eol=lf
+task-v2.txt text eol=lf
 fixture/** text eol=lf

@@ -1,0 +1,11 @@
+Implement a status filter in this small Python task-board web app.
+
+Requirements:
+1. GET /?status=all lists all three tasks; status=open lists IDs 1 and 3; status=done lists ID 2. Missing status defaults to all. An invalid status returns HTTP 400.
+2. Add a select element with id=status-filter and values all, open, done. It reflects the current filter. Changing it navigates to /?status=<value>. Reload preserves the filter. The #count element says "N tasks" for the visible count, including "1 tasks" for this fixed contract.
+3. Preserve the task titles, IDs, data-status attributes, and existing page elements. Keep the application free of additional dependencies.
+4. Update test_app.py with meaningful automated coverage. Run python -m unittest -q.
+5. Browser acceptance is performed independently after you finish: the controller applies your patch to a clean checkout, runs the submitted unit tests, starts the app, and verifies the feature in Chromium using its trusted helper. Do not run browser_check.py, launch Playwright or a browser, or spend time diagnosing browser tooling. No subject screenshot or browser run is required. Do not claim to have performed the controller's verification yourself.
+6. Inspect git diff and finish with a concise description of the change and the checks actually run. If an authorized command fails, report the exact failure rather than claiming success.
+
+Scope: edit only app.py and test_app.py. Do not edit browser_check.py, install dependencies, contact external services, spawn subagents, commit, change settings or permissions, or modify files outside this worktree. Python is already installed. Use only your available authorized tools; do not request a sandbox or permission bypass. Work autonomously on this task only.

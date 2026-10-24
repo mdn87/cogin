@@ -39,7 +39,8 @@ python taxonomy_bench.py validate --taxonomy sample_data
 
 - [`src/taxonomy-bench/`](src/taxonomy-bench/) — the benchmark package, CLI, and tests
 - [`src/agent-cli-harness/`](src/agent-cli-harness/) — separate pinned experiment for agent CLI repository work
-- [`docs/evidence/agent-cli-comparison-2026-10-24.md`](docs/evidence/agent-cli-comparison-2026-10-24.md) — unattended CLI results and remaining comparison limits
+- [`docs/evidence/agent-cli-comparison-v2-2026-10-24.md`](docs/evidence/agent-cli-comparison-v2-2026-10-24.md) — CLI comparison with independent browser acceptance
+- [`docs/evidence/agent-cli-comparison-2026-10-24.md`](docs/evidence/agent-cli-comparison-2026-10-24.md) — historical v1 CLI results and limits
 - [`src/taxonomy-bench/STRATEGY_CONTRACT.md`](src/taxonomy-bench/STRATEGY_CONTRACT.md) — the data-only cognitive-strategy export contract
 - [`docs/runplans/matrix-2.md`](docs/runplans/matrix-2.md) — the expanded model and reasoning-effort experiment
 - [`docs/evidence/matrix-2-results-2026-10-23.md`](docs/evidence/matrix-2-results-2026-10-23.md) — live results, limitations, and machine-readable condition profiles

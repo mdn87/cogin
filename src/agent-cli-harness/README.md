@@ -4,6 +4,10 @@ This experiment measures a small repo task with tools enabled. It is separate
 from Taxonomy Bench and does not use the Wave controller or its task scores.
 The current implementation runs unattended trials only. Supervised approval
 counts and blind human cleanup scores are intentionally null.
+Protocol v2 assigns real-browser acceptance to the independent verifier. Each
+subject implements the feature, updates and runs unit tests, and inspects its
+diff. Historical protocol v1 trials retain their original browser requirements
+and scores; they cannot be combined with v2 trials.
 
 The application fixture uses Python's standard library. Verification uses an
 already-installed Python Playwright package and Chromium; no dependency or
@@ -25,8 +29,10 @@ files across Windows checkouts. An integrity mismatch stops preparation;
 the controller never silently replaces a frozen hash.
 
 The seed app lists three tasks. The subject must add a status filter, update
-tests, run the local app through the provided Chromium helper, and inspect its
-diff. Only `app.py` and `test_app.py` are intended edits. Each trial starts in a
+and run tests, and inspect its diff. The controller starts the resulting app
+and runs the trusted Chromium helper on a fresh patch replay. The v2 prompt
+instructs subjects not to launch Playwright or diagnose browser tooling.
+Only `app.py` and `test_app.py` are intended edits. Each trial starts in a
 fresh worktree at the same seed commit. The process deadline is 600 seconds;
 there are no automatic retries. Provider restrictions remain enforced.
 
@@ -42,10 +48,11 @@ runs the submitted unit tests, and executes the trusted browser helper from
 the harness source against that checkout. This prevents a modified subject
 helper from replacing acceptance checks. Off-target scoring includes newly
 added files and renames; binary off-target files fail the verdict even though
-their line count is unknown (reported as zero). A task pass also requires an
-updated test file, observed unit-test and browser commands, a subject browser
-screenshot, and no off-target edits. A correct replayed patch can therefore
-pass acceptance even when the subject could not run the browser itself.
+their line count is unknown (reported as zero). A v2 task pass requires fresh
+unit and browser acceptance, an updated test file, an observed subject unit-test
+command, and no off-target edits. Subject browser commands and screenshots are
+recorded when present but are not required. V1 retains its additional subject
+browser-command and screenshot requirements; old scores are never promoted.
 
 Malformed/incomplete streams, CLI errors/timeouts, model mismatches, unexpected
 permission modes, permission denials, and trials with no completed tool events
@@ -60,6 +67,10 @@ events are not counted as assistant events. The predeclared repeatability gate
 requires two valid trials, identical off-target verdicts, and an assistant-event
 difference no greater than `max(2, ceil(0.25 * larger_count))`. This is a coarse
 within-lane check, not proof of statistical equivalence or a model ranking.
+Observed test/browser commands require a direct Python invocation, including
+common shell wrappers. Reading or searching for a helper filename does not
+count as executing it. Reports reparse retained streams with a hashed scorer;
+the original trial records remain unchanged.
 
 ## Commands
 
@@ -89,6 +100,12 @@ inspection commands. `--allow-git-log` requires separate approval for that
 history inspection. It also permits exactly `git show <frozen-seed-commit>`;
 other `git show` arguments remain denied. These options record permission;
 they do not supply authorization.
+`prepare` defaults to protocol v2; `--protocol-version 1` explicitly selects
+the historical task. `prepare-corrected` inherits the source protocol unless
+`--protocol-version 2` explicitly migrates a v1 source into a new batch. Such a
+migration records the authorization, freezes `task-v2.txt` under a new prompt
+hash, and retains the seed and binary pins. All lanes must be rerun. Reporting
+rejects different protocol versions even if other hashes happen to match.
 `--allow-git-metadata` separately records approved read-only access to the
 isolated seed repository's `.git` directory and exact path-existence checks.
 Linked worktrees otherwise point outside the trial's sandbox file grants.
@@ -102,6 +119,9 @@ Windows can require full-command matches. New batches therefore use documented
 are added only by the approved correction. Exact entries for the frozen test
 and browser commands are also recorded. No rule grants arbitrary commands or
 all Git subcommands.
+The `windows-command-regex-v2` permission revision matches multiline Python
+commands as well as single-line commands, while retaining the Python prefix.
+Historical permission revisions remain reproducible from their frozen pins.
 Corrected batches also accept exactly `cmd /c dir`, the Windows spelling of
 the authorized fixture directory listing. Its anchored rule does not accept
 additional arguments, chained commands, or other `cmd` operations.
@@ -134,6 +154,8 @@ idempotent.
 
 The initial batch pins Codex 0.164.0 from the npm native package, Claude
 2.1.296, and agy 1.4.7. This avoids PATH's Clici-specific Codex 0.162.1.
-The [2026-10-24 evidence](../../docs/evidence/agent-cli-comparison-2026-10-24.md)
-records the actual outcomes, excluded attempts, and remaining work. No model
-ranking or migration decision follows from this small experiment.
+The [historical v1 evidence](../../docs/evidence/agent-cli-comparison-2026-10-24.md)
+retains the original outcomes and excluded attempts. The
+[v2 evidence](../../docs/evidence/agent-cli-comparison-v2-2026-10-24.md) records
+fresh trials under independent browser verification. No model ranking or
+migration decision follows from this small experiment.

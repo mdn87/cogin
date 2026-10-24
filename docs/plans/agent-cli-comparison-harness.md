@@ -1,7 +1,8 @@
 # Agent CLI Comparison Harness
 
 **Status:** unattended harness implemented; live evidence and remaining limits
-are in [the 2026-10-24 report](../evidence/agent-cli-comparison-2026-10-24.md).
+are in [the v2 report](../evidence/agent-cli-comparison-v2-2026-10-24.md).
+The [v1 report](../evidence/agent-cli-comparison-2026-10-24.md) remains historical.
 Supervised approval counts and blind human cleanup scoring remain a later phase.
 Implementation: [`src/agent-cli-harness`](../../src/agent-cli-harness/).
 **Relationship to Wave 1:** none. This is a separate experiment with a separate
@@ -76,8 +77,15 @@ diff is captured, archived per the repo's branch-archival rule.
 ## Task spec
 
 One prompt, byte-identical across lanes, stored in the harness and hashed into
-each run record. It must require all five of: add one feature, update tests,
-run the app, verify behavior in the browser, produce a clean diff.
+each run record. Protocol v2 requires the subject to add one feature, update
+and run unit tests, and produce a clean diff. The independent verifier applies
+the patch to a clean checkout, reruns the submitted tests, starts the app, and
+checks the UI in real Chromium with the trusted helper. Subject browser
+execution and screenshots are not required.
+
+V1 required subjects to run the browser themselves. Its frozen prompt and
+scores remain unchanged. V2 has a new prompt hash and explicit protocol version;
+all three lanes require fresh repeats, and reports reject mixed versions.
 
 ## Metrics
 
@@ -92,10 +100,10 @@ run the app, verify behavior in the browser, produce a clean diff.
 
 ## Known asymmetries — record, do not paper over
 
-1. **Browser verification.** Claude Code and agy have browser tooling; Codex
-   does not natively. Score *how* each lane verified (real browser, curl,
-   test-only, not at all) rather than pass/fail. A lane that skipped
-   verification and a lane that could not are different results.
+1. **Browser verification.** V2 measures browser-correct patches through a
+   shared independent verifier. It does not measure subjects' ability to drive
+   a browser. V1's subject-browser failures remain historical environment
+   evidence and are not reclassified as v2 successes.
 2. **Model vs harness.** A lane's result confounds the model with its CLI's
    agent loop. This measures CLI session configurations, not models — same
    caveat Wave 1 carries.

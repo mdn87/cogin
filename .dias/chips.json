@@ -272,23 +272,23 @@
       "chipId": "cogin:agent-cli-comparison-harness",
       "projectId": "cogin",
       "title": "Agent CLI comparison harness",
-      "summary": "Harness built; Claude/Codex repeat pairs pass. agy metadata and shell fixes verified; batch 12 timed out or hit a search denial. Playwright startup inside agy remains unresolved.",
-      "stage": "active",
+      "summary": "V2 unattended comparison complete: six valid task passes and three repeatability gates. Independent Chromium checks pass. Supervised counts and blind cleanup remain later.",
+      "stage": "done",
       "sequence": 70,
       "prereqs": [],
       "linkedRunIds": [
-        "agent-cli:batch-1:claude-1",
-        "agent-cli:batch-1:claude-2",
-        "agent-cli:batch-3:codex-1",
-        "agent-cli:batch-3:codex-2",
-        "agent-cli:batch-12:agy-1",
-        "agent-cli:batch-12:agy-2"
+        "agent-cli:protocol-v2-batch-1:claude-1",
+        "agent-cli:protocol-v2-batch-1:claude-2",
+        "agent-cli:protocol-v2-batch-1:codex-1",
+        "agent-cli:protocol-v2-batch-1:codex-2",
+        "agent-cli:protocol-v2-batch-2:agy-1",
+        "agent-cli:protocol-v2-batch-2:agy-2"
       ],
       "confidence": "reported",
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-09-27T20:43:02.274Z",
-        "updatedAt": "2026-10-24T12:51:16.664145+00:00"
+        "updatedAt": "2026-10-24T13:19:17.510194+00:00"
       },
       "evidence": [
         {
@@ -332,6 +332,18 @@
           "at": "2026-10-24T12:51:16.664145+00:00",
           "kind": "note",
           "message": "Exact fixture-search correction tested, not live-verified. Two valid agy repeats still missing; supervised approval counts and blind cleanup scoring remain a later phase."
+        },
+        {
+          "entryId": "cogin:agent-cli-comparison-harness:v2-complete-2026-10-24",
+          "at": "2026-10-24T13:19:17.510194+00:00",
+          "kind": "stage-change",
+          "message": "V2 moves browser checks to the independent verifier. Six fresh trials pass tests and Chromium; all three repeatability gates pass. V1 scores preserved; 34 harness tests pass."
+        },
+        {
+          "entryId": "cogin:agent-cli-comparison-harness:v2-agy-rules-2026-10-24",
+          "at": "2026-10-24T13:19:17.510194+00:00",
+          "kind": "note",
+          "message": "First v2 agy attempt excluded after multiline Python denial. Corrected matching stays within the Python grant; a new agy pair passes. No subject browser run required."
         }
       ]
     },
