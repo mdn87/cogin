@@ -20,6 +20,10 @@ reviewer's concern about that error-response line is unverified and is not a
 validated vulnerability finding. Original patches and historical scores remain
 unchanged. These scores do not cover the new supervised patches.
 
+Blind scoring of the three supervised patches was dropped by the operator on
+2026-10-26. They stay unscored; the six unattended scores above are final for
+this record.
+
 ## Supervised sessions
 
 | Capture | Human prompts | Allows | Denials | Task acceptance |
