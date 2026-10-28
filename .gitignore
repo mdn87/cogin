@@ -56,3 +56,6 @@ node_modules
 
 # Private agent-comparison runs and isolated fixture repositories
 src/agent-cli-harness/runs/
+
+# Local Lugos work-in-progress state
+.lugos-wip/
