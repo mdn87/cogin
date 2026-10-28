@@ -358,8 +358,8 @@
       "chipId": "cogin:human-effort-measurements",
       "projectId": "cogin",
       "title": "Collect human approval and blind cleanup measurements",
-      "summary": "Six blind reviews done. Claude: two passes, 4 prompts each. Codex MXC: one pass, 3 prompts; repeat failed after 1 allow and 1 denial. agy lacks an interactive approval channel.",
-      "stage": "blocked",
+      "summary": "Closed as dropped by Matt 2026-10-26: no blind scoring of supervised patches. Six blind reviews and seven supervised captures stay as recorded.",
+      "stage": "done",
       "sequence": 75,
       "prereqs": [
         "cogin:agent-cli-comparison-harness"
@@ -369,7 +369,7 @@
       "aheadOfPrereqs": null,
       "timestamps": {
         "createdAt": "2026-10-24T14:02:20.155043+00:00",
-        "updatedAt": "2026-10-24T18:25:29.193014+00:00"
+        "updatedAt": "2026-10-28T04:10:30+00:00"
       },
       "evidence": [
         {
@@ -413,6 +413,12 @@
           "at": "2026-10-24T18:25:29.193014+00:00",
           "kind": "note",
           "message": "MXC repeat: 2 prompts, 1 allow, 1 denial; unit/Chromium checks failed. Capture complete; denial respected. Seven captures, original scores and 57 historical hashes preserved."
+        },
+        {
+          "entryId": "cogin:human-effort-measurements:dropped-2026-10-26",
+          "at": "2026-10-28T04:10:30+00:00",
+          "kind": "stage-change",
+          "message": "Closed as dropped: Matt dropped blind scoring on 2026-10-26 (cogin 6de6ae7). The three supervised patches stay unscored; no further human measurement is planned."
         }
       ]
     },

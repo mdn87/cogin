@@ -8,13 +8,13 @@
   "milestonePhase": "closeout",
   "portfolioGroup": "agent-platform",
   "displayPriority": 500,
-  "assessedAt": "2026-10-24T18:25:29.193014+00:00",
+  "assessedAt": "2026-10-28T04:10:30+00:00",
   "confidence": "reported",
   "currentMilestone": "Six blind reviews and seven supervised captures published. Claude: two passes. Codex MXC: one pass; repeat failed after one allow and one denial. All attempts retained.",
-  "remainingSummary": "agy needs an interactive approval channel. Supervised patches have no cleanup scores. Codex repeat failed after a denial; repeatable task success is unestablished.",
-  "nextChipId": "cogin:human-effort-measurements",
+  "remainingSummary": "Nothing planned. Matt dropped blind scoring of the supervised patches on 2026-10-26 (6de6ae7), so they stay unscored. Known limits, not work items: agy has no interactive approval channel, and the Codex repeat failed after a denial, so repeatable task success is unestablished.",
+  "nextChipId": null,
   "source": {
-    "label": "Seven captures and six blind scores verified; MXC repeat failed after 1 allow and 1 denial. 57 historical hashes unchanged. Prior 62 tests passed at 47bf49f.",
-    "updatedAt": "2026-10-24"
+    "label": "Board reconciled 2026-10-28: human-effort chip closed as dropped (6de6ae7). Captures, scores and 57 historical hashes unchanged.",
+    "updatedAt": "2026-10-28"
   }
 }
