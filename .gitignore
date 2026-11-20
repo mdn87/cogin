@@ -59,3 +59,4 @@ src/agent-cli-harness/runs/
 
 # Local Lugos work-in-progress state
 .lugos-wip/
+config/glas.benchmark.local.json
