@@ -85,10 +85,16 @@ The source script also runs without installation:
 python taxonomy_bench.py validate --taxonomy sample_data
 ```
 
-Set an API key for OpenAI runs:
+For OpenAI runs, create an ignored `config/glas.benchmark.local.json` in the
+repository root with a BWS reference mapped to `OPENAI_API_KEY`. Set
+`GLAS_PYTHON` to a Python installation with GLAS and its Bitwarden dependencies,
+`GLAS_ROOT` if using a source checkout, and `GLAS_HOME` to the selected
+native-store profile inventory. The wrapper drops inherited provider API keys
+before launching GLAS. Run OpenAI commands through the wrapper from this
+directory:
 
 ```bash
-export OPENAI_API_KEY="..."
+python ../../scripts/taxonomy_with_glas.py run --suite suites/SUITE.json --provider openai --model MODEL_ID --out runs
 ```
 
 ## Validate the source taxonomy
@@ -213,7 +219,7 @@ Wave gates.
 ## Run one model and effort level
 
 ```bash
-python taxonomy_bench.py run \
+python ../../scripts/taxonomy_with_glas.py run \
   --suite suites/taxonomy-v1-seed42.private.json \
   --provider openai \
   --model YOUR_MODEL_ID \
@@ -248,7 +254,7 @@ Reasoning effort values are passed through to the provider because supported val
 ## Compare models and effort levels
 
 ```bash
-python taxonomy_bench.py matrix \
+python ../../scripts/taxonomy_with_glas.py matrix \
   --suite suites/taxonomy-v1-seed42.private.json \
   --provider openai \
   --models MODEL_ID_A,MODEL_ID_B \
